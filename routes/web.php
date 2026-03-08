@@ -4,15 +4,58 @@ declare(strict_types=1);
 
 use App\Core\Routing\Router;
 use App\Modules\Admin\Controllers\AdminController;
+use App\Modules\Brand\Controllers\BrandAdminController;
+use App\Modules\Brand\Repositories\BrandRepository;
+use App\Modules\Brand\Services\BrandService;
+use App\Modules\Catalog\Repositories\CatalogRepository;
+use App\Modules\Catalog\Services\CatalogService;
+use App\Modules\Category\Controllers\CategoryAdminController;
+use App\Modules\Category\Repositories\CategoryRepository;
+use App\Modules\Category\Services\CategoryService;
+use App\Modules\Product\Controllers\ProductAdminController;
+use App\Modules\Product\Repositories\ProductAttributeRepository;
+use App\Modules\Product\Repositories\ProductImageRepository;
+use App\Modules\Product\Repositories\ProductRepository;
+use App\Modules\Product\Services\ProductService;
 use App\Modules\Storefront\Controllers\StorefrontController;
 
-/** @var array{router: Router, view: \App\Core\View\ViewFactory} $app */
-$storefront = new StorefrontController($app['view']);
+/** @var array{router: Router, view: \App\Core\View\ViewFactory, pdo: \PDO} $app */
+$brandService = new BrandService(new BrandRepository($app['pdo']));
+$categoryService = new CategoryService(new CategoryRepository($app['pdo']));
+$productService = new ProductService(
+    new ProductRepository($app['pdo']),
+    new ProductAttributeRepository($app['pdo']),
+    new ProductImageRepository($app['pdo'])
+);
+$catalogService = new CatalogService(new CatalogRepository($app['pdo']));
+
+$storefront = new StorefrontController($app['view'], $catalogService);
 $admin = new AdminController($app['view']);
+$brandAdmin = new BrandAdminController($app['view'], $brandService);
+$categoryAdmin = new CategoryAdminController($app['view'], $categoryService);
+$productAdmin = new ProductAdminController($app['view'], $productService, $brandService, $categoryService);
 
 $app['router']->get('/', [$storefront, 'home']);
 $app['router']->get('/category/{slug}', [$storefront, 'category']);
 $app['router']->get('/product/{slug}', [$storefront, 'product']);
 $app['router']->get('/cart', [$storefront, 'cart']);
 $app['router']->get('/checkout', [$storefront, 'checkout']);
+
 $app['router']->get('/admin', [$admin, 'dashboard']);
+$app['router']->get('/admin/brands', [$brandAdmin, 'index']);
+$app['router']->get('/admin/brands/create', [$brandAdmin, 'createForm']);
+$app['router']->post('/admin/brands', [$brandAdmin, 'store']);
+$app['router']->get('/admin/brands/{id}/edit', [$brandAdmin, 'editForm']);
+$app['router']->post('/admin/brands/{id}', [$brandAdmin, 'update']);
+
+$app['router']->get('/admin/categories', [$categoryAdmin, 'index']);
+$app['router']->get('/admin/categories/create', [$categoryAdmin, 'createForm']);
+$app['router']->post('/admin/categories', [$categoryAdmin, 'store']);
+$app['router']->get('/admin/categories/{id}/edit', [$categoryAdmin, 'editForm']);
+$app['router']->post('/admin/categories/{id}', [$categoryAdmin, 'update']);
+
+$app['router']->get('/admin/products', [$productAdmin, 'index']);
+$app['router']->get('/admin/products/create', [$productAdmin, 'createForm']);
+$app['router']->post('/admin/products', [$productAdmin, 'store']);
+$app['router']->get('/admin/products/{id}/edit', [$productAdmin, 'editForm']);
+$app['router']->post('/admin/products/{id}', [$productAdmin, 'update']);

@@ -109,3 +109,20 @@ För att se migrationer som ska köras manuellt i MariaDB:
 ```bash
 php scripts/migrate.php
 ```
+
+
+## Katalogblock (nuvarande status)
+
+Följande finns nu i foundation:
+- verklig katalogkoppling för storefront (`/`, `/category/{slug}`, `/product/{slug}`)
+- enkel serverrenderad katalogadmin för brands/categories/products
+- stöd för product attributes och product images i adminformulär
+
+Exempel admin-URL:er:
+- `/admin/brands`
+- `/admin/categories`
+- `/admin/products`
+
+Databas:
+- kör även `database/migrations/002_catalog_foundation.sql`
+- valfritt: kör `database/seeders/001_catalog_demo.sql` för demo-data

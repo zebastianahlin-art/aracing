@@ -16,6 +16,11 @@ final class Router
         $this->routes['GET'][] = ['pattern' => $path, 'handler' => $handler];
     }
 
+    public function post(string $path, callable $handler): void
+    {
+        $this->routes['POST'][] = ['pattern' => $path, 'handler' => $handler];
+    }
+
     public function dispatch(string $method, string $uri): Response
     {
         $path = parse_url($uri, PHP_URL_PATH) ?: '/';

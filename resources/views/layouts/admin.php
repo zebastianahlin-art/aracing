@@ -6,25 +6,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?= htmlspecialchars($title ?? 'A-Racing Admin', ENT_QUOTES, 'UTF-8') ?></title>
   <style>
-    :root { --bg:#0c0c10; --sidebar:#13131a; --card:#1a1a22; --text:#f5f5f7; --muted:#9ea0ac; --accent:#e10600; }
-    body { margin:0; font-family:Inter,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--text); display:grid; grid-template-columns:230px 1fr; min-height:100vh; }
-    aside { background:var(--sidebar); padding:1rem; border-right:1px solid #23232f; }
-    aside a { display:block; color:var(--text); text-decoration:none; margin:.7rem 0; }
-    aside a:hover { color:var(--accent); }
-    main { padding:1.2rem; }
-    .card { background:var(--card); border:1px solid #2b2b36; border-radius:10px; padding:1rem; }
-    h1 span { color:var(--accent); }
-    small { color:var(--muted); }
+    :root { --bg:#0c0c10; --sidebar:#11131a; --card:#171922; --line:#2a2f3d; --text:#f5f5f7; --muted:#9ea0ac; --accent:#e10600; }
+    body { margin:0; font:14px/1.4 Inter,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--text); display:grid; grid-template-columns:220px 1fr; min-height:100vh; }
+    aside { background:var(--sidebar); padding:1rem; border-right:1px solid var(--line); }
+    aside a { display:block; color:var(--text); text-decoration:none; margin:.5rem 0; padding:.35rem .45rem; border-radius:6px; }
+    aside a:hover { color:var(--accent); background:#1b1f2b; }
+    main { padding:1rem; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:.9rem; }
+    .topline { display:flex; justify-content:space-between; align-items:center; margin-bottom:.8rem; }
+    .btn { background:#222838; color:var(--text); border:1px solid #384055; padding:.35rem .55rem; border-radius:6px; text-decoration:none; }
+    .btn:hover { border-color:var(--accent); color:var(--accent); }
+    .table { width:100%; border-collapse:collapse; font-size:13px; }
+    .table th,.table td { border-bottom:1px solid var(--line); padding:.4rem; text-align:left; vertical-align:top; }
+    input,select,textarea { width:100%; padding:.45rem; border-radius:6px; border:1px solid #353d52; background:#0f121a; color:var(--text); }
+    textarea { min-height:100px; }
+    .grid { display:grid; gap:.7rem; grid-template-columns:1fr 1fr; }
+    label { display:block; margin:.35rem 0 .2rem; color:var(--muted); }
   </style>
 </head>
 <body>
   <aside>
     <h2>Admin</h2>
     <a href="/admin">Dashboard</a>
+    <a href="/admin/brands">Brands</a>
+    <a href="/admin/categories">Categories</a>
+    <a href="/admin/products">Products</a>
     <a href="/">Till storefront</a>
   </aside>
-  <main>
-    <?= $content ?? '' ?>
-  </main>
+  <main><?= $content ?? '' ?></main>
 </body>
 </html>

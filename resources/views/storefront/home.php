@@ -2,12 +2,20 @@
 ob_start();
 ?>
 <section class="panel">
-  <h2>Start</h2>
-  <p>Mörkt storefront-skelett för A-Racing med fokus på katalog, tydlig lagerkommunikation och snabb serverrendering.</p>
-  <ul>
-    <li><a href="/category/bromsar">Exempel kategori</a></li>
-    <li><a href="/product/racing-bromsbelagg-x1">Exempel produkt</a></li>
-  </ul>
+  <h2>Senaste aktiva produkter</h2>
+  <?php if ($products === []): ?>
+    <p class="muted">Inga aktiva produkter ännu.</p>
+  <?php else: ?>
+    <div class="product-grid">
+      <?php foreach ($products as $product): ?>
+        <article class="product-card">
+          <h3><a href="/product/<?= htmlspecialchars((string) $product['slug'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $product['name'], ENT_QUOTES, 'UTF-8') ?></a></h3>
+          <p class="muted">Brand: <?= htmlspecialchars((string) ($product['brand_name'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
+          <p class="muted">SKU: <?= htmlspecialchars((string) ($product['sku'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
+        </article>
+      <?php endforeach; ?>
+    </div>
+  <?php endif; ?>
 </section>
 <?php
 $content = (string) ob_get_clean();

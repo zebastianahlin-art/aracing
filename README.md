@@ -84,3 +84,28 @@ Bygg inte senare roadmap-faser innan tidigare faser fungerar stabilt.
 /tests       Automatiserade tester, fixtures och importexempel
 /scripts     CLI-kommandon för import, indexering, cache och batchjobb
 /storage     Importfiler, loggar, genererade bilder och temporära filer
+```
+
+## Lokal uppstart (foundation)
+
+1. Installera beroenden:
+   ```bash
+   composer install
+   ```
+2. Skapa miljöfil:
+   ```bash
+   cp .env.example .env
+   ```
+3. Starta lokal server:
+   ```bash
+   composer serve
+   ```
+4. Öppna i webbläsare:
+   - `http://127.0.0.1:8000/`
+   - `http://127.0.0.1:8000/admin`
+
+För att se migrationer som ska köras manuellt i MariaDB:
+
+```bash
+php scripts/migrate.php
+```

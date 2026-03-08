@@ -1,0 +1,167 @@
+A-RACING
+MASTERPLAN & BYGGUNDERLAG
+AI-driven och automatiserad motorsport-webshop
+Projekt-PM, arkitektur och Codex-upplägg
+Version 1.0 • Mars 2026
+Detta dokument är avsett att fungera som huvudspecifikation för planering, arkitektur och styrning av utvecklingen.
+
+1. Sammanfattning
+Målet är att bygga en egen mörk, snabb och modulär webshop för motorsportartiklar där produktimport, artikelvård, pris/lager, orderstöd och fordonskoppling automatiseras så långt det är praktiskt säkert. Plattformen ska minska manuell administration, förbättra kundupplevelsen och ge en tydlig väg från sidoprojekt till större verksamhet.
+Område
+Beslut / riktning
+Plattform
+Egenbyggd webshopplattform i modern PHP + MariaDB, serverrenderad frontend.
+Design
+Mörkt A-Racing 2.0-uttryck med sportbil/performance-känsla, frontade produkter, tydliga lagerbadges och bilväljare högt upp.
+Kärnproblem att lösa
+Produktimport, artikelvård, pris/lager, hybridorderflöde, YMM/fitment, SEO och marknadsföringsautomation.
+AI-roll
+Översättning, SEO, URL-import till artikelutkast, fitment-förslag, kvalitetsgranskning, rapporter och marknadsutkast.
+Roadmap
+Bygg först kärnplattform och leverantörsmotor, sedan order/inköp, därefter YMM och AI.
+Drift
+Egen VPS med Nginx, MariaDB, Redis, backup, bildoptimering och schemalagda jobb.
+
+2. Affärsmål och verksamhetsbild
+Produkter: trimdelar, motordelar, bromsar, stötdämpare/chassi, fälgar/däck samt skydd/kläder.
+Kunder: främst privatpersoner i Sverige, ibland Norden.
+Verksamhet: sidoprojekt idag, men ska kunna växa betydligt över tid.
+Största flaskhalsar: produktimport, artikelvård, uppdatering av pris/lager, fitment/YMM och innehållsarbete.
+3. Produktvision
+Webshop som yta ovanpå tre motorer: produkt- och leverantörsmotor, fitment/YMM-motor och AI-/automationsmotor.
+Admin ska fungera som ett kontrollcenter för en ensam operatör, inte som en traditionell passiv backend.
+Kunden ska snabbt kunna besvara tre frågor: Passar detta min bil? Finns det i lager? Är detta rätt del för mitt bygge?
+4. Spikade teknikbeslut
+Egenbyggd plattform i PHP med MariaDB, inte WooCommerce-baserad.
+Serverrenderad storefront med fokus på snabbhet, robusthet och enkel drift.
+AI via API, inte lokal modell i första fasen.
+Svenska och engelska från start.
+Frakt via Fraktjakt API. Betalning via lågkostnadsalternativ + Swish + möjlighet till egen fakturering.
+Google Analytics räcker initialt.
+5. Designriktning
+Mörkt tema med racingröd accent som huvudspår.
+Hero med sportbil/performance-känsla, bilväljare högt upp, frontade produkter och tydliga kategoriblock.
+Tydlig lagerkommunikation: eget lager, leverantörslager/beställningsvara eller slut i lager.
+Produktdata och passform ska väga tyngre än ren dekor.
+Admin ska vara dashboard-first, kompakt och datatät men lättskannad.
+6. Huvudmoduler
+Katalog: produkter, kategorier, varumärken, bilder, attribut, språkfält.
+Leverantörer/import: leverantörer, importprofiler, CSV/Excel, rådata, URL-importutkast, importloggar.
+Pris/lager: marginalregler, avrundning, produktpriser, eget lager, leverantörslager och historik.
+Order/inköp: order, orderrader, inköpsförslag, restorder, delleveranser.
+Fitment/YMM: fordonsdatabas, produktkopplingar, bilväljare, sparade bilar.
+AI och kvalitet: översättning, SEO, URL-import, fitment-förslag, kvalitetsflaggor, rapporter, marknadsutkast.
+7. Viktigaste funktionella flöden
+Manuell CSV/Excel-import med validering, radloggar och importsammanfattning.
+AI-URL-import: klistra in leverantörslänk och skapa granskningsbart artikelutkast.
+Prisuppdatering: inköpspris + marginal + avrundning, med logg och avvikelseflagga.
+Lageruppdatering: tydlig visning av eget lager, leverantörslager eller slut i lager.
+Order till inköpsförslag: systemet föreslår vad som ska beställas hem, men du godkänner.
+Fitment: AI får föreslå, men verifiering sker assisterat.
+Varannandagsrapport: AI-sammanfattning av order, lager, prisavvikelser och artikelvård.
+8. Datamodell – styrande principer
+Separera leverantörens rådata från butikens publicerade produktdata.
+Produkt och leverantörsartikel är två olika objekt.
+Fitment ska vara riktig relationsmodell, inte bara fri text.
+AI-förslag och automation ska loggas och kunna granskas.
+Produktdata ska byggas som hybrid: fasta kärnfält + attributmodell för varierande tekniska specifikationer.
+9. MVP-definition
+MVP ska kunna ersätta nuvarande butik i praktiken.
+Måste innehålla: produkter, kategorier, varumärken, sök, kundvagn, checkout, betalning, Fraktjakt, leverantörsregister, CSV-import, pris/lagerlogik, dashboard och tabellredigering.
+Ska inte innehålla i första lanserbara versionen: AI-URL-import, full YMM, AI-fitment, sociala medier-utkast och leverantörsbevakning.
+10. Roadmap i sex faser
+Fas 0: Arkitekturlåsning och underlag.
+Fas 1: Kärnplattform – katalog, storefront, checkout, betalning, frakt.
+Fas 2: Leverantör och artikelhantering – import, pris, lager, dashboard, bulk edit.
+Fas 3: Orderlogik – inköpsförslag, restorder och delleveranser.
+Fas 4: Fitment / YMM – fordonsdatabas, bilväljare, passformslogik.
+Fas 5: AI som sparar tid – översättning, SEO, URL-import, fitment-förslag.
+Fas 6: Tillväxt och automation – rapporter, marknadsutkast, leverantörsbevakning.
+11. Risker som ska undvikas
+För stor MVP som försenar allt.
+AI byggs för tidigt ovanpå en svag kärna.
+Fitment blir för stort och otympligt innan grunden är satt.
+Admin blir sekundär trots att den är central för din vardag.
+Designförfining prioriteras före import, lager, order och produktvård.
+12. Regler för utvecklingen
+Bygg modulärt. Separera domänlogik, presentation och integrationer.
+Inga svarta lådor: import och AI-ändringar ska vara spårbara.
+Följ roadmapen. Bygg inte allt samtidigt.
+Produktvård, lagerstatus och inköpsförslag ska optimeras för snabb vardagsanvändning.
+Passform får aldrig framstå som säkrare än den är.
+13. Rekommenderat upplägg för Codex
+Ja — jag rekommenderar att detta även paketeras så att det fungerar bra i Codex. OpenAI beskriver Codex som ett verktyg för agentiskt kodarbete, både lokalt via CLI och i parallella arbetsytor i app/web/IDE-flöden. För ett modulärt projekt som detta är det en stark matchning, eftersom du kan låta agenten arbeta etappvis mot tydliga delspecifikationer och acceptanskriterier.
+Så bör underlaget paketeras för Codex:
+En huvudspecifikation i /docs som beskriver målbild, arkitektur, roadmap och regler.
+En teknisk README med projektstruktur, körinstruktioner, miljövariabler, kodstandard och MVP-scope.
+Separata modul-PM i /docs/modules för katalog, leverantör/import, pris/lager, order/inköp, YMM, AI, storefront och admin.
+En backlog/tasks-mapp där varje uppgift är liten, testbar och har acceptanskriterier.
+En tydlig arkitekturregel-fil som uttryckligen talar om vad agenten inte får göra.
+Föreslagen repo-struktur för Codex
+Mapp
+Innehåll
+/docs
+Masterplan, modulkrav, wireframes, datamodell, ADR:er och backlog
+/app
+Applikationskod uppdelad per modul/domän
+/config
+Miljö- och integrationskonfiguration
+/database
+Migrationer, seeders och referensdata för YMM
+/public
+Publika assets och storefront-entry
+/tests
+Automatiserade tester, fixtures och importexempel
+/scripts
+CLI-kommandon för import, indexering, cache och batchjobb
+/storage
+Importfiler, loggar, genererade bilder och temporära filer
+
+14. Resurser du behöver för att lyckas bygga detta
+Projektet går att bygga stegvis utan stort team, men du behöver rätt kombination av kapacitet, struktur och testdisciplin.
+En teknisk huvudspårshållare: du själv + en kodagent/kodchatt som följer specen strikt.
+En stagingmiljö eller separat subdomän innan produktion.
+Git med tydliga commits och möjlighet att rulla tillbaka.
+Verkliga leverantörsfiler, produkt-URL:er och några riktiga orderfall för återkommande test.
+En rutin där varje större byggblock testas mot verkliga data innan nästa block startar.
+Tekniska resurser
+VPS som klarar PHP, MariaDB, Redis, cron/schemalagda jobb och bildoptimering.
+Backupstrategi för databas, produktbilder och importfiler.
+E-postlösning för orderbekräftelser och systemnotiser.
+AI-budget via API för översättning, SEO, URL-import och rapporter.
+Testdata: leverantörs-CSV, Excel-filer, URL:er, kategoriträd och realistiska produktbilder.
+Kompetenser som behövs i praktiken
+Kompetens
+Behövs när
+Kommentar
+PHP/backend
+Från dag 1
+Kärnan i plattformen, datamodellen, orderflöden, admin och integrationer.
+Frontend/UX
+Tidigt
+Storefront och admin måste kännas snabba, mörka och tydliga även på mobil.
+Datamodellering
+Tidigt
+Viktigt för leverantörsdata, priser, lager och YMM/fitment.
+E-handelslogik
+Tidigt
+Checkout, statusflöden, restorder, delleverans, frakt och betalning.
+AI-integrationskompetens
+Fas 5+
+Behövs när URL-import, SEO, översättning och rapporter kopplas in.
+Test/QA
+Löpande
+Importflöden och hybridorder måste verifieras med verkliga scenarier.
+
+15. Mitt rekommenderade byggupplägg
+Använd Codex som kodmotor, men låt denna specifikation vara styrande dokument.
+Bygg i små etapper: arkitekturskelett → katalog → storefront → checkout → leverantör/import → pris/lager → order/inköp → YMM → AI.
+Låt varje modul få egen delspec med syfte, datamodell, arbetsflöden, UI och acceptanskriterier.
+Kräv kompletta leveranser per steg: migreringar, modeller, services, vyer och testfall.
+Arbeta alltid mot staging först innan något läggs i produktion.
+16. Första konkreta Codex-uppdrag
+Sätt upp grundarkitektur med modulär PHP-struktur, routing, konfiguration, miljöhantering, migreringssystem och mörkt admin/storefront-skelett.
+Bygg katalogmodulen med brands, categories, products, product_images och product_attributes samt enkel admin för listing och redigering.
+Bygg storefront för startsida, kategorisida, produktsida och produktkort enligt designbriefen.
+Bygg kundvagn, checkout, ordermodell och grundläggande orderadmin.
+Bygg därefter leverantörsregistret, importprofiler och CSV-import innan AI eller YMM påbörjas.

@@ -251,3 +251,22 @@ Lokal manuell test:
 2. Öppna `/admin/purchasing`, markera rader och skapa ett underlag.
 3. Öppna underlaget via `/admin/purchase-lists` och justera `selected_quantity` per rad.
 4. Uppdatera status (`draft/reviewed/exported`) samt anteckning i detaljvyn.
+
+
+## Leverantörsflöde v2: importgranskning + manuell matchningskö
+
+Databas:
+- kör även `database/migrations/009_supplier_item_review_v2.sql`
+
+Admin:
+- `/admin/supplier-item-review` visar importgranskning för `supplier_items`
+- filtrering: SKU, titel, leverantör, import run, matchningsstatus och databrister
+- manuella åtgärder: matcha/byta matchning mot befintlig produkt, rensa matchning, markera granskad
+
+Lokal manuell test:
+1. Kör en CSV-import via `/admin/import-runs`.
+2. Öppna `/admin/supplier-item-review` och filtrera fram omatchade rader.
+3. Matcha en leverantörsartikel till en befintlig produkt och verifiera status `Kopplad`.
+4. Byt matchning till en annan produkt och verifiera att kopplingen flyttas tydligt.
+5. Rensa matchning och verifiera status `Behöver granskning`.
+

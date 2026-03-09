@@ -91,6 +91,32 @@ final class ProductSupplierLinkRepository
         ]);
     }
 
+
+
+    /** @return array<string, mixed>|null */
+    public function primaryForSupplierItem(int $supplierItemId): ?array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT psl.id, psl.product_id, psl.supplier_item_id, psl.supplier_id, psl.is_primary,
+                    p.name AS product_name
+             FROM product_supplier_links psl
+             INNER JOIN products p ON p.id = psl.product_id
+             WHERE psl.supplier_item_id = :supplier_item_id AND psl.is_primary = 1
+             ORDER BY psl.updated_at DESC, psl.id DESC
+             LIMIT 1'
+        );
+        $stmt->execute(['supplier_item_id' => $supplierItemId]);
+        $row = $stmt->fetch();
+
+        return $row !== false ? $row : null;
+    }
+
+    public function clearBySupplierItemId(int $supplierItemId): void
+    {
+        $stmt = $this->pdo->prepare('DELETE FROM product_supplier_links WHERE supplier_item_id = :supplier_item_id');
+        $stmt->execute(['supplier_item_id' => $supplierItemId]);
+    }
+
     public function clearByProductId(int $productId): void
     {
         $this->pdo->prepare('DELETE FROM product_supplier_links WHERE product_id = :product_id')

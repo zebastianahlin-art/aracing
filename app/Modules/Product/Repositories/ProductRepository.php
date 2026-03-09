@@ -104,6 +104,39 @@ final class ProductRepository
         return $stmt->fetchAll();
     }
 
+
+
+    /** @return array<int, array<string, mixed>> */
+    public function searchForSupplierMatch(string $query, int $limit = 120): array
+    {
+        $sql = 'SELECT p.id, p.name, p.sku, b.name AS brand_name
+'
+             . 'FROM products p
+'
+             . 'LEFT JOIN brands b ON b.id = p.brand_id
+'
+             . 'WHERE 1=1';
+        $params = [];
+
+        $query = trim($query);
+        if ($query !== '') {
+            $sql .= ' AND (p.name LIKE :query OR p.sku LIKE :query OR p.slug LIKE :query)';
+            $params['query'] = '%' . $query . '%';
+        }
+
+        $sql .= ' ORDER BY p.updated_at DESC, p.id DESC LIMIT :limit';
+        $stmt = $this->pdo->prepare($sql);
+
+        if (isset($params['query'])) {
+            $stmt->bindValue('query', $params['query']);
+        }
+
+        $stmt->bindValue('limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll();
+    }
+
     /** @return array<string, mixed>|null */
     public function findById(int $id): ?array
     {

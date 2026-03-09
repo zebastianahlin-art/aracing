@@ -44,6 +44,54 @@ final class SupplierItemRepository
         ]);
     }
 
+    /** @return array<string, mixed>|null */
+    public function findById(int $id): ?array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT si.id, si.supplier_id, si.import_run_id, si.supplier_sku, si.supplier_title, si.price, si.stock_qty,
+                    si.review_status, si.matched_at, si.last_reviewed_at, s.name AS supplier_name
+             FROM supplier_items si
+             LEFT JOIN suppliers s ON s.id = si.supplier_id
+             WHERE si.id = :id'
+        );
+        $stmt->execute(['id' => $id]);
+        $row = $stmt->fetch();
+
+        return $row !== false ? $row : null;
+    }
+
+    public function updateReviewStatus(int $id, ?string $status, bool $touchReviewedAt): void
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE supplier_items
+             SET review_status = :review_status,
+                 last_reviewed_at = CASE WHEN :touch_reviewed = 1 THEN NOW() ELSE last_reviewed_at END,
+                 updated_at = NOW()
+             WHERE id = :id'
+        );
+
+        $stmt->execute([
+            'id' => $id,
+            'review_status' => $status,
+            'touch_reviewed' => $touchReviewedAt ? 1 : 0,
+        ]);
+    }
+
+    public function setMatchedAt(int $id, bool $isMatched): void
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE supplier_items
+             SET matched_at = CASE WHEN :is_matched = 1 THEN NOW() ELSE NULL END,
+                 updated_at = NOW()
+             WHERE id = :id'
+        );
+
+        $stmt->execute([
+            'id' => $id,
+            'is_matched' => $isMatched ? 1 : 0,
+        ]);
+    }
+
     private function toNullableDecimal(mixed $value): ?string
     {
         if ($value === null) {

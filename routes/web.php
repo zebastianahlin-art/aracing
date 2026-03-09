@@ -20,13 +20,16 @@ use App\Modules\Checkout\Controllers\CheckoutController;
 use App\Modules\Checkout\Services\CheckoutService;
 use App\Modules\Import\Controllers\ImportProfileAdminController;
 use App\Modules\Import\Controllers\ImportRunAdminController;
+use App\Modules\Import\Controllers\SupplierItemReviewAdminController;
 use App\Modules\Import\Repositories\ImportProfileRepository;
 use App\Modules\Import\Repositories\ImportRowRepository;
 use App\Modules\Import\Repositories\ImportRunRepository;
 use App\Modules\Import\Repositories\SupplierItemRepository;
+use App\Modules\Import\Repositories\SupplierItemReviewRepository;
 use App\Modules\Import\Services\CsvImportService;
 use App\Modules\Import\Services\ImportProfileService;
 use App\Modules\Import\Services\ImportRunService;
+use App\Modules\Import\Services\SupplierItemReviewService;
 use App\Modules\Order\Controllers\OrderAdminController;
 use App\Modules\Order\Repositories\OrderRepository;
 use App\Modules\Order\Services\OrderService;
@@ -66,11 +69,12 @@ $supplierService = new SupplierService(new SupplierRepository($app['pdo']));
 $importProfileService = new ImportProfileService(new ImportProfileRepository($app['pdo']));
 $importRowRepository = new ImportRowRepository($app['pdo']);
 $importRunRepository = new ImportRunRepository($app['pdo']);
+$supplierItemRepository = new SupplierItemRepository($app['pdo']);
 $importRunService = new ImportRunService($importRunRepository, $importRowRepository);
 $csvImportService = new CsvImportService(
     $importRunRepository,
     $importRowRepository,
-    new SupplierItemRepository($app['pdo']),
+    $supplierItemRepository,
     $importProfileService
 );
 $cartService = new CartService(new CartRepository($app['pdo']), new CartProductRepository($app['pdo']));
@@ -92,6 +96,13 @@ $productAdmin = new ProductAdminController($app['view'], $productService, $brand
 $supplierAdmin = new SupplierAdminController($app['view'], $supplierService);
 $importProfileAdmin = new ImportProfileAdminController($app['view'], $importProfileService, $supplierService);
 $importRunAdmin = new ImportRunAdminController($app['view'], $importRunService, $importProfileService, $csvImportService);
+$supplierItemReviewService = new SupplierItemReviewService(
+    new SupplierItemReviewRepository($app['pdo']),
+    $supplierItemRepository,
+    new ProductSupplierLinkRepository($app['pdo']),
+    new ProductSupplierItemLookupRepository($app['pdo'])
+);
+$supplierItemReviewAdmin = new SupplierItemReviewAdminController($app['view'], $supplierItemReviewService, $supplierService, $importRunService, $productService);
 $orderAdmin = new OrderAdminController($app['view'], $orderService);
 $purchasingAdmin = new PurchasingAdminController($app['view'], $purchasingService);
 
@@ -162,3 +173,9 @@ $app['router']->post('/admin/import-profiles/{id}', [$importProfileAdmin, 'updat
 $app['router']->get('/admin/import-runs', [$importRunAdmin, 'index']);
 $app['router']->post('/admin/import-runs/upload', [$importRunAdmin, 'upload']);
 $app['router']->get('/admin/import-runs/{id}', [$importRunAdmin, 'detail']);
+
+
+$app['router']->get('/admin/supplier-item-review', [$supplierItemReviewAdmin, 'index']);
+$app['router']->post('/admin/supplier-item-review/{id}/match', [$supplierItemReviewAdmin, 'match']);
+$app['router']->post('/admin/supplier-item-review/{id}/clear', [$supplierItemReviewAdmin, 'clearMatch']);
+$app['router']->post('/admin/supplier-item-review/{id}/reviewed', [$supplierItemReviewAdmin, 'markReviewed']);

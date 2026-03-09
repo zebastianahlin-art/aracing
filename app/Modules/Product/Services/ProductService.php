@@ -36,6 +36,14 @@ final class ProductService
         return ['rows' => $rows, 'filters' => $normalized];
     }
 
+
+
+    /** @return array<int, array<string, mixed>> */
+    public function searchForSupplierMatch(string $query): array
+    {
+        return $this->products->searchForSupplierMatch($query);
+    }
+
     /** @return array<string, mixed>|null */
     public function get(int $id): ?array
     {

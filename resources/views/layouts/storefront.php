@@ -19,6 +19,18 @@
     .image-strip { display:grid; gap:.6rem; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); margin-top:1rem; }
     .image-item { border:1px solid var(--line); padding:.45rem; border-radius:8px; }
     img { max-width:100%; border-radius:6px; }
+
+    .table { width:100%; border-collapse:collapse; margin:.7rem 0; }
+    .table th,.table td { border-bottom:1px solid var(--line); padding:.45rem; text-align:left; vertical-align:top; }
+    input,textarea { width:100%; padding:.45rem; border-radius:6px; border:1px solid #353d52; background:#0f121a; color:var(--text); }
+    .btn-primary,.btn-secondary,.btn-danger { display:inline-block; padding:.4rem .65rem; border-radius:6px; text-decoration:none; border:1px solid transparent; cursor:pointer; }
+    .btn-primary { background:var(--accent); color:#fff; border-color:#a50000; }
+    .btn-secondary { background:#222838; color:var(--text); border-color:#384055; }
+    .btn-danger { background:#2b1414; color:#ffb3b3; border-color:#703030; }
+    .inline-form { display:flex; align-items:end; gap:.45rem; margin:.6rem 0; }
+    .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+    .ok-msg { color:#7ee787; }
+    .err-msg { color:#ff9c9c; }
   </style>
 </head>
 <body>

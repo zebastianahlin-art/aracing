@@ -28,6 +28,8 @@
     .pill.bad { color:#ff8d8d; border-color:#8a2d2d; background:#2a1212; }
     .error-box { border:1px solid #8a2d2d; background:#2a1212; color:#ffb3b3; padding:.55rem .7rem; border-radius:6px; }
     pre { white-space:pre-wrap; margin:0; max-width:520px; overflow:auto; font-size:12px; }
+    .compact th,.compact td { font-size:12px; padding:.35rem; }
+    .grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:.7rem; align-items:end; }
   </style>
 </head>
 <body>
@@ -37,6 +39,7 @@
     <a href="/admin/brands">Brands</a>
     <a href="/admin/categories">Categories</a>
     <a href="/admin/products">Products</a>
+    <a href="/admin/orders">Orders</a>
     <a href="/admin/suppliers">Leverantörer</a>
     <a href="/admin/import-profiles">Importprofiler</a>
     <a href="/admin/import-runs">Importkörningar</a>

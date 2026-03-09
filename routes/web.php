@@ -7,11 +7,17 @@ use App\Modules\Admin\Controllers\AdminController;
 use App\Modules\Brand\Controllers\BrandAdminController;
 use App\Modules\Brand\Repositories\BrandRepository;
 use App\Modules\Brand\Services\BrandService;
+use App\Modules\Cart\Controllers\CartController;
+use App\Modules\Cart\Repositories\CartProductRepository;
+use App\Modules\Cart\Repositories\CartRepository;
+use App\Modules\Cart\Services\CartService;
 use App\Modules\Catalog\Repositories\CatalogRepository;
 use App\Modules\Catalog\Services\CatalogService;
 use App\Modules\Category\Controllers\CategoryAdminController;
 use App\Modules\Category\Repositories\CategoryRepository;
 use App\Modules\Category\Services\CategoryService;
+use App\Modules\Checkout\Controllers\CheckoutController;
+use App\Modules\Checkout\Services\CheckoutService;
 use App\Modules\Import\Controllers\ImportProfileAdminController;
 use App\Modules\Import\Controllers\ImportRunAdminController;
 use App\Modules\Import\Repositories\ImportProfileRepository;
@@ -21,6 +27,9 @@ use App\Modules\Import\Repositories\SupplierItemRepository;
 use App\Modules\Import\Services\CsvImportService;
 use App\Modules\Import\Services\ImportProfileService;
 use App\Modules\Import\Services\ImportRunService;
+use App\Modules\Order\Controllers\OrderAdminController;
+use App\Modules\Order\Repositories\OrderRepository;
+use App\Modules\Order\Services\OrderService;
 use App\Modules\Product\Controllers\ProductAdminController;
 use App\Modules\Product\Repositories\ProductAttributeRepository;
 use App\Modules\Product\Repositories\ProductImageRepository;
@@ -59,8 +68,12 @@ $csvImportService = new CsvImportService(
     new SupplierItemRepository($app['pdo']),
     $importProfileService
 );
+$cartService = new CartService(new CartRepository($app['pdo']), new CartProductRepository($app['pdo']));
+$orderService = new OrderService(new OrderRepository($app['pdo']));
 
 $storefront = new StorefrontController($app['view'], $catalogService);
+$cartController = new CartController($app['view'], $cartService);
+$checkoutController = new CheckoutController($app['view'], $cartService, new CheckoutService(), $orderService);
 $admin = new AdminController($app['view']);
 $brandAdmin = new BrandAdminController($app['view'], $brandService);
 $categoryAdmin = new CategoryAdminController($app['view'], $categoryService);
@@ -68,12 +81,19 @@ $productAdmin = new ProductAdminController($app['view'], $productService, $brand
 $supplierAdmin = new SupplierAdminController($app['view'], $supplierService);
 $importProfileAdmin = new ImportProfileAdminController($app['view'], $importProfileService, $supplierService);
 $importRunAdmin = new ImportRunAdminController($app['view'], $importRunService, $importProfileService, $csvImportService);
+$orderAdmin = new OrderAdminController($app['view'], $orderService);
 
 $app['router']->get('/', [$storefront, 'home']);
 $app['router']->get('/category/{slug}', [$storefront, 'category']);
 $app['router']->get('/product/{slug}', [$storefront, 'product']);
-$app['router']->get('/cart', [$storefront, 'cart']);
-$app['router']->get('/checkout', [$storefront, 'checkout']);
+$app['router']->get('/cart', [$cartController, 'show']);
+$app['router']->post('/cart/items', [$cartController, 'add']);
+$app['router']->post('/cart/items/update', [$cartController, 'update']);
+$app['router']->post('/cart/items/remove', [$cartController, 'remove']);
+
+$app['router']->get('/checkout', [$checkoutController, 'form']);
+$app['router']->post('/checkout/place-order', [$checkoutController, 'placeOrder']);
+$app['router']->get('/checkout/confirmation', [$checkoutController, 'confirmation']);
 
 $app['router']->get('/admin', [$admin, 'dashboard']);
 $app['router']->get('/admin/brands', [$brandAdmin, 'index']);
@@ -93,6 +113,10 @@ $app['router']->get('/admin/products/create', [$productAdmin, 'createForm']);
 $app['router']->post('/admin/products', [$productAdmin, 'store']);
 $app['router']->get('/admin/products/{id}/edit', [$productAdmin, 'editForm']);
 $app['router']->post('/admin/products/{id}', [$productAdmin, 'update']);
+
+$app['router']->get('/admin/orders', [$orderAdmin, 'index']);
+$app['router']->get('/admin/orders/{id}', [$orderAdmin, 'show']);
+$app['router']->post('/admin/orders/{id}/status', [$orderAdmin, 'updateStatuses']);
 
 $app['router']->get('/admin/suppliers', [$supplierAdmin, 'index']);
 $app['router']->get('/admin/suppliers/create', [$supplierAdmin, 'createForm']);

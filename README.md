@@ -157,3 +157,29 @@ Admin:
 Storefront:
 - produktkort på start och kategori visar pris (om satt) och lagerstatus.
 - produktsida visar `sale_price` + `currency_code` samt enkel lagerstatus.
+
+## Kundvagn + checkout + order v1
+
+Databas:
+- kör även `database/migrations/005_cart_checkout_order_v1.sql`
+
+Storefront-flöde:
+- produktsida har nu "Lägg i kundvagn" (blockeras om `stock_status = out_of_stock`)
+- kundvagn finns på `/cart` med uppdatera/ta bort
+- checkout finns på `/checkout`
+- orderbekräftelse visas på `/checkout/confirmation`
+
+Prisstrategi i v1:
+- add-to-cart använder `products.sale_price`
+- om `sale_price` saknas blockeras köp tydligt
+
+Orderadmin v1:
+- `/admin/orders` listar ordrar
+- `/admin/orders/{id}` visar orderdetalj + manuell statusuppdatering
+
+Lokal manuell test:
+1. Öppna en aktiv produkt med pris och lagerstatus ej `out_of_stock`.
+2. Lägg i kundvagn och verifiera antal/radtotal/total.
+3. Gå till checkout och skapa order.
+4. Verifiera bekräftelsesida med ordernummer.
+5. Öppna `/admin/orders` och kontrollera ordern samt testa statusuppdatering.

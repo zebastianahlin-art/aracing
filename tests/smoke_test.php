@@ -7,7 +7,7 @@ require dirname(__DIR__) . '/vendor/autoload.php';
 $app = require dirname(__DIR__) . '/bootstrap/app.php';
 require dirname(__DIR__) . '/routes/web.php';
 
-$paths = ['/', '/category/test', '/product/test', '/cart', '/checkout', '/admin'];
+$paths = ['/', '/category/test', '/product/test', '/cart', '/checkout', '/checkout/confirmation', '/admin', '/admin/orders'];
 
 foreach ($paths as $path) {
     $response = $app['router']->dispatch('GET', $path);

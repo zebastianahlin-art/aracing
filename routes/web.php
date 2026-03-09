@@ -38,6 +38,11 @@ use App\Modules\Product\Repositories\ProductSupplierItemLookupRepository;
 use App\Modules\Product\Repositories\ProductSupplierLinkRepository;
 use App\Modules\Product\Services\ProductService;
 use App\Modules\Product\Services\ProductSupplierLinkService;
+use App\Modules\Purchasing\Controllers\PurchasingAdminController;
+use App\Modules\Purchasing\Repositories\PurchaseListItemRepository;
+use App\Modules\Purchasing\Repositories\PurchaseListRepository;
+use App\Modules\Purchasing\Repositories\RefillNeedRepository;
+use App\Modules\Purchasing\Services\PurchasingService;
 use App\Modules\Storefront\Controllers\StorefrontController;
 use App\Modules\Supplier\Controllers\SupplierAdminController;
 use App\Modules\Supplier\Repositories\SupplierRepository;
@@ -71,6 +76,12 @@ $csvImportService = new CsvImportService(
 $cartService = new CartService(new CartRepository($app['pdo']), new CartProductRepository($app['pdo']));
 $orderService = new OrderService(new OrderRepository($app['pdo']));
 
+$purchasingService = new PurchasingService(
+    new RefillNeedRepository($app['pdo']),
+    new PurchaseListRepository($app['pdo']),
+    new PurchaseListItemRepository($app['pdo'])
+);
+
 $storefront = new StorefrontController($app['view'], $catalogService);
 $cartController = new CartController($app['view'], $cartService);
 $checkoutController = new CheckoutController($app['view'], $cartService, new CheckoutService(), $orderService);
@@ -82,6 +93,7 @@ $supplierAdmin = new SupplierAdminController($app['view'], $supplierService);
 $importProfileAdmin = new ImportProfileAdminController($app['view'], $importProfileService, $supplierService);
 $importRunAdmin = new ImportRunAdminController($app['view'], $importRunService, $importProfileService, $csvImportService);
 $orderAdmin = new OrderAdminController($app['view'], $orderService);
+$purchasingAdmin = new PurchasingAdminController($app['view'], $purchasingService);
 
 $app['router']->get('/', [$storefront, 'home']);
 $app['router']->get('/category/{slug}', [$storefront, 'category']);
@@ -126,6 +138,14 @@ $app['router']->post('/admin/orders/{id}/mark-processing', [$orderAdmin, 'markPr
 $app['router']->post('/admin/orders/{id}/mark-packed', [$orderAdmin, 'markPacked']);
 $app['router']->post('/admin/orders/{id}/mark-shipped', [$orderAdmin, 'markShipped']);
 $app['router']->get('/admin/orders/{id}/print', [$orderAdmin, 'printView']);
+
+
+$app['router']->get('/admin/purchasing', [$purchasingAdmin, 'refillNeeds']);
+$app['router']->post('/admin/purchasing/purchase-lists', [$purchasingAdmin, 'createPurchaseList']);
+$app['router']->get('/admin/purchase-lists', [$purchasingAdmin, 'purchaseLists']);
+$app['router']->get('/admin/purchase-lists/{id}', [$purchasingAdmin, 'purchaseListDetail']);
+$app['router']->post('/admin/purchase-lists/{id}/update', [$purchasingAdmin, 'updatePurchaseList']);
+$app['router']->post('/admin/purchase-lists/{id}/items/{itemId}/quantity', [$purchasingAdmin, 'updatePurchaseListItem']);
 
 $app['router']->get('/admin/suppliers', [$supplierAdmin, 'index']);
 $app['router']->get('/admin/suppliers/create', [$supplierAdmin, 'createForm']);

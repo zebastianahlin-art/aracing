@@ -15,7 +15,7 @@ final class CatalogRepository
     /** @return array<int, array<string, mixed>> */
     public function latestActiveProducts(int $limit = 12): array
     {
-        $stmt = $this->pdo->prepare('SELECT p.id, p.name, p.slug, p.sku, p.description, b.name AS brand_name
+        $stmt = $this->pdo->prepare('SELECT p.id, p.name, p.slug, p.sku, p.description, p.sale_price, p.currency_code, p.stock_status, p.stock_quantity, b.name AS brand_name
             FROM products p
             LEFT JOIN brands b ON b.id = p.brand_id
             WHERE p.is_active = 1
@@ -40,7 +40,7 @@ final class CatalogRepository
     /** @return array<int, array<string, mixed>> */
     public function activeProductsByCategory(int $categoryId): array
     {
-        $stmt = $this->pdo->prepare('SELECT p.id, p.name, p.slug, p.sku, b.name AS brand_name
+        $stmt = $this->pdo->prepare('SELECT p.id, p.name, p.slug, p.sku, p.sale_price, p.currency_code, p.stock_status, p.stock_quantity, b.name AS brand_name
             FROM products p
             LEFT JOIN brands b ON b.id = p.brand_id
             WHERE p.category_id = :category_id AND p.is_active = 1
@@ -53,7 +53,7 @@ final class CatalogRepository
     /** @return array<string, mixed>|null */
     public function activeProductBySlug(string $slug): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT p.id, p.name, p.slug, p.sku, p.description, b.name AS brand_name
+        $stmt = $this->pdo->prepare('SELECT p.id, p.name, p.slug, p.sku, p.description, p.sale_price, p.currency_code, p.stock_status, p.stock_quantity, b.name AS brand_name
             FROM products p
             LEFT JOIN brands b ON b.id = p.brand_id
             WHERE p.slug = :slug AND p.is_active = 1');

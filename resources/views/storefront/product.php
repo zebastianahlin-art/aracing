@@ -9,6 +9,11 @@ ob_start();
     <p class="muted">Brand: <?= htmlspecialchars((string) ($product['brand_name'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
     <p class="muted">SKU: <?= htmlspecialchars((string) ($product['sku'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
     <p><?= nl2br(htmlspecialchars((string) ($product['description'] ?? ''), ENT_QUOTES, 'UTF-8')) ?></p>
+    <?php if ($product['sale_price'] !== null): ?>
+      <p><strong>Pris: <?= htmlspecialchars((string) $product['sale_price'], ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars((string) ($product['currency_code'] ?? 'SEK'), ENT_QUOTES, 'UTF-8') ?></strong></p>
+    <?php endif; ?>
+    <p class="muted">Lagerstatus: <?= htmlspecialchars((string) ($product['stock_status'] ?? 'okänd'), ENT_QUOTES, 'UTF-8') ?><?= $product['stock_quantity'] !== null ? ' (' . (int) $product['stock_quantity'] . ')' : '' ?></p>
+
 
     <h3>Attribut</h3>
     <?php if (($product['attributes'] ?? []) === []): ?>

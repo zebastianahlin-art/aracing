@@ -25,7 +25,10 @@ use App\Modules\Product\Controllers\ProductAdminController;
 use App\Modules\Product\Repositories\ProductAttributeRepository;
 use App\Modules\Product\Repositories\ProductImageRepository;
 use App\Modules\Product\Repositories\ProductRepository;
+use App\Modules\Product\Repositories\ProductSupplierItemLookupRepository;
+use App\Modules\Product\Repositories\ProductSupplierLinkRepository;
 use App\Modules\Product\Services\ProductService;
+use App\Modules\Product\Services\ProductSupplierLinkService;
 use App\Modules\Storefront\Controllers\StorefrontController;
 use App\Modules\Supplier\Controllers\SupplierAdminController;
 use App\Modules\Supplier\Repositories\SupplierRepository;
@@ -34,10 +37,15 @@ use App\Modules\Supplier\Services\SupplierService;
 /** @var array{router: Router, view: \App\Core\View\ViewFactory, pdo: \PDO} $app */
 $brandService = new BrandService(new BrandRepository($app['pdo']));
 $categoryService = new CategoryService(new CategoryRepository($app['pdo']));
+$productSupplierLinkService = new ProductSupplierLinkService(
+    new ProductSupplierLinkRepository($app['pdo']),
+    new ProductSupplierItemLookupRepository($app['pdo'])
+);
 $productService = new ProductService(
     new ProductRepository($app['pdo']),
     new ProductAttributeRepository($app['pdo']),
-    new ProductImageRepository($app['pdo'])
+    new ProductImageRepository($app['pdo']),
+    $productSupplierLinkService
 );
 $catalogService = new CatalogService(new CatalogRepository($app['pdo']));
 $supplierService = new SupplierService(new SupplierRepository($app['pdo']));
@@ -56,7 +64,7 @@ $storefront = new StorefrontController($app['view'], $catalogService);
 $admin = new AdminController($app['view']);
 $brandAdmin = new BrandAdminController($app['view'], $brandService);
 $categoryAdmin = new CategoryAdminController($app['view'], $categoryService);
-$productAdmin = new ProductAdminController($app['view'], $productService, $brandService, $categoryService);
+$productAdmin = new ProductAdminController($app['view'], $productService, $brandService, $categoryService, $supplierService, $productSupplierLinkService);
 $supplierAdmin = new SupplierAdminController($app['view'], $supplierService);
 $importProfileAdmin = new ImportProfileAdminController($app['view'], $importProfileService, $supplierService);
 $importRunAdmin = new ImportRunAdminController($app['view'], $importRunService, $importProfileService, $csvImportService);

@@ -14,7 +14,8 @@ final class ProductService
     public function __construct(
         private readonly ProductRepository $products,
         private readonly ProductAttributeRepository $attributes,
-        private readonly ProductImageRepository $images
+        private readonly ProductImageRepository $images,
+        private readonly ProductSupplierLinkService $supplierLinks
     ) {
     }
 
@@ -34,6 +35,7 @@ final class ProductService
 
         $product['attributes'] = $this->attributes->byProductId($id);
         $product['images'] = $this->images->byProductId($id);
+        $product['primary_supplier_link'] = $this->supplierLinks->primaryLinkForProduct($id);
 
         return $product;
     }
@@ -45,6 +47,7 @@ final class ProductService
         $id = $this->products->create($data);
         $this->attributes->replaceForProduct($id, $this->parseAttributes($input['attributes'] ?? ''));
         $this->images->replaceForProduct($id, $this->parseImages($input['images'] ?? ''));
+        $this->supplierLinks->syncPrimaryFromInput($id, $input);
 
         return $id;
     }
@@ -56,6 +59,7 @@ final class ProductService
         $this->products->update($id, $data);
         $this->attributes->replaceForProduct($id, $this->parseAttributes($input['attributes'] ?? ''));
         $this->images->replaceForProduct($id, $this->parseImages($input['images'] ?? ''));
+        $this->supplierLinks->syncPrimaryFromInput($id, $input);
     }
 
     /** @return array<string, mixed> */
@@ -70,8 +74,41 @@ final class ProductService
             'slug' => Slugger::slugify($input['slug'] ?? $name),
             'sku' => trim($input['sku'] ?? ''),
             'description' => trim($input['description'] ?? ''),
+            'sale_price' => $this->toNullableDecimal($input['sale_price'] ?? null),
+            'currency_code' => $this->normalizeCurrencyCode($input['currency_code'] ?? null),
+            'stock_status' => $this->normalizeStockStatus($input['stock_status'] ?? null),
+            'stock_quantity' => $this->toNullableInt($input['stock_quantity'] ?? null),
             'is_active' => isset($input['is_active']) ? 1 : 0,
         ];
+    }
+
+    private function toNullableDecimal(mixed $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $normalized = str_replace(',', '.', trim((string) $value));
+        if ($normalized === '' || is_numeric($normalized) === false) {
+            return null;
+        }
+
+        return number_format((float) $normalized, 2, '.', '');
+    }
+
+    private function normalizeCurrencyCode(?string $value): string
+    {
+        $normalized = strtoupper(trim((string) $value));
+
+        return $normalized !== '' ? substr($normalized, 0, 10) : 'SEK';
+    }
+
+    private function normalizeStockStatus(?string $value): ?string
+    {
+        $allowed = ['i lager', 'låg lagerstatus', 'slut i lager', 'okänd'];
+        $normalized = mb_strtolower(trim((string) $value));
+
+        return in_array($normalized, $allowed, true) ? $normalized : null;
     }
 
     /** @return array<int, array{attribute_key:string, attribute_value:string}> */
@@ -138,9 +175,9 @@ final class ProductService
         return $images;
     }
 
-    private function toNullableInt(?string $value): ?int
+    private function toNullableInt(mixed $value): ?int
     {
-        if ($value === null || trim($value) === '') {
+        if ($value === null || trim((string) $value) === '') {
             return null;
         }
 

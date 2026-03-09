@@ -143,3 +143,17 @@ Lokal test av CSV-import:
 2. Skapa en importprofil i `/admin/import-profiles` och ange JSON mapping (t.ex. `supplier_sku`, `supplier_title`, `price`, `stock_qty`).
 3. Öppna `/admin/import-runs`, välj profil och ladda upp en CSV-fil.
 4. Öppna körningsdetaljen för att granska radstatus, felmeddelanden, rådata och mappad data.
+
+
+## Pris/lager + produkt-leverantörskoppling v1
+
+Databas:
+- kör även `database/migrations/004_product_supplier_links_v1.sql`
+
+Admin:
+- `/admin/products` visar nu länkstatus mot leverantörsartikel samt enkel pris/lagerstatus.
+- `/admin/products/{id}/edit` har filterbar supplier_item-lista och sparar primär produktkoppling med snapshots.
+
+Storefront:
+- produktkort på start och kategori visar pris (om satt) och lagerstatus.
+- produktsida visar `sale_price` + `currency_code` samt enkel lagerstatus.

@@ -8,6 +8,21 @@ ob_start();
     <h2><?= htmlspecialchars((string) $product['name'], ENT_QUOTES, 'UTF-8') ?></h2>
     <p class="muted">Brand: <?= htmlspecialchars((string) ($product['brand_name'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
     <p class="muted">SKU: <?= htmlspecialchars((string) ($product['sku'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
+
+    <?php $images = $product['images'] ?? []; $primaryImage = $images[0] ?? null; ?>
+    <?php if ($primaryImage !== null): ?>
+      <img class="product-hero" src="<?= htmlspecialchars((string) $primaryImage['image_url'], ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars((string) ($primaryImage['alt_text'] ?: $product['name']), ENT_QUOTES, 'UTF-8') ?>">
+      <?php if (count($images) > 1): ?>
+        <div class="thumb-strip">
+          <?php foreach (array_slice($images, 1) as $image): ?>
+            <img src="<?= htmlspecialchars((string) $image['image_url'], ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars((string) ($image['alt_text'] ?: $product['name']), ENT_QUOTES, 'UTF-8') ?>">
+          <?php endforeach; ?>
+        </div>
+      <?php endif; ?>
+    <?php else: ?>
+      <div class="image-placeholder" style="max-width:560px;">Ingen produktbild uppladdad</div>
+    <?php endif; ?>
+
     <p><?= nl2br(htmlspecialchars((string) ($product['description'] ?? ''), ENT_QUOTES, 'UTF-8')) ?></p>
     <?php if ($product['sale_price'] !== null): ?>
       <p><strong>Pris: <?= htmlspecialchars((string) $product['sale_price'], ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars((string) ($product['currency_code'] ?? 'SEK'), ENT_QUOTES, 'UTF-8') ?></strong></p>
@@ -35,20 +50,6 @@ ob_start();
           <li><strong><?= htmlspecialchars((string) $attribute['attribute_key'], ENT_QUOTES, 'UTF-8') ?>:</strong> <?= htmlspecialchars((string) $attribute['attribute_value'], ENT_QUOTES, 'UTF-8') ?></li>
         <?php endforeach; ?>
       </ul>
-    <?php endif; ?>
-
-    <h3>Bilder</h3>
-    <?php if (($product['images'] ?? []) === []): ?>
-      <p class="muted">Inga bilder registrerade.</p>
-    <?php else: ?>
-      <div class="image-strip">
-        <?php foreach ($product['images'] as $image): ?>
-          <div class="image-item">
-            <img src="<?= htmlspecialchars((string) $image['image_url'], ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars((string) ($image['alt_text'] ?: $product['name']), ENT_QUOTES, 'UTF-8') ?>">
-            <div class="muted"><?= (int) $image['is_primary'] === 1 ? 'Primärbild' : 'Bild' ?></div>
-          </div>
-        <?php endforeach; ?>
-      </div>
     <?php endif; ?>
   <?php endif; ?>
 </section>

@@ -15,6 +15,11 @@
     .accent { color:var(--accent); }
     .product-grid { display:grid; gap:.8rem; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); }
     .product-card { border:1px solid var(--line); border-radius:8px; padding:.7rem; background:#121217; }
+    .product-thumb { width:100%; aspect-ratio:4/3; object-fit:cover; border:1px solid #2d2f38; margin-bottom:.6rem; background:#0e0e12; }
+    .image-placeholder { width:100%; aspect-ratio:4/3; display:flex; align-items:center; justify-content:center; border:1px dashed #31333b; border-radius:6px; color:var(--muted); margin-bottom:.6rem; font-size:12px; }
+    .product-hero { width:100%; max-width:560px; aspect-ratio:4/3; object-fit:cover; border:1px solid #2f3240; background:#0f1014; }
+    .thumb-strip { display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.7rem; }
+    .thumb-strip img { width:110px; height:82px; object-fit:cover; border:1px solid #2f3240; }
     .muted { color:var(--muted); font-size:13px; }
     .image-strip { display:grid; gap:.6rem; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); margin-top:1rem; }
     .image-item { border:1px solid var(--line); padding:.45rem; border-radius:8px; }

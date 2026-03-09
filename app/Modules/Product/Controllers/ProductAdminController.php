@@ -9,6 +9,7 @@ use App\Core\View\ViewFactory;
 use App\Modules\Brand\Services\BrandService;
 use App\Modules\Category\Services\CategoryService;
 use App\Modules\Product\Services\ProductService;
+use App\Modules\Product\Services\ProductMediaService;
 use App\Modules\Product\Services\ProductSupplierLinkService;
 use App\Modules\Supplier\Services\SupplierService;
 
@@ -17,6 +18,7 @@ final class ProductAdminController
     public function __construct(
         private readonly ViewFactory $views,
         private readonly ProductService $products,
+        private readonly ProductMediaService $media,
         private readonly BrandService $brands,
         private readonly CategoryService $categories,
         private readonly SupplierService $suppliers,
@@ -159,6 +161,61 @@ final class ProductAdminController
         $this->products->update((int) $id, $_POST);
 
         return $this->redirect('/admin/products');
+    }
+
+    public function uploadImages(string $id): Response
+    {
+        $productId = (int) $id;
+
+        try {
+            $count = $this->media->uploadImages($productId, $_FILES, (string) ($_POST['default_alt_text'] ?? ''));
+
+            return $this->redirect('/admin/products/' . $productId . '/edit?notice=' . urlencode($count . ' bild(er) uppladdade') . '#media');
+        } catch (\RuntimeException $exception) {
+            return $this->redirect('/admin/products/' . $productId . '/edit?media_error=' . urlencode($exception->getMessage()) . '#media');
+        }
+    }
+
+    public function updateImage(string $id, string $imageId): Response
+    {
+        $productId = (int) $id;
+        $isPrimary = ((string) ($_POST['is_primary'] ?? '0')) === '1';
+
+        try {
+            $this->media->updateImageMeta(
+                $productId,
+                (int) $imageId,
+                (string) ($_POST['alt_text'] ?? ''),
+                (int) ($_POST['sort_order'] ?? 0),
+                $isPrimary
+            );
+
+            return $this->redirect('/admin/products/' . $productId . '/edit?notice=' . urlencode('Bild metadata sparad') . '#media');
+        } catch (\RuntimeException $exception) {
+            return $this->redirect('/admin/products/' . $productId . '/edit?media_error=' . urlencode($exception->getMessage()) . '#media');
+        }
+    }
+
+    public function setPrimaryImage(string $id, string $imageId): Response
+    {
+        $productId = (int) $id;
+
+        try {
+            $this->media->setPrimaryImage($productId, (int) $imageId);
+
+            return $this->redirect('/admin/products/' . $productId . '/edit?notice=' . urlencode('Primärbild uppdaterad') . '#media');
+        } catch (\RuntimeException $exception) {
+            return $this->redirect('/admin/products/' . $productId . '/edit?media_error=' . urlencode($exception->getMessage()) . '#media');
+        }
+    }
+
+    public function deleteImage(string $id, string $imageId): Response
+    {
+        $productId = (int) $id;
+
+        $this->media->deleteImage($productId, (int) $imageId);
+
+        return $this->redirect('/admin/products/' . $productId . '/edit?notice=' . urlencode('Bild borttagen') . '#media');
     }
 
     private function redirect(string $location): Response

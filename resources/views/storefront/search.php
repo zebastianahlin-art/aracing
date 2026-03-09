@@ -22,7 +22,9 @@ require __DIR__ . '/partials/listing-filters.php';
     <?php foreach ($products as $product): ?>
       <article class="product-card">
         <?php if (!empty($product['image_url'])): ?>
-          <img src="<?= htmlspecialchars((string) $product['image_url'], ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars((string) $product['name'], ENT_QUOTES, 'UTF-8') ?>" style="margin-bottom:.6rem;aspect-ratio:4/3;object-fit:cover;">
+          <img class="product-thumb" src="<?= htmlspecialchars((string) $product['image_url'], ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars((string) $product['name'], ENT_QUOTES, 'UTF-8') ?>">
+        <?php else: ?>
+          <div class="image-placeholder">Ingen bild</div>
         <?php endif; ?>
         <h3><a href="/product/<?= htmlspecialchars((string) $product['slug'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $product['name'], ENT_QUOTES, 'UTF-8') ?></a></h3>
         <p class="muted">Varumärke: <?= htmlspecialchars((string) ($product['brand_name'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>

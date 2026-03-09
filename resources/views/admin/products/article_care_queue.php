@@ -66,7 +66,12 @@ ob_start();
             <span class="pill warn"><?= htmlspecialchars((string) ($gapLabels[$gap] ?? $gap), ENT_QUOTES, 'UTF-8') ?></span>
           <?php endforeach; ?>
         </td>
-        <td><a class="btn" href="/admin/products/<?= (int) $row['id'] ?>/edit">Redigera</a></td>
+        <td>
+          <a class="btn" href="/admin/products/<?= (int) $row['id'] ?>/edit">Redigera</a>
+          <?php if (in_array('missing_image', $row['care_gaps'] ?? [], true)): ?>
+            <a class="btn" href="/admin/products/<?= (int) $row['id'] ?>/edit#media">Hantera bilder</a>
+          <?php endif; ?>
+        </td>
       </tr>
       <?php endforeach; ?>
     </tbody>

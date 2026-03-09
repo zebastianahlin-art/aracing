@@ -127,6 +127,24 @@ Databas:
 - kör även `database/migrations/002_catalog_foundation.sql`
 - valfritt: kör `database/seeders/001_catalog_demo.sql` för demo-data
 
+### Produktmedia v1 (admin)
+
+Produktredigering (`/admin/products/{id}/edit`) har nu en mediasektion för:
+- uppladdning av en eller flera bilder (multipart/form-data)
+- val av primärbild
+- sort_order
+- alt-text
+- borttagning
+
+Bilder sparas lokalt i `public/uploads/product-images/` och refereras via `product_images.image_url`.
+
+Lokal snabbtest:
+1. Öppna en produkt i admin.
+2. Ladda upp en eller flera bilder i sektionen `Produktmedia v1`.
+3. Sätt en primärbild och justera `sort_order`.
+4. Verifiera att produktkort i storefront (start/kategori/sök) visar primärbild eller fallback om bild saknas.
+5. Verifiera produktsidan visar primärbild tydligt och extra bilder som enkel thumbnail-strip.
+
 
 ## Leverantörsregister och CSV-import v1
 

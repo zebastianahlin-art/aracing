@@ -47,6 +47,8 @@ use App\Modules\Product\Repositories\ProductRepository;
 use App\Modules\Product\Repositories\ProductSupplierItemLookupRepository;
 use App\Modules\Product\Repositories\ProductSupplierLinkRepository;
 use App\Modules\Product\Services\ProductService;
+use App\Modules\Product\Services\ProductMediaService;
+use App\Modules\Product\Services\ProductImageStorageService;
 use App\Modules\Product\Services\ProductSupplierLinkService;
 use App\Modules\Purchasing\Controllers\PurchasingAdminController;
 use App\Modules\Purchasing\Repositories\PurchaseListItemRepository;
@@ -73,6 +75,11 @@ $productService = new ProductService(
     new ProductImageRepository($app['pdo']),
     $productSupplierLinkService,
     new ProductSupplierItemLookupRepository($app['pdo'])
+);
+$productMediaService = new ProductMediaService(
+    new ProductRepository($app['pdo']),
+    new ProductImageRepository($app['pdo']),
+    new ProductImageStorageService()
 );
 $catalogService = new CatalogService(new CatalogRepository($app['pdo']));
 $supplierService = new SupplierService(new SupplierRepository($app['pdo']));
@@ -108,7 +115,7 @@ $checkoutController = new CheckoutController($app['view'], $cartService, new Che
 $admin = new AdminController($app['view']);
 $brandAdmin = new BrandAdminController($app['view'], $brandService);
 $categoryAdmin = new CategoryAdminController($app['view'], $categoryService);
-$productAdmin = new ProductAdminController($app['view'], $productService, $brandService, $categoryService, $supplierService, $productSupplierLinkService);
+$productAdmin = new ProductAdminController($app['view'], $productService, $productMediaService, $brandService, $categoryService, $supplierService, $productSupplierLinkService);
 $supplierAdmin = new SupplierAdminController($app['view'], $supplierService);
 $importProfileAdmin = new ImportProfileAdminController($app['view'], $importProfileService, $supplierService);
 $importRunAdmin = new ImportRunAdminController($app['view'], $importRunService, $importProfileService, $csvImportService);
@@ -161,6 +168,10 @@ $app['router']->post('/admin/products', [$productAdmin, 'store']);
 $app['router']->get('/admin/products/article-care', [$productAdmin, 'articleCareQueue']);
 $app['router']->get('/admin/products/{id}/edit', [$productAdmin, 'editForm']);
 $app['router']->post('/admin/products/{id}', [$productAdmin, 'update']);
+$app['router']->post('/admin/products/{id}/images/upload', [$productAdmin, 'uploadImages']);
+$app['router']->post('/admin/products/{id}/images/{imageId}/update', [$productAdmin, 'updateImage']);
+$app['router']->post('/admin/products/{id}/images/{imageId}/primary', [$productAdmin, 'setPrimaryImage']);
+$app['router']->post('/admin/products/{id}/images/{imageId}/delete', [$productAdmin, 'deleteImage']);
 
 $app['router']->get('/admin/orders', [$orderAdmin, 'index']);
 $app['router']->get('/admin/orders/{id}', [$orderAdmin, 'show']);

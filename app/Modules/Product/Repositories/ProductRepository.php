@@ -349,7 +349,8 @@ final class ProductRepository
         }
 
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
-        $sql = 'SELECT p.id, p.name, p.slug, p.sku, p.sale_price, p.currency_code, p.stock_status, b.name AS brand_name
+        $sql = 'SELECT p.id, p.name, p.slug, p.sku, p.sale_price, p.currency_code, p.stock_status, b.name AS brand_name,
+            (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.is_primary DESC, pi.sort_order ASC, pi.id ASC LIMIT 1) AS image_url
 '
              . 'FROM products p
 '

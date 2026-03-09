@@ -17,6 +17,13 @@ use App\Modules\Category\Controllers\CategoryAdminController;
 use App\Modules\Category\Repositories\CategoryRepository;
 use App\Modules\Category\Services\CategoryService;
 use App\Modules\Checkout\Controllers\CheckoutController;
+use App\Modules\Cms\Controllers\CmsHomeAdminController;
+use App\Modules\Cms\Controllers\CmsPageAdminController;
+use App\Modules\Cms\Controllers\CmsStorefrontController;
+use App\Modules\Cms\Repositories\CmsHomeSectionRepository;
+use App\Modules\Cms\Repositories\CmsPageRepository;
+use App\Modules\Cms\Services\CmsHomeService;
+use App\Modules\Cms\Services\CmsPageService;
 use App\Modules\Checkout\Services\CheckoutService;
 use App\Modules\Import\Controllers\ImportProfileAdminController;
 use App\Modules\Import\Controllers\ImportRunAdminController;
@@ -81,6 +88,12 @@ $csvImportService = new CsvImportService(
 );
 $cartService = new CartService(new CartRepository($app['pdo']), new CartProductRepository($app['pdo']));
 $orderService = new OrderService(new OrderRepository($app['pdo']));
+$cmsPageService = new CmsPageService(new CmsPageRepository($app['pdo']));
+$cmsHomeService = new CmsHomeService(
+    new CmsHomeSectionRepository($app['pdo']),
+    new ProductRepository($app['pdo']),
+    new CategoryRepository($app['pdo'])
+);
 
 $purchasingService = new PurchasingService(
     new RefillNeedRepository($app['pdo']),
@@ -89,6 +102,7 @@ $purchasingService = new PurchasingService(
 );
 
 $storefront = new StorefrontController($app['view'], $catalogService);
+$cmsStorefront = new CmsStorefrontController($app['view'], $cmsHomeService, $cmsPageService);
 $cartController = new CartController($app['view'], $cartService);
 $checkoutController = new CheckoutController($app['view'], $cartService, new CheckoutService(), $orderService);
 $admin = new AdminController($app['view']);
@@ -107,10 +121,14 @@ $supplierItemReviewService = new SupplierItemReviewService(
 $supplierItemReviewAdmin = new SupplierItemReviewAdminController($app['view'], $supplierItemReviewService, $supplierService, $importRunService, $productService);
 $orderAdmin = new OrderAdminController($app['view'], $orderService);
 $purchasingAdmin = new PurchasingAdminController($app['view'], $purchasingService);
+$cmsPageAdmin = new CmsPageAdminController($app['view'], $cmsPageService);
+$cmsHomeAdmin = new CmsHomeAdminController($app['view'], $cmsHomeService);
 
-$app['router']->get('/', [$storefront, 'home']);
+$app['router']->get('/', [$cmsStorefront, 'home']);
 $app['router']->get('/category/{slug}', [$storefront, 'category']);
 $app['router']->get('/product/{slug}', [$storefront, 'product']);
+
+$app['router']->get('/pages/{slug}', [$cmsStorefront, 'page']);
 $app['router']->get('/cart', [$cartController, 'show']);
 $app['router']->post('/cart/items', [$cartController, 'add']);
 $app['router']->post('/cart/items/update', [$cartController, 'update']);
@@ -177,6 +195,15 @@ $app['router']->get('/admin/import-runs', [$importRunAdmin, 'index']);
 $app['router']->post('/admin/import-runs/upload', [$importRunAdmin, 'upload']);
 $app['router']->get('/admin/import-runs/{id}', [$importRunAdmin, 'detail']);
 
+
+
+$app['router']->get('/admin/cms/pages', [$cmsPageAdmin, 'index']);
+$app['router']->get('/admin/cms/pages/create', [$cmsPageAdmin, 'createForm']);
+$app['router']->post('/admin/cms/pages', [$cmsPageAdmin, 'store']);
+$app['router']->get('/admin/cms/pages/{id}/edit', [$cmsPageAdmin, 'editForm']);
+$app['router']->post('/admin/cms/pages/{id}', [$cmsPageAdmin, 'update']);
+$app['router']->get('/admin/cms/home', [$cmsHomeAdmin, 'edit']);
+$app['router']->post('/admin/cms/home', [$cmsHomeAdmin, 'update']);
 
 $app['router']->get('/admin/supplier-item-review', [$supplierItemReviewAdmin, 'index']);
 $app['router']->post('/admin/supplier-item-review/{id}/match', [$supplierItemReviewAdmin, 'match']);

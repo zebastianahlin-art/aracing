@@ -52,6 +52,8 @@
     <a href="/admin/import-profiles">Importprofiler</a>
     <a href="/admin/import-runs">Importkörningar</a>
     <a href="/admin/supplier-item-review">Importgranskning</a>
+    <a href="/admin/cms/pages">CMS-sidor</a>
+    <a href="/admin/cms/home">CMS startsida</a>
     <a href="/">Till storefront</a>
   </aside>
   <main><?= $content ?? '' ?></main>

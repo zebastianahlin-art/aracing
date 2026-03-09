@@ -22,7 +22,8 @@
 
     .table { width:100%; border-collapse:collapse; margin:.7rem 0; }
     .table th,.table td { border-bottom:1px solid var(--line); padding:.45rem; text-align:left; vertical-align:top; }
-    input,textarea { width:100%; padding:.45rem; border-radius:6px; border:1px solid #353d52; background:#0f121a; color:var(--text); }
+    input,textarea,select { width:100%; padding:.45rem; border-radius:6px; border:1px solid #353d52; background:#0f121a; color:var(--text); }
+    .filters-grid { display:grid; gap:.6rem; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); }
     .btn-primary,.btn-secondary,.btn-danger { display:inline-block; padding:.4rem .65rem; border-radius:6px; text-decoration:none; border:1px solid transparent; cursor:pointer; }
     .btn-primary { background:var(--accent); color:#fff; border-color:#a50000; }
     .btn-secondary { background:#222838; color:var(--text); border-color:#384055; }
@@ -38,6 +39,7 @@
   <h1>A-<span class="accent">Racing</span></h1>
   <nav>
     <a href="/">Start</a>
+    <a href="/search">Sök</a>
     <a href="/cart">Kundvagn</a>
     <a href="/checkout">Checkout</a>
     <a href="/pages/kopvillkor">Köpvillkor</a>

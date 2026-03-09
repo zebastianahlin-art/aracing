@@ -14,6 +14,17 @@ ob_start();
     <?php endif; ?>
     <p class="muted">Lagerstatus: <?= htmlspecialchars((string) ($product['stock_status'] ?? 'okänd'), ENT_QUOTES, 'UTF-8') ?><?= $product['stock_quantity'] !== null ? ' (' . (int) $product['stock_quantity'] . ')' : '' ?></p>
 
+    <?php $canBuy = ($product['stock_status'] ?? '') !== 'out_of_stock' && $product['sale_price'] !== null; ?>
+    <?php if ($canBuy): ?>
+      <form method="post" action="/cart/items" class="inline-form">
+        <input type="hidden" name="product_id" value="<?= (int) $product['id'] ?>">
+        <label for="qty">Antal</label>
+        <input id="qty" type="number" name="quantity" min="1" value="1" style="max-width:90px;">
+        <button type="submit" class="btn-primary">Lägg i kundvagn</button>
+      </form>
+    <?php else: ?>
+      <p class="muted">Produkten kan inte köpas just nu (saknar pris eller är slut i lager).</p>
+    <?php endif; ?>
 
     <h3>Attribut</h3>
     <?php if (($product['attributes'] ?? []) === []): ?>

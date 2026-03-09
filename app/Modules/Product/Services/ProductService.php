@@ -129,7 +129,9 @@ final class ProductService
         $data = $this->normalizeData($input);
         $id = $this->products->create($data);
         $this->attributes->replaceForProduct($id, $this->parseAttributes($input['attributes'] ?? ''));
-        $this->images->replaceForProduct($id, $this->parseImages($input['images'] ?? ''));
+        if (array_key_exists('images', $input)) {
+            $this->images->replaceForProduct($id, $this->parseImages($input['images'] ?? ''));
+        }
         $this->supplierLinks->syncPrimaryFromInput($id, $input);
 
         return $id;
@@ -141,7 +143,9 @@ final class ProductService
         $data = $this->normalizeData($input);
         $this->products->update($id, $data);
         $this->attributes->replaceForProduct($id, $this->parseAttributes($input['attributes'] ?? ''));
-        $this->images->replaceForProduct($id, $this->parseImages($input['images'] ?? ''));
+        if (array_key_exists('images', $input)) {
+            $this->images->replaceForProduct($id, $this->parseImages($input['images'] ?? ''));
+        }
         $this->supplierLinks->syncPrimaryFromInput($id, $input);
     }
 

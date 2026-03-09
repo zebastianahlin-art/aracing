@@ -1,21 +1,18 @@
 <?php
 $isEdit = is_array($product);
 $attributesText = '';
-$imagesText = '';
 $primaryLink = $product['primary_supplier_link'] ?? null;
 $selectedSupplierItemId = (string) ($product['supplier_item_id'] ?? $primaryLink['supplier_item_id'] ?? '');
 if ($isEdit) {
     foreach (($product['attributes'] ?? []) as $attribute) {
         $attributesText .= $attribute['attribute_key'] . '|' . $attribute['attribute_value'] . PHP_EOL;
     }
-    foreach (($product['images'] ?? []) as $image) {
-        $imagesText .= $image['image_url'] . '|' . $image['alt_text'] . '|' . $image['sort_order'] . '|' . $image['is_primary'] . PHP_EOL;
-    }
 }
 
 $selectedSupplierId = (string) ($selected_supplier_id ?? '');
 $stockOptions = ['i lager', 'låg lagerstatus', 'slut i lager', 'okänd'];
 $filterAction = $isEdit ? '/admin/products/' . (int) $product['id'] . '/edit' : '/admin/products/create';
+$mediaError = (string) ($_GET['media_error'] ?? '');
 ob_start();
 ?>
 <section class="card" style="margin-bottom:.8rem;">
@@ -114,8 +111,64 @@ ob_start();
 
     <label>Beskrivning</label><textarea name="description"><?= htmlspecialchars((string) ($product['description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
     <label>Attribut (en rad per attribut: key|value)</label><textarea name="attributes"><?= htmlspecialchars($attributesText, ENT_QUOTES, 'UTF-8') ?></textarea>
-    <label>Bilder (en rad: url|alt|sort_order|is_primary[0/1])</label><textarea name="images"><?= htmlspecialchars($imagesText, ENT_QUOTES, 'UTF-8') ?></textarea>
     <br><button class="btn" type="submit">Spara</button>
   </form>
 </section>
+
+<?php if ($isEdit): ?>
+<section id="media" class="card" style="margin-top:.8rem;">
+  <div class="topline"><h3>Produktmedia v1</h3></div>
+  <?php if ($mediaError !== ''): ?><p class="error-box"><?= htmlspecialchars($mediaError, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
+
+  <form method="post" action="/admin/products/<?= (int) $product['id'] ?>/images/upload" enctype="multipart/form-data" style="margin-bottom:.9rem;">
+    <div class="grid" style="align-items:end;">
+      <div>
+        <label>Ladda upp bild(er)</label>
+        <input type="file" name="images[]" accept="image/jpeg,image/png,image/webp,image/gif" multiple required>
+      </div>
+      <div>
+        <label>Standard alt-text (valfritt)</label>
+        <input name="default_alt_text" value="<?= htmlspecialchars((string) ($product['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+      </div>
+    </div>
+    <button class="btn" type="submit">Ladda upp</button>
+  </form>
+
+  <?php $images = $product['images'] ?? []; ?>
+  <?php if ($images === []): ?>
+    <p class="pill bad">Produkten saknar bild.</p>
+  <?php else: ?>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:.7rem;">
+      <?php foreach ($images as $image): ?>
+        <article class="card">
+          <img src="<?= htmlspecialchars((string) $image['image_url'], ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars((string) ($image['alt_text'] ?: $product['name']), ENT_QUOTES, 'UTF-8') ?>" style="width:100%;aspect-ratio:4/3;object-fit:cover;margin-bottom:.5rem;">
+          <p class="muted" style="margin:.2rem 0;"><?= (int) $image['is_primary'] === 1 ? 'Primärbild' : 'Sekundär bild' ?></p>
+
+          <form method="post" action="/admin/products/<?= (int) $product['id'] ?>/images/<?= (int) $image['id'] ?>/update">
+            <label>Alt-text</label>
+            <input name="alt_text" value="<?= htmlspecialchars((string) ($image['alt_text'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+            <label>Sort order</label>
+            <input name="sort_order" type="number" value="<?= (int) ($image['sort_order'] ?? 0) ?>">
+            <label><input type="checkbox" name="is_primary" value="1" <?= (int) ($image['is_primary'] ?? 0) === 1 ? 'checked' : '' ?>> Primärbild</label>
+            <button class="btn" type="submit">Spara bilddata</button>
+          </form>
+
+          <?php if ((int) ($image['is_primary'] ?? 0) !== 1): ?>
+            <form method="post" action="/admin/products/<?= (int) $product['id'] ?>/images/<?= (int) $image['id'] ?>/primary" style="margin-top:.45rem;">
+              <button class="btn" type="submit">Sätt som primär</button>
+            </form>
+          <?php endif; ?>
+
+          <form method="post" action="/admin/products/<?= (int) $product['id'] ?>/images/<?= (int) $image['id'] ?>/delete" style="margin-top:.45rem;" onsubmit="return confirm('Ta bort bild permanent?');">
+            <button class="btn" type="submit">Ta bort bild</button>
+          </form>
+        </article>
+      <?php endforeach; ?>
+    </div>
+  <?php endif; ?>
+</section>
+<?php else: ?>
+  <section class="card" style="margin-top:.8rem;"><p class="muted">Spara produkten först för att kunna ladda upp och hantera bilder.</p></section>
+<?php endif; ?>
+
 <?php $content = (string) ob_get_clean(); $title = 'Product-form | Admin'; require __DIR__ . '/../../layouts/admin.php'; ?>

@@ -137,6 +137,84 @@ final class ProductRepository
         return $stmt->fetchAll();
     }
 
+    /** @param array<string,string> $filters
+     * @return array<int,array<string,mixed>>
+     */
+    public function articleCareQueue(array $filters): array
+    {
+        $sql = 'SELECT p.id,
+                       p.name,
+                       p.sku,
+                       p.brand_id,
+                       p.category_id,
+                       p.description,
+                       p.sale_price,
+                       p.is_active,
+                       CASE WHEN psl.id IS NULL THEN 0 ELSE 1 END AS has_supplier_link,
+                       CASE WHEN pi.id IS NULL THEN 0 ELSE 1 END AS has_image
+                FROM products p
+                LEFT JOIN product_supplier_links psl ON psl.product_id = p.id AND psl.is_primary = 1
+                LEFT JOIN product_images pi ON pi.product_id = p.id AND pi.is_primary = 1';
+
+        $where = [];
+        $params = [];
+
+        $name = trim((string) ($filters['name'] ?? ''));
+        if ($name !== '') {
+            $where[] = 'p.name LIKE :name';
+            $params['name'] = '%' . $name . '%';
+        }
+
+        $sku = trim((string) ($filters['sku'] ?? ''));
+        if ($sku !== '') {
+            $where[] = 'p.sku LIKE :sku';
+            $params['sku'] = '%' . $sku . '%';
+        }
+
+        $active = $filters['active'] ?? '';
+        if ($active === '0' || $active === '1') {
+            $where[] = 'p.is_active = :is_active';
+            $params['is_active'] = (int) $active;
+        }
+
+        $hasLink = $filters['has_supplier_link'] ?? '';
+        if ($hasLink === '1') {
+            $where[] = 'psl.id IS NOT NULL';
+        }
+        if ($hasLink === '0') {
+            $where[] = 'psl.id IS NULL';
+        }
+
+        $gap = trim((string) ($filters['gap'] ?? ''));
+        if ($gap !== '') {
+            $where[] = match ($gap) {
+                'missing_brand' => 'p.brand_id IS NULL',
+                'missing_category' => 'p.category_id IS NULL',
+                'missing_sale_price' => 'p.sale_price IS NULL',
+                'missing_description' => '(p.description IS NULL OR TRIM(p.description) = \'\')',
+                'missing_image' => 'pi.id IS NULL',
+                'missing_supplier_link' => 'psl.id IS NULL',
+                'inactive' => 'p.is_active = 0',
+                default => '1=1',
+            };
+        }
+
+        if ($where !== []) {
+            $sql .= ' WHERE ' . implode(' AND ', $where);
+        }
+
+        $sql .= ' GROUP BY p.id ORDER BY p.updated_at DESC, p.id DESC';
+
+        $stmt = $this->pdo->prepare($sql);
+        foreach ($params as $key => $value) {
+            $type = is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR;
+            $stmt->bindValue($key, $value, $type);
+        }
+        $stmt->execute();
+
+        return $stmt->fetchAll();
+    }
+
     /** @return array<string, mixed>|null */
     public function findById(int $id): ?array
     {

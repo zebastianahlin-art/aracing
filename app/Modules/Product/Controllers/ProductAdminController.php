@@ -93,9 +93,19 @@ final class ProductAdminController
     {
         $selectedSupplierId = $this->toNullableInt($_GET['supplier_id'] ?? null);
         $supplierItemQuery = trim((string) ($_GET['supplier_item_query'] ?? ''));
+        $draft = null;
+        $supplierItemId = $this->toNullableInt($_GET['supplier_item_id'] ?? null);
+
+        if ($supplierItemId !== null) {
+            $draft = $this->products->prefillDraftFromSupplierItem($supplierItemId);
+            if ($draft !== null && $selectedSupplierId === null) {
+                $selectedSupplierId = (int) ($draft['supplier_item']['supplier_id'] ?? 0) ?: null;
+            }
+        }
 
         return new Response($this->views->render('admin.products.form', [
-            'product' => null,
+            'product' => $draft['product_defaults'] ?? null,
+            'prefill_draft' => $draft,
             'brands' => $this->brands->list(),
             'categories' => $this->categories->listForSelect(),
             'suppliers' => $this->suppliers->listActive(),
@@ -107,9 +117,24 @@ final class ProductAdminController
 
     public function store(): Response
     {
-        $this->products->create($_POST);
+        $productId = $this->products->create($_POST);
+
+        $returnToReview = isset($_POST['return_to_review']) && (int) $_POST['return_to_review'] === 1;
+        if ($returnToReview) {
+            return $this->redirect('/admin/supplier-item-review?notice=' . urlencode('Produkt skapad och kopplad (#' . $productId . ')'));
+        }
 
         return $this->redirect('/admin/products');
+    }
+
+    public function articleCareQueue(): Response
+    {
+        $queue = $this->products->articleCareQueue($_GET);
+
+        return new Response($this->views->render('admin.products.article_care_queue', [
+            'rows' => $queue['rows'],
+            'filters' => $queue['filters'],
+        ]));
     }
 
     public function editForm(string $id): Response

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Product\Services;
 
+use App\Modules\Import\Repositories\SupplierItemRepository;
 use App\Modules\Product\Repositories\ProductSupplierItemLookupRepository;
 use App\Modules\Product\Repositories\ProductSupplierLinkRepository;
 
@@ -11,7 +12,8 @@ final class ProductSupplierLinkService
 {
     public function __construct(
         private readonly ProductSupplierLinkRepository $links,
-        private readonly ProductSupplierItemLookupRepository $items
+        private readonly ProductSupplierItemLookupRepository $items,
+        private readonly SupplierItemRepository $supplierItems
     ) {
     }
 
@@ -75,6 +77,9 @@ final class ProductSupplierLinkService
             'supplier_price_snapshot' => $supplierItem['price'],
             'supplier_stock_snapshot' => $supplierItem['stock_qty'],
         ]);
+
+        $this->supplierItems->setMatchedAt($supplierItemId, true);
+        $this->supplierItems->updateReviewStatus($supplierItemId, 'linked', true);
 
         return true;
     }

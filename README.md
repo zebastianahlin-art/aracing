@@ -270,3 +270,18 @@ Lokal manuell test:
 4. Byt matchning till en annan produkt och verifiera att kopplingen flyttas tydligt.
 5. Rensa matchning och verifiera status `Behöver granskning`.
 
+
+## Produktupprättning från supplier item + artikelvårdskö v1
+
+Admin:
+- `/admin/supplier-item-review` har nu action `Skapa ny produkt` för omatchade leverantörsartiklar.
+- `/admin/products/create?supplier_item_id={id}` öppnar produktformulär med konservativ förifyllning från supplier item (namn/SKU, tom description, inget auto-satt sale_price/lagerstatus).
+- vid sparning med primär leverantörskoppling skapas produkt + explicit `product_supplier_link`, snapshots uppdateras och supplier item markeras som länkad/granskad.
+- `/admin/products/article-care` visar artikelvårdskö för databrister med filter/sök för namn, SKU, aktiv/inaktiv, bristtyp och med/utan leverantörskoppling.
+
+Lokal manuell test:
+1. Öppna `/admin/supplier-item-review` och klicka `Skapa ny produkt` på en omatchad rad.
+2. Verifiera att formuläret är förifyllt från leverantörsdata och att källa/databrister visas tydligt.
+3. Spara produkten och verifiera i `/admin/supplier-item-review` att artikeln inte längre är omatchad.
+4. Öppna `/admin/products/article-care`, filtrera på t.ex. `Saknar sale_price` eller `Saknar leverantörskoppling` och verifiera att rätt produkter visas.
+5. Använd snabblänk `Redigera`, komplettera data och kontrollera att produkten försvinner från valda bristfilter.

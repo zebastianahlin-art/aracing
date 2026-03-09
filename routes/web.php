@@ -54,22 +54,24 @@ use App\Modules\Supplier\Services\SupplierService;
 /** @var array{router: Router, view: \App\Core\View\ViewFactory, pdo: \PDO} $app */
 $brandService = new BrandService(new BrandRepository($app['pdo']));
 $categoryService = new CategoryService(new CategoryRepository($app['pdo']));
+$supplierItemRepository = new SupplierItemRepository($app['pdo']);
 $productSupplierLinkService = new ProductSupplierLinkService(
     new ProductSupplierLinkRepository($app['pdo']),
-    new ProductSupplierItemLookupRepository($app['pdo'])
+    new ProductSupplierItemLookupRepository($app['pdo']),
+    $supplierItemRepository
 );
 $productService = new ProductService(
     new ProductRepository($app['pdo']),
     new ProductAttributeRepository($app['pdo']),
     new ProductImageRepository($app['pdo']),
-    $productSupplierLinkService
+    $productSupplierLinkService,
+    new ProductSupplierItemLookupRepository($app['pdo'])
 );
 $catalogService = new CatalogService(new CatalogRepository($app['pdo']));
 $supplierService = new SupplierService(new SupplierRepository($app['pdo']));
 $importProfileService = new ImportProfileService(new ImportProfileRepository($app['pdo']));
 $importRowRepository = new ImportRowRepository($app['pdo']);
 $importRunRepository = new ImportRunRepository($app['pdo']);
-$supplierItemRepository = new SupplierItemRepository($app['pdo']);
 $importRunService = new ImportRunService($importRunRepository, $importRowRepository);
 $csvImportService = new CsvImportService(
     $importRunRepository,
@@ -137,6 +139,7 @@ $app['router']->post('/admin/products/operations', [$productAdmin, 'runBulkActio
 $app['router']->post('/admin/products/{id}/operations', [$productAdmin, 'runProductAction']);
 $app['router']->get('/admin/products/create', [$productAdmin, 'createForm']);
 $app['router']->post('/admin/products', [$productAdmin, 'store']);
+$app['router']->get('/admin/products/article-care', [$productAdmin, 'articleCareQueue']);
 $app['router']->get('/admin/products/{id}/edit', [$productAdmin, 'editForm']);
 $app['router']->post('/admin/products/{id}', [$productAdmin, 'update']);
 

@@ -109,6 +109,8 @@ $app['router']->get('/admin/categories/{id}/edit', [$categoryAdmin, 'editForm'])
 $app['router']->post('/admin/categories/{id}', [$categoryAdmin, 'update']);
 
 $app['router']->get('/admin/products', [$productAdmin, 'index']);
+$app['router']->post('/admin/products/operations', [$productAdmin, 'runBulkAction']);
+$app['router']->post('/admin/products/{id}/operations', [$productAdmin, 'runProductAction']);
 $app['router']->get('/admin/products/create', [$productAdmin, 'createForm']);
 $app['router']->post('/admin/products', [$productAdmin, 'store']);
 $app['router']->get('/admin/products/{id}/edit', [$productAdmin, 'editForm']);

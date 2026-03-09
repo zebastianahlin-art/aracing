@@ -19,10 +19,21 @@ final class ProductService
     ) {
     }
 
-    /** @return array<int, array<string, mixed>> */
-    public function list(): array
+    /** @param array<string, string> $filters
+     *  @return array{rows: array<int, array<string, mixed>>, filters: array<string, string>}
+     */
+    public function operationalOverview(array $filters): array
     {
-        return $this->products->all();
+        $normalized = $this->normalizeOverviewFilters($filters);
+        $rows = $this->products->adminOverview($normalized);
+
+        foreach ($rows as &$row) {
+            $row['has_supplier_link'] = $row['supplier_link_id'] !== null;
+            $row['deviation_flags'] = $this->buildDeviationFlags($row);
+        }
+        unset($row);
+
+        return ['rows' => $rows, 'filters' => $normalized];
     }
 
     /** @return array<string, mixed>|null */
@@ -62,6 +73,73 @@ final class ProductService
         $this->supplierLinks->syncPrimaryFromInput($id, $input);
     }
 
+    public function syncPrimarySnapshot(int $productId): void
+    {
+        $this->supplierLinks->syncPrimarySnapshot($productId);
+    }
+
+    public function copySupplierPriceToPublished(int $productId): void
+    {
+        $link = $this->supplierLinks->primaryLinkForProduct($productId);
+        if ($link === null || $link['supplier_price_snapshot'] === null) {
+            return;
+        }
+
+        $this->products->updateSalePrice($productId, number_format((float) $link['supplier_price_snapshot'], 2, '.', ''));
+    }
+
+    public function copySupplierStockToPublished(int $productId): void
+    {
+        $link = $this->supplierLinks->primaryLinkForProduct($productId);
+        if ($link === null) {
+            return;
+        }
+
+        $stock = $link['supplier_stock_snapshot'];
+        $this->products->updateStockQuantity($productId, $stock !== null ? (int) $stock : null);
+    }
+
+    public function refreshPublishedStockStatusFromQuantity(int $productId): void
+    {
+        $product = $this->products->findById($productId);
+        if ($product === null) {
+            return;
+        }
+
+        $status = $this->deriveStockStatusFromQuantity($product['stock_quantity']);
+        $this->products->updateStockStatus($productId, $status);
+    }
+
+    public function setActiveStatus(int $productId, bool $active): void
+    {
+        $this->products->updateActiveStatus($productId, $active ? 1 : 0);
+    }
+
+    /** @param array<int, int> $productIds */
+    public function applyBulkOperation(array $productIds, string $operation): void
+    {
+        foreach ($productIds as $productId) {
+            if ($operation === 'set_active') {
+                $this->setActiveStatus($productId, true);
+                continue;
+            }
+
+            if ($operation === 'set_inactive') {
+                $this->setActiveStatus($productId, false);
+                continue;
+            }
+
+            if ($operation === 'refresh_stock_status') {
+                $this->refreshPublishedStockStatusFromQuantity($productId);
+                continue;
+            }
+
+            if ($operation === 'sync_snapshot') {
+                $this->syncPrimarySnapshot($productId);
+            }
+        }
+    }
+
     /** @return array<string, mixed> */
     private function normalizeData(array $input): array
     {
@@ -80,6 +158,83 @@ final class ProductService
             'stock_quantity' => $this->toNullableInt($input['stock_quantity'] ?? null),
             'is_active' => isset($input['is_active']) ? 1 : 0,
         ];
+    }
+
+    /** @param array<string, string> $filters
+     *  @return array<string, string>
+     */
+    private function normalizeOverviewFilters(array $filters): array
+    {
+        $active = (string) ($filters['active'] ?? '');
+        $hasLink = (string) ($filters['has_link'] ?? '');
+        $deviation = (string) ($filters['deviation'] ?? '');
+        $stockStatus = mb_strtolower(trim((string) ($filters['stock_status'] ?? '')));
+
+        return [
+            'name' => trim((string) ($filters['name'] ?? '')),
+            'sku' => trim((string) ($filters['sku'] ?? '')),
+            'active' => in_array($active, ['0', '1'], true) ? $active : '',
+            'has_link' => in_array($hasLink, ['0', '1'], true) ? $hasLink : '',
+            'deviation' => $deviation === '1' ? '1' : '',
+            'stock_status' => in_array($stockStatus, ['i lager', 'låg lagerstatus', 'slut i lager', 'okänd'], true) ? $stockStatus : '',
+        ];
+    }
+
+    /** @param array<string, mixed> $row
+     *  @return array<int, string>
+     */
+    private function buildDeviationFlags(array $row): array
+    {
+        $flags = [];
+
+        if ($row['supplier_link_id'] === null) {
+            $flags[] = 'saknar leverantörskoppling';
+        }
+
+        if ($row['sale_price'] === null) {
+            $flags[] = 'saknar sale_price';
+        }
+
+        if ((int) ($row['is_active'] ?? 0) === 0) {
+            $flags[] = 'inaktiv produkt';
+        }
+
+        if ($row['sale_price'] !== null && $row['supplier_price_snapshot'] !== null && (float) $row['sale_price'] !== (float) $row['supplier_price_snapshot']) {
+            $flags[] = 'pris avviker';
+        }
+
+        $stockDiffers = false;
+        if ($row['stock_quantity'] === null xor $row['supplier_stock_snapshot'] === null) {
+            $stockDiffers = true;
+        }
+
+        if ($row['stock_quantity'] !== null && $row['supplier_stock_snapshot'] !== null && (int) $row['stock_quantity'] !== (int) $row['supplier_stock_snapshot']) {
+            $stockDiffers = true;
+        }
+
+        if ($stockDiffers) {
+            $flags[] = 'lager avviker';
+        }
+
+        return $flags;
+    }
+
+    private function deriveStockStatusFromQuantity(mixed $quantity): string
+    {
+        if ($quantity === null) {
+            return 'okänd';
+        }
+
+        $qty = (int) $quantity;
+        if ($qty <= 0) {
+            return 'slut i lager';
+        }
+
+        if ($qty <= 3) {
+            return 'låg lagerstatus';
+        }
+
+        return 'i lager';
     }
 
     private function toNullableDecimal(mixed $value): ?string

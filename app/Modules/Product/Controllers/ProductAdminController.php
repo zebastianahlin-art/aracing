@@ -26,7 +26,67 @@ final class ProductAdminController
 
     public function index(): Response
     {
-        return new Response($this->views->render('admin.products.index', ['products' => $this->products->list()]));
+        $overview = $this->products->operationalOverview($_GET);
+
+        return new Response($this->views->render('admin.products.index', [
+            'products' => $overview['rows'],
+            'filters' => $overview['filters'],
+            'notice' => (string) ($_GET['notice'] ?? ''),
+        ]));
+    }
+
+    public function runProductAction(string $id): Response
+    {
+        $productId = (int) $id;
+        $action = (string) ($_POST['action'] ?? '');
+
+        if ($action === 'sync_snapshot') {
+            $this->products->syncPrimarySnapshot($productId);
+        }
+
+        if ($action === 'copy_price') {
+            $this->products->copySupplierPriceToPublished($productId);
+        }
+
+        if ($action === 'copy_stock') {
+            $this->products->copySupplierStockToPublished($productId);
+        }
+
+        if ($action === 'refresh_stock_status') {
+            $this->products->refreshPublishedStockStatusFromQuantity($productId);
+        }
+
+        if ($action === 'set_active') {
+            $this->products->setActiveStatus($productId, true);
+        }
+
+        if ($action === 'set_inactive') {
+            $this->products->setActiveStatus($productId, false);
+        }
+
+        return $this->redirect('/admin/products?notice=' . urlencode('Produktåtgärd sparad'));
+    }
+
+    public function runBulkAction(): Response
+    {
+        $action = (string) ($_POST['bulk_action'] ?? '');
+        $selected = $_POST['selected_product_ids'] ?? [];
+        $ids = [];
+
+        if (is_array($selected)) {
+            foreach ($selected as $id) {
+                $normalized = trim((string) $id);
+                if ($normalized !== '' && ctype_digit($normalized)) {
+                    $ids[] = (int) $normalized;
+                }
+            }
+        }
+
+        if ($ids !== [] && $action !== '') {
+            $this->products->applyBulkOperation($ids, $action);
+        }
+
+        return $this->redirect('/admin/products?notice=' . urlencode('Bulkåtgärd körd'));
     }
 
     public function createForm(): Response

@@ -194,3 +194,19 @@ Lokal manuell test:
 4. Lägg till intern anteckning och verifiera att historikrad skapas.
 5. Klicka `Markera packad` och `Markera skickad` och verifiera tidsstämplar + historik.
 6. Öppna utskriftsvyn och kontrollera att sidan är ren för vanlig webbutskrift.
+
+## Pris/lager v2 + operativ produktöversikt (admin)
+
+Admin:
+- `/admin/products` fungerar nu som operativ arbetsyta med sök/filter för namn, SKU, aktiv-status, leverantörskoppling, avvikelse och lagerstatus.
+- tabellen visar publicerad produktdata sida vid sida med leverantörssnapshot och tydliga avvikelseflaggor.
+- manuella åtgärder finns per rad: synka snapshot, kopiera leverantörspris, kopiera leverantörslager, sätt lagerstatus från publicerat antal, snabb växling aktiv/inaktiv.
+- enkel bulkåtgärd finns för markerade produkter.
+
+Lokal manuell test:
+1. Öppna `/admin/products`.
+2. Testa sök/filter-kombinationer och verifiera att listan uppdateras.
+3. Kör `Synka snapshot` på en produkt med primär leverantörslänk och verifiera uppdaterade snapshot-fält.
+4. Kör `Kopiera pris` och kontrollera i produktens redigeringsvy att `sale_price` uppdaterats.
+5. Kör `Kopiera lager` och `Sätt lagerstatus` och verifiera publicerad `stock_quantity` + `stock_status`.
+6. Markera flera rader och kör en bulkåtgärd (t.ex. `Markera inaktiv`).

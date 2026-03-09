@@ -46,6 +46,26 @@ final class ProductSupplierLinkService
             return;
         }
 
+        $this->syncPrimaryFromSupplierItem($productId, (int) $supplierItem['id']);
+    }
+
+    public function syncPrimarySnapshot(int $productId): bool
+    {
+        $primaryLink = $this->links->primaryForProduct($productId);
+        if ($primaryLink === null) {
+            return false;
+        }
+
+        return $this->syncPrimaryFromSupplierItem($productId, (int) $primaryLink['supplier_item_id']);
+    }
+
+    private function syncPrimaryFromSupplierItem(int $productId, int $supplierItemId): bool
+    {
+        $supplierItem = $this->items->findById($supplierItemId);
+        if ($supplierItem === null || $supplierItem['supplier_id'] === null) {
+            return false;
+        }
+
         $this->links->upsertPrimary($productId, [
             'supplier_item_id' => $supplierItemId,
             'supplier_id' => (int) $supplierItem['supplier_id'],
@@ -55,6 +75,8 @@ final class ProductSupplierLinkService
             'supplier_price_snapshot' => $supplierItem['price'],
             'supplier_stock_snapshot' => $supplierItem['stock_qty'],
         ]);
+
+        return true;
     }
 
     private function toNullableInt(mixed $value): ?int

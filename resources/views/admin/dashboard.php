@@ -3,7 +3,8 @@ ob_start();
 ?>
 <section class="card">
   <h1>A-<span style="color:#e10600;">Racing</span> Admin</h1>
-  <p>Katalogblocket är aktivt. Hantera brands, categories och products i vänstermenyn.</p>
+  <p>Katalogblocket är aktivt och leverantör/import v1 finns nu i admin för spårbar CSV-hantering.</p>
+  <p>Snabbval: <a class="btn" href="/admin/suppliers">Leverantörer</a> <a class="btn" href="/admin/import-profiles">Importprofiler</a> <a class="btn" href="/admin/import-runs">Importkörningar</a></p>
 </section>
 <?php
 $content = (string) ob_get_clean();

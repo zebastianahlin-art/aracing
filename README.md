@@ -126,3 +126,20 @@ Exempel admin-URL:er:
 Databas:
 - kör även `database/migrations/002_catalog_foundation.sql`
 - valfritt: kör `database/seeders/001_catalog_demo.sql` för demo-data
+
+
+## Leverantörsregister och CSV-import v1
+
+Databas:
+- kör även `database/migrations/003_supplier_import_v1.sql`
+
+Admin-URL:er:
+- `/admin/suppliers`
+- `/admin/import-profiles`
+- `/admin/import-runs`
+
+Lokal test av CSV-import:
+1. Skapa en leverantör i `/admin/suppliers`.
+2. Skapa en importprofil i `/admin/import-profiles` och ange JSON mapping (t.ex. `supplier_sku`, `supplier_title`, `price`, `stock_qty`).
+3. Öppna `/admin/import-runs`, välj profil och ladda upp en CSV-fil.
+4. Öppna körningsdetaljen för att granska radstatus, felmeddelanden, rådata och mappad data.

@@ -47,9 +47,23 @@ final class CheckoutController
     public function confirmation(): Response
     {
         $orderNumber = $_SESSION['last_order_number'] ?? null;
+        $publicOrder = is_string($orderNumber) ? $this->orders->getPublicOrderSummaryByNumber($orderNumber) : null;
 
         return new Response($this->views->render('storefront.order_confirmation', [
             'orderNumber' => is_string($orderNumber) ? $orderNumber : null,
+            'publicOrder' => $publicOrder,
+        ]));
+    }
+
+    public function orderStatus(): Response
+    {
+        $orderNumber = trim((string) ($_GET['order_number'] ?? ''));
+        $summary = $orderNumber !== '' ? $this->orders->getPublicOrderSummaryByNumber($orderNumber) : null;
+
+        return new Response($this->views->render('storefront.order_status', [
+            'queryOrderNumber' => $orderNumber,
+            'orderSummary' => $summary,
+            'showNotFound' => $orderNumber !== '' && $summary === null,
         ]));
     }
 

@@ -7,7 +7,13 @@ ob_start();
     <p class="muted">Ingen ny order hittades i sessionen.</p>
   <?php else: ?>
     <p>Ordernummer: <strong><?= htmlspecialchars((string) $orderNumber, ENT_QUOTES, 'UTF-8') ?></strong></p>
-    <p class="muted">Din order är registrerad som pending. Betalning och frakt hanteras i v1 som placeholders.</p>
+    <?php if (($publicOrder ?? null) !== null): ?>
+      <p>Status: <strong><?= htmlspecialchars((string) $publicOrder['fulfillment_status'], ENT_QUOTES, 'UTF-8') ?></strong></p>
+      <p>Skickad: <?= htmlspecialchars((string) ($publicOrder['shipped_at'] ?? 'Inte skickad ännu'), ENT_QUOTES, 'UTF-8') ?></p>
+      <p>Trackingnummer: <?= htmlspecialchars((string) ($publicOrder['tracking_number'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
+      <p>Fraktmetod: <?= htmlspecialchars((string) ($publicOrder['shipping_method'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
+    <?php endif; ?>
+    <p><a class="btn-secondary" href="/order-status?order_number=<?= urlencode((string) $orderNumber) ?>">Visa orderstatus</a></p>
   <?php endif; ?>
   <p><a class="btn-primary" href="/">Till startsidan</a></p>
 </section>

@@ -12,7 +12,7 @@ final class OrderService
 {
     private const ALLOWED_ORDER_STATUS = ['pending', 'confirmed', 'cancelled'];
     private const ALLOWED_PAYMENT_STATUS = ['unpaid', 'pending', 'paid'];
-    private const ALLOWED_FULFILLMENT_STATUS = ['unfulfilled', 'processing', 'shipped'];
+    private const ALLOWED_FULFILLMENT_STATUS = ['unfulfilled', 'processing', 'packed', 'shipped'];
 
     public function __construct(private readonly OrderRepository $orders)
     {
@@ -37,6 +37,29 @@ final class OrderService
             'items' => $this->orders->orderItems($id),
             'notes' => $this->orders->orderNotes($id),
             'events' => $this->orders->orderEvents($id),
+        ];
+    }
+
+    /** @return array<string, mixed>|null */
+    public function getPublicOrderSummaryByNumber(string $orderNumber): ?array
+    {
+        $cleanOrderNumber = trim($orderNumber);
+        if ($cleanOrderNumber === '') {
+            return null;
+        }
+
+        $order = $this->orders->findOrderByNumber($cleanOrderNumber);
+        if ($order === null) {
+            return null;
+        }
+
+        return [
+            'order_number' => $order['order_number'],
+            'status' => $order['status'],
+            'fulfillment_status' => $order['fulfillment_status'],
+            'shipped_at' => $order['shipped_at'],
+            'tracking_number' => $order['tracking_number'] ?? null,
+            'shipping_method' => $order['shipping_method'] ?? null,
         ];
     }
 
@@ -80,6 +103,10 @@ final class OrderService
                 'internal_reference' => null,
                 'packed_at' => null,
                 'shipped_at' => null,
+                'tracking_number' => null,
+                'shipping_method' => null,
+                'shipped_by_name' => null,
+                'shipment_note' => null,
             ]);
 
             foreach ($cartData['items'] as $item) {
@@ -185,12 +212,41 @@ final class OrderService
         }
     }
 
+    public function markProcessing(int $orderId): void
+    {
+        $order = $this->orders->findOrderById($orderId);
+        if ($order === null) {
+            throw new InvalidArgumentException('Order hittades inte.');
+        }
+
+        $this->orders->beginTransaction();
+        try {
+            $this->orders->updateFulfillmentStatus($orderId, 'processing');
+            $this->orders->createOrderEvent($orderId, 'order_processing', 'Order markerad som processing.');
+            if (($order['fulfillment_status'] ?? '') !== 'processing') {
+                $this->orders->createOrderEvent($orderId, 'fulfillment_status_changed', sprintf('Leveransstatus ändrad: %s → processing.', (string) $order['fulfillment_status']));
+            }
+            $this->orders->commit();
+        } catch (\Throwable $e) {
+            $this->orders->rollBack();
+            throw $e;
+        }
+    }
+
     public function markPacked(int $orderId): void
     {
+        $order = $this->orders->findOrderById($orderId);
+        if ($order === null) {
+            throw new InvalidArgumentException('Order hittades inte.');
+        }
+
         $this->orders->beginTransaction();
         try {
             $this->orders->markPacked($orderId);
             $this->orders->createOrderEvent($orderId, 'order_packed', 'Order markerad som packad.');
+            if (($order['fulfillment_status'] ?? '') !== 'packed') {
+                $this->orders->createOrderEvent($orderId, 'fulfillment_status_changed', sprintf('Leveransstatus ändrad: %s → packed.', (string) $order['fulfillment_status']));
+            }
             $this->orders->commit();
         } catch (\Throwable $e) {
             $this->orders->rollBack();
@@ -200,10 +256,75 @@ final class OrderService
 
     public function markShipped(int $orderId): void
     {
+        $order = $this->orders->findOrderById($orderId);
+        if ($order === null) {
+            throw new InvalidArgumentException('Order hittades inte.');
+        }
+
         $this->orders->beginTransaction();
         try {
             $this->orders->markShipped($orderId);
             $this->orders->createOrderEvent($orderId, 'order_shipped', 'Order markerad som skickad.');
+            if (($order['fulfillment_status'] ?? '') !== 'shipped') {
+                $this->orders->createOrderEvent($orderId, 'fulfillment_status_changed', sprintf('Leveransstatus ändrad: %s → shipped.', (string) $order['fulfillment_status']));
+            }
+            $this->orders->commit();
+        } catch (\Throwable $e) {
+            $this->orders->rollBack();
+            throw $e;
+        }
+    }
+
+    public function updateShipmentInfo(int $orderId, string $trackingNumber, string $shippingMethod, string $shippedByName, string $shipmentNote): void
+    {
+        $order = $this->orders->findOrderById($orderId);
+        if ($order === null) {
+            throw new InvalidArgumentException('Order hittades inte.');
+        }
+
+        $trackingNumber = trim($trackingNumber);
+        $shippingMethod = trim($shippingMethod);
+        $shippedByName = trim($shippedByName);
+        $shipmentNote = trim($shipmentNote);
+
+        $this->orders->beginTransaction();
+        try {
+            $this->orders->updateShipmentInfo(
+                $orderId,
+                $trackingNumber !== '' ? $trackingNumber : null,
+                $shippingMethod !== '' ? $shippingMethod : null,
+                $shippedByName !== '' ? $shippedByName : null,
+                $shipmentNote !== '' ? $shipmentNote : null
+            );
+
+            if (trim((string) ($order['tracking_number'] ?? '')) !== $trackingNumber) {
+                $message = $trackingNumber === ''
+                    ? 'Trackingnummer rensat.'
+                    : sprintf('Trackingnummer uppdaterat: %s.', $trackingNumber);
+                $this->orders->createOrderEvent($orderId, 'tracking_number_updated', $message);
+            }
+
+            if (trim((string) ($order['shipping_method'] ?? '')) !== $shippingMethod) {
+                $message = $shippingMethod === ''
+                    ? 'Fraktmetod rensad.'
+                    : sprintf('Fraktmetod uppdaterad: %s.', $shippingMethod);
+                $this->orders->createOrderEvent($orderId, 'shipping_method_updated', $message);
+            }
+
+            if (trim((string) ($order['shipment_note'] ?? '')) !== $shipmentNote) {
+                $message = $shipmentNote === ''
+                    ? 'Försändelsenotering rensad.'
+                    : 'Försändelsenotering uppdaterad.';
+                $this->orders->createOrderEvent($orderId, 'shipment_note_updated', $message);
+            }
+
+            if (trim((string) ($order['shipped_by_name'] ?? '')) !== $shippedByName) {
+                $message = $shippedByName === ''
+                    ? 'Skickad av rensad.'
+                    : sprintf('Skickad av uppdaterad: %s.', $shippedByName);
+                $this->orders->createOrderEvent($orderId, 'shipped_by_name_updated', $message);
+            }
+
             $this->orders->commit();
         } catch (\Throwable $e) {
             $this->orders->rollBack();

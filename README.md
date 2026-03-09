@@ -210,3 +210,28 @@ Lokal manuell test:
 4. Kör `Kopiera pris` och kontrollera i produktens redigeringsvy att `sale_price` uppdaterats.
 5. Kör `Kopiera lager` och `Sätt lagerstatus` och verifiera publicerad `stock_quantity` + `stock_status`.
 6. Markera flera rader och kör en bulkåtgärd (t.ex. `Markera inaktiv`).
+
+## Operativ orderhantering v3 (plock + manuell försändelse)
+
+Databas:
+- kör även `database/migrations/007_order_operations_v3.sql`
+
+Admin:
+- `/admin/orders` visar nu operativ status med `processing`, `packed`, `shipped` samt tracking/fraktmetod i listan.
+- `/admin/orders/{id}` har plockvänligare radlista, tydligare kund/leveransinfo och formulär för manuell försändelseinfo.
+- operativa actions finns för `Markera processing`, `Markera packad`, `Markera skickad`.
+
+Historik:
+- event loggas vid processing/packed/shipped.
+- event loggas när trackingnummer, fraktmetod eller försändelsenotering uppdateras.
+
+Kundvy:
+- orderbekräftelsen visar status + eventuell försändelseinfo.
+- enkel orderstatussida finns på `/order-status`.
+
+Lokal manuell test:
+1. Skapa en order via `/checkout`.
+2. Öppna `/admin/orders/{id}` och klicka `Markera processing`, sedan `Markera packad`, sedan `Markera skickad`.
+3. Fyll i och spara `tracking_number`, `shipping_method`, `shipped_by_name`, `shipment_note`.
+4. Verifiera att historiken visar separata events för status och försändelsefält.
+5. Öppna `/order-status?order_number={ORDERNUMMER}` och verifiera kundsynlig status.

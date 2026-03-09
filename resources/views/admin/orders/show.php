@@ -15,6 +15,7 @@ $events = $detail['events'] ?? [];
 
     <div class="actions-inline">
       <a class="btn" href="/admin/orders/<?= (int) $order['id'] ?>/print" target="_blank" rel="noopener">Utskriftsvy</a>
+      <form method="post" action="/admin/orders/<?= (int) $order['id'] ?>/mark-processing"><button class="btn" type="submit">Markera processing</button></form>
       <form method="post" action="/admin/orders/<?= (int) $order['id'] ?>/mark-packed"><button class="btn" type="submit">Markera packad</button></form>
       <form method="post" action="/admin/orders/<?= (int) $order['id'] ?>/mark-shipped"><button class="btn" type="submit">Markera skickad</button></form>
     </div>
@@ -26,13 +27,6 @@ $events = $detail['events'] ?? [];
         <?= htmlspecialchars((string) $order['customer_email'], ENT_QUOTES, 'UTF-8') ?><br>
         <?= htmlspecialchars((string) ($order['customer_phone'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
 
-        <h3>Fakturaadress</h3>
-        <p><?= htmlspecialchars((string) $order['billing_address_line_1'], ENT_QUOTES, 'UTF-8') ?><br>
-        <?= htmlspecialchars((string) ($order['billing_address_line_2'] ?? ''), ENT_QUOTES, 'UTF-8') ?><br>
-        <?= htmlspecialchars((string) $order['billing_postal_code'] . ' ' . (string) $order['billing_city'], ENT_QUOTES, 'UTF-8') ?><br>
-        <?= htmlspecialchars((string) $order['billing_country'], ENT_QUOTES, 'UTF-8') ?></p>
-      </div>
-      <div>
         <h3>Leveransadress</h3>
         <p><?= htmlspecialchars((string) $order['shipping_first_name'] . ' ' . (string) $order['shipping_last_name'], ENT_QUOTES, 'UTF-8') ?><br>
         <?= htmlspecialchars((string) ($order['shipping_phone'] ?? '-'), ENT_QUOTES, 'UTF-8') ?><br>
@@ -41,33 +35,53 @@ $events = $detail['events'] ?? [];
         <?= htmlspecialchars((string) $order['shipping_postal_code'] . ' ' . (string) $order['shipping_city'], ENT_QUOTES, 'UTF-8') ?><br>
         <?= htmlspecialchars((string) $order['shipping_country'], ENT_QUOTES, 'UTF-8') ?></p>
 
-        <h3>Operativt</h3>
-        <p>Intern referens: <?= htmlspecialchars((string) ($order['internal_reference'] ?? '-'), ENT_QUOTES, 'UTF-8') ?><br>
-        Packad: <?= htmlspecialchars((string) ($order['packed_at'] ?? '-'), ENT_QUOTES, 'UTF-8') ?><br>
-        Skickad: <?= htmlspecialchars((string) ($order['shipped_at'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
+        <h3>Kundanteckning</h3>
+        <p><?= nl2br(htmlspecialchars((string) ($order['order_notes'] ?? '-'), ENT_QUOTES, 'UTF-8')) ?></p>
+      </div>
+      <div>
+        <h3>Operativ status</h3>
+        <p>
+          <span class="pill"><?= htmlspecialchars((string) $order['fulfillment_status'], ENT_QUOTES, 'UTF-8') ?></span><br>
+          Intern referens: <?= htmlspecialchars((string) ($order['internal_reference'] ?? '-'), ENT_QUOTES, 'UTF-8') ?><br>
+          Packad: <?= htmlspecialchars((string) ($order['packed_at'] ?? '-'), ENT_QUOTES, 'UTF-8') ?><br>
+          Skickad: <?= htmlspecialchars((string) ($order['shipped_at'] ?? '-'), ENT_QUOTES, 'UTF-8') ?>
+        </p>
+
+        <h3>Manuell försändelseinfo</h3>
+        <form method="post" action="/admin/orders/<?= (int) $order['id'] ?>/shipment">
+          <label for="tracking_number">Trackingnummer</label>
+          <input id="tracking_number" type="text" name="tracking_number" value="<?= htmlspecialchars((string) ($order['tracking_number'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+
+          <label for="shipping_method">Fraktmetod</label>
+          <input id="shipping_method" type="text" name="shipping_method" value="<?= htmlspecialchars((string) ($order['shipping_method'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+
+          <label for="shipped_by_name">Skickad av</label>
+          <input id="shipped_by_name" type="text" name="shipped_by_name" value="<?= htmlspecialchars((string) ($order['shipped_by_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+
+          <label for="shipment_note">Försändelsenotering</label>
+          <textarea id="shipment_note" name="shipment_note"><?= htmlspecialchars((string) ($order['shipment_note'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
+
+          <button class="btn" type="submit">Spara försändelseinfo</button>
+        </form>
       </div>
     </div>
 
-    <h3>Orderrader</h3>
+    <h3>Plocklista</h3>
     <table class="table compact">
-      <thead><tr><th>Produkt</th><th>SKU</th><th>Pris</th><th>Antal</th><th>Radtotal</th></tr></thead>
+      <thead><tr><th>Produktnamn</th><th>SKU</th><th>Antal</th><th>Intern ref</th><th>Pris</th><th>Radtotal</th></tr></thead>
       <tbody>
       <?php foreach ($items as $item): ?>
         <tr>
           <td><?= htmlspecialchars((string) $item['product_name_snapshot'], ENT_QUOTES, 'UTF-8') ?></td>
           <td><?= htmlspecialchars((string) ($item['sku_snapshot'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></td>
+          <td><strong><?= (int) $item['quantity'] ?></strong></td>
+          <td><?= htmlspecialchars((string) ($order['internal_reference'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></td>
           <td><?= number_format((float) $item['unit_price_snapshot'], 2, ',', ' ') ?></td>
-          <td><?= (int) $item['quantity'] ?></td>
           <td><?= number_format((float) $item['line_total'], 2, ',', ' ') ?></td>
         </tr>
       <?php endforeach; ?>
       </tbody>
     </table>
-
-    <h3>Summering</h3>
-    <p>Subtotal: <?= number_format((float) $order['subtotal_amount'], 2, ',', ' ') ?> <?= htmlspecialchars((string) $order['currency_code'], ENT_QUOTES, 'UTF-8') ?><br>
-      Frakt: <?= number_format((float) $order['shipping_amount'], 2, ',', ' ') ?> <?= htmlspecialchars((string) $order['currency_code'], ENT_QUOTES, 'UTF-8') ?><br>
-      <strong>Total: <?= number_format((float) $order['total_amount'], 2, ',', ' ') ?> <?= htmlspecialchars((string) $order['currency_code'], ENT_QUOTES, 'UTF-8') ?></strong></p>
 
     <h3>Uppdatera order</h3>
     <form method="post" action="/admin/orders/<?= (int) $order['id'] ?>/update" class="grid-4">

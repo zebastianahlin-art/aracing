@@ -127,6 +127,7 @@ $cmsHomeAdmin = new CmsHomeAdminController($app['view'], $cmsHomeService);
 $app['router']->get('/', [$cmsStorefront, 'home']);
 $app['router']->get('/category/{slug}', [$storefront, 'category']);
 $app['router']->get('/product/{slug}', [$storefront, 'product']);
+$app['router']->get('/search', [$storefront, 'search']);
 
 $app['router']->get('/pages/{slug}', [$cmsStorefront, 'page']);
 $app['router']->get('/cart', [$cartController, 'show']);

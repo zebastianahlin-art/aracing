@@ -23,9 +23,15 @@ final class StorefrontController
 
     public function category(string $slug): Response
     {
-        $payload = $this->catalog->categoryPage($slug);
+        $payload = $this->catalog->categoryPage($slug, $_GET);
 
         return new Response($this->views->render('storefront.category', $payload));
+    }
+
+
+    public function search(): Response
+    {
+        return new Response($this->views->render('storefront.search', $this->catalog->searchPage($_GET)));
     }
 
     public function product(string $slug): Response

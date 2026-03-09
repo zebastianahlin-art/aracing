@@ -307,3 +307,24 @@ Lokal manuell test:
 3. Öppna `/admin/cms/home` och aktivera `hero` + `intro` + `featured_products`.
 4. Ange produkt-ID:n i `featured_products` som kommaseparerad lista och spara.
 5. Öppna `/` och verifiera att sektionerna visas enligt admininställning.
+
+## Storefront sök + filtrering v1
+
+Ny route:
+- `/search`
+
+Stöd i v1:
+- sök på produktnamn, SKU och varumärke
+- filter på kategori, varumärke, min/max-pris och lagerstatus
+- sortering: senaste, namn A-Ö/Ö-A, pris stigande/fallande
+- kategori-sidor använder samma listningslogik med filter/sortering
+
+Konsekvent regel för prislösa produkter i listning:
+- produkter utan `sale_price` visas i listning med texten `Pris visas vid förfrågan`
+- endast aktiva produkter (`is_active = 1`) visas i storefront-listningar
+
+Lokal manuell test:
+1. Starta servern med `composer serve`.
+2. Öppna `/search` och sök på namn, SKU och varumärke.
+3. Testa filterkombinationer (kategori, brand, pris, lagerstatus) samt sortering.
+4. Öppna en `/category/{slug}` och verifiera träffräknare, filter/sortering och tomt-resultat-läge.

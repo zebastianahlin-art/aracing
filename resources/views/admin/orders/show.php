@@ -2,6 +2,8 @@
 ob_start();
 $order = $detail['order'] ?? null;
 $items = $detail['items'] ?? [];
+$notes = $detail['notes'] ?? [];
+$events = $detail['events'] ?? [];
 ?>
 <section class="card">
   <?php if ($order === null): ?>
@@ -10,6 +12,12 @@ $items = $detail['items'] ?? [];
     <div class="topline"><h1>Order <?= htmlspecialchars((string) $order['order_number'], ENT_QUOTES, 'UTF-8') ?></h1><a class="btn" href="/admin/orders">Tillbaka</a></div>
     <?php if (($message ?? '') !== ''): ?><p class="pill ok"><?= htmlspecialchars((string) $message, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
     <?php if (($error ?? '') !== ''): ?><p class="error-box"><?= htmlspecialchars((string) $error, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
+
+    <div class="actions-inline">
+      <a class="btn" href="/admin/orders/<?= (int) $order['id'] ?>/print" target="_blank" rel="noopener">Utskriftsvy</a>
+      <form method="post" action="/admin/orders/<?= (int) $order['id'] ?>/mark-packed"><button class="btn" type="submit">Markera packad</button></form>
+      <form method="post" action="/admin/orders/<?= (int) $order['id'] ?>/mark-shipped"><button class="btn" type="submit">Markera skickad</button></form>
+    </div>
 
     <div class="grid">
       <div>
@@ -32,6 +40,11 @@ $items = $detail['items'] ?? [];
         <?= htmlspecialchars((string) ($order['shipping_address_line_2'] ?? ''), ENT_QUOTES, 'UTF-8') ?><br>
         <?= htmlspecialchars((string) $order['shipping_postal_code'] . ' ' . (string) $order['shipping_city'], ENT_QUOTES, 'UTF-8') ?><br>
         <?= htmlspecialchars((string) $order['shipping_country'], ENT_QUOTES, 'UTF-8') ?></p>
+
+        <h3>Operativt</h3>
+        <p>Intern referens: <?= htmlspecialchars((string) ($order['internal_reference'] ?? '-'), ENT_QUOTES, 'UTF-8') ?><br>
+        Packad: <?= htmlspecialchars((string) ($order['packed_at'] ?? '-'), ENT_QUOTES, 'UTF-8') ?><br>
+        Skickad: <?= htmlspecialchars((string) ($order['shipped_at'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
       </div>
     </div>
 
@@ -56,8 +69,8 @@ $items = $detail['items'] ?? [];
       Frakt: <?= number_format((float) $order['shipping_amount'], 2, ',', ' ') ?> <?= htmlspecialchars((string) $order['currency_code'], ENT_QUOTES, 'UTF-8') ?><br>
       <strong>Total: <?= number_format((float) $order['total_amount'], 2, ',', ' ') ?> <?= htmlspecialchars((string) $order['currency_code'], ENT_QUOTES, 'UTF-8') ?></strong></p>
 
-    <h3>Status</h3>
-    <form method="post" action="/admin/orders/<?= (int) $order['id'] ?>/status" class="grid-3">
+    <h3>Uppdatera order</h3>
+    <form method="post" action="/admin/orders/<?= (int) $order['id'] ?>/update" class="grid-4">
       <div>
         <label>Orderstatus</label>
         <select name="status">
@@ -82,8 +95,42 @@ $items = $detail['items'] ?? [];
           <?php endforeach; ?>
         </select>
       </div>
-      <div><button class="btn" type="submit">Uppdatera</button></div>
+      <div>
+        <label>Intern referens</label>
+        <input type="text" name="internal_reference" value="<?= htmlspecialchars((string) ($order['internal_reference'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+      </div>
+      <div><button class="btn" type="submit">Spara uppdatering</button></div>
     </form>
+
+    <div class="grid">
+      <div>
+        <h3>Interna anteckningar</h3>
+        <form method="post" action="/admin/orders/<?= (int) $order['id'] ?>/notes">
+          <label for="note_text">Ny anteckning</label>
+          <textarea id="note_text" name="note_text" required></textarea>
+          <button class="btn" type="submit">Lägg till anteckning</button>
+        </form>
+
+        <?php foreach ($notes as $note): ?>
+          <article class="timeline-item">
+            <strong><?= htmlspecialchars((string) $note['note_type'], ENT_QUOTES, 'UTF-8') ?></strong>
+            <div><?= nl2br(htmlspecialchars((string) $note['note_text'], ENT_QUOTES, 'UTF-8')) ?></div>
+            <small><?= htmlspecialchars((string) $note['created_at'], ENT_QUOTES, 'UTF-8') ?></small>
+          </article>
+        <?php endforeach; ?>
+      </div>
+
+      <div>
+        <h3>Historik</h3>
+        <?php foreach ($events as $event): ?>
+          <article class="timeline-item">
+            <strong><?= htmlspecialchars((string) $event['event_type'], ENT_QUOTES, 'UTF-8') ?></strong>
+            <div><?= htmlspecialchars((string) $event['event_message'], ENT_QUOTES, 'UTF-8') ?></div>
+            <small><?= htmlspecialchars((string) $event['created_at'], ENT_QUOTES, 'UTF-8') ?></small>
+          </article>
+        <?php endforeach; ?>
+      </div>
+    </div>
   <?php endif; ?>
 </section>
 <?php

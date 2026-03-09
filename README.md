@@ -177,9 +177,20 @@ Orderadmin v1:
 - `/admin/orders` listar ordrar
 - `/admin/orders/{id}` visar orderdetalj + manuell statusuppdatering
 
+## Orderadmin v2 (operativ hantering)
+
+Databas:
+- kör även `database/migrations/006_order_admin_v2.sql`
+
+Admin:
+- `/admin/orders` har nu sök + filter (status, betalstatus, leveransstatus)
+- `/admin/orders/{id}` har intern referens, interna anteckningar, historik samt knappar för packad/skickad
+- `/admin/orders/{id}/print` är en utskriftsvänlig plock-/ordervy
+
 Lokal manuell test:
-1. Öppna en aktiv produkt med pris och lagerstatus ej `out_of_stock`.
-2. Lägg i kundvagn och verifiera antal/radtotal/total.
-3. Gå till checkout och skapa order.
-4. Verifiera bekräftelsesida med ordernummer.
-5. Öppna `/admin/orders` och kontrollera ordern samt testa statusuppdatering.
+1. Skapa en order via storefront checkout.
+2. Öppna `/admin/orders` och testa sök/filter.
+3. Öppna orderdetalj och uppdatera statusfält + intern referens.
+4. Lägg till intern anteckning och verifiera att historikrad skapas.
+5. Klicka `Markera packad` och `Markera skickad` och verifiera tidsstämplar + historik.
+6. Öppna utskriftsvyn och kontrollera att sidan är ren för vanlig webbutskrift.

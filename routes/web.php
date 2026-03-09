@@ -116,7 +116,11 @@ $app['router']->post('/admin/products/{id}', [$productAdmin, 'update']);
 
 $app['router']->get('/admin/orders', [$orderAdmin, 'index']);
 $app['router']->get('/admin/orders/{id}', [$orderAdmin, 'show']);
-$app['router']->post('/admin/orders/{id}/status', [$orderAdmin, 'updateStatuses']);
+$app['router']->post('/admin/orders/{id}/update', [$orderAdmin, 'update']);
+$app['router']->post('/admin/orders/{id}/notes', [$orderAdmin, 'addNote']);
+$app['router']->post('/admin/orders/{id}/mark-packed', [$orderAdmin, 'markPacked']);
+$app['router']->post('/admin/orders/{id}/mark-shipped', [$orderAdmin, 'markShipped']);
+$app['router']->get('/admin/orders/{id}/print', [$orderAdmin, 'printView']);
 
 $app['router']->get('/admin/suppliers', [$supplierAdmin, 'index']);
 $app['router']->get('/admin/suppliers/create', [$supplierAdmin, 'createForm']);

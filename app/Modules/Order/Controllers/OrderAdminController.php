@@ -17,8 +17,17 @@ final class OrderAdminController
 
     public function index(): Response
     {
+        $filters = [
+            'search' => trim((string) ($_GET['search'] ?? '')),
+            'status' => trim((string) ($_GET['status'] ?? '')),
+            'payment_status' => trim((string) ($_GET['payment_status'] ?? '')),
+            'fulfillment_status' => trim((string) ($_GET['fulfillment_status'] ?? '')),
+        ];
+
         return new Response($this->views->render('admin.orders.index', [
-            'orders' => $this->orders->listOrders(),
+            'orders' => $this->orders->listOrders($filters),
+            'filters' => $filters,
+            'statusOptions' => $this->orders->statusOptions(),
         ]));
     }
 
@@ -34,20 +43,55 @@ final class OrderAdminController
         ]));
     }
 
-    public function updateStatuses(string $id): Response
+    public function update(string $id): Response
     {
         try {
-            $this->orders->updateStatuses(
+            $this->orders->updateOrderAdminFields(
                 (int) $id,
                 (string) ($_POST['status'] ?? ''),
                 (string) ($_POST['payment_status'] ?? ''),
-                (string) ($_POST['fulfillment_status'] ?? '')
+                (string) ($_POST['fulfillment_status'] ?? ''),
+                (string) ($_POST['internal_reference'] ?? '')
             );
 
-            return $this->redirect('/admin/orders/' . (int) $id . '?message=' . urlencode('Status uppdaterad.'));
+            return $this->redirect('/admin/orders/' . (int) $id . '?message=' . urlencode('Order uppdaterad.'));
         } catch (InvalidArgumentException $e) {
             return $this->redirect('/admin/orders/' . (int) $id . '?error=' . urlencode($e->getMessage()));
         }
+    }
+
+    public function addNote(string $id): Response
+    {
+        try {
+            $this->orders->addInternalNote((int) $id, (string) ($_POST['note_text'] ?? ''));
+
+            return $this->redirect('/admin/orders/' . (int) $id . '?message=' . urlencode('Anteckning tillagd.'));
+        } catch (InvalidArgumentException $e) {
+            return $this->redirect('/admin/orders/' . (int) $id . '?error=' . urlencode($e->getMessage()));
+        }
+    }
+
+    public function markPacked(string $id): Response
+    {
+        $this->orders->markPacked((int) $id);
+
+        return $this->redirect('/admin/orders/' . (int) $id . '?message=' . urlencode('Order markerad som packad.'));
+    }
+
+    public function markShipped(string $id): Response
+    {
+        $this->orders->markShipped((int) $id);
+
+        return $this->redirect('/admin/orders/' . (int) $id . '?message=' . urlencode('Order markerad som skickad.'));
+    }
+
+    public function printView(string $id): Response
+    {
+        $detail = $this->orders->getOrderDetail((int) $id);
+
+        return new Response($this->views->render('admin.orders.print', [
+            'detail' => $detail,
+        ]));
     }
 
     private function redirect(string $location): Response

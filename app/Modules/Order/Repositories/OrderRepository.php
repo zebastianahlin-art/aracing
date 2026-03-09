@@ -19,13 +19,13 @@ final class OrderRepository
             billing_address_line_1, billing_address_line_2, billing_postal_code, billing_city, billing_country,
             shipping_first_name, shipping_last_name, shipping_phone, shipping_address_line_1, shipping_address_line_2,
             shipping_postal_code, shipping_city, shipping_country, order_notes, subtotal_amount, shipping_amount,
-            total_amount, payment_status, fulfillment_status, created_at, updated_at
+            total_amount, payment_status, fulfillment_status, internal_reference, packed_at, shipped_at, created_at, updated_at
         ) VALUES (
             :order_number, :status, :currency_code, :customer_email, :customer_first_name, :customer_last_name, :customer_phone,
             :billing_address_line_1, :billing_address_line_2, :billing_postal_code, :billing_city, :billing_country,
             :shipping_first_name, :shipping_last_name, :shipping_phone, :shipping_address_line_1, :shipping_address_line_2,
             :shipping_postal_code, :shipping_city, :shipping_country, :order_notes, :subtotal_amount, :shipping_amount,
-            :total_amount, :payment_status, :fulfillment_status, NOW(), NOW()
+            :total_amount, :payment_status, :fulfillment_status, :internal_reference, :packed_at, :shipped_at, NOW(), NOW()
         )';
 
         $stmt = $this->pdo->prepare($sql);
@@ -54,6 +54,28 @@ final class OrderRepository
         ]);
     }
 
+    public function createOrderEvent(int $orderId, string $eventType, string $eventMessage): void
+    {
+        $stmt = $this->pdo->prepare('INSERT INTO order_events (order_id, event_type, event_message, created_at)
+            VALUES (:order_id, :event_type, :event_message, NOW())');
+        $stmt->execute([
+            'order_id' => $orderId,
+            'event_type' => $eventType,
+            'event_message' => $eventMessage,
+        ]);
+    }
+
+    public function createOrderNote(int $orderId, string $noteType, string $noteText): void
+    {
+        $stmt = $this->pdo->prepare('INSERT INTO order_notes (order_id, note_type, note_text, created_at, updated_at)
+            VALUES (:order_id, :note_type, :note_text, NOW(), NOW())');
+        $stmt->execute([
+            'order_id' => $orderId,
+            'note_type' => $noteType,
+            'note_text' => $noteText,
+        ]);
+    }
+
     public function orderNumberExists(string $orderNumber): bool
     {
         $stmt = $this->pdo->prepare('SELECT id FROM orders WHERE order_number = :order_number LIMIT 1');
@@ -63,12 +85,38 @@ final class OrderRepository
     }
 
     /** @return array<int, array<string, mixed>> */
-    public function listOrders(): array
+    public function listOrders(array $filters = []): array
     {
-        $sql = 'SELECT id, order_number, customer_first_name, customer_last_name, customer_email, status, payment_status, fulfillment_status, total_amount, created_at
-            FROM orders ORDER BY created_at DESC, id DESC';
+        $conditions = [];
+        $params = [];
 
-        return $this->pdo->query($sql)->fetchAll();
+        $search = trim((string) ($filters['search'] ?? ''));
+        if ($search !== '') {
+            $conditions[] = '(order_number LIKE :search OR customer_email LIKE :search OR CONCAT(customer_first_name, " ", customer_last_name) LIKE :search)';
+            $params['search'] = '%' . $search . '%';
+        }
+
+        foreach (['status', 'payment_status', 'fulfillment_status'] as $field) {
+            $value = trim((string) ($filters[$field] ?? ''));
+            if ($value !== '') {
+                $conditions[] = $field . ' = :' . $field;
+                $params[$field] = $value;
+            }
+        }
+
+        $sql = 'SELECT id, order_number, customer_first_name, customer_last_name, customer_email, status, payment_status, fulfillment_status, total_amount, created_at
+            FROM orders';
+
+        if ($conditions !== []) {
+            $sql .= ' WHERE ' . implode(' AND ', $conditions);
+        }
+
+        $sql .= ' ORDER BY created_at DESC, id DESC';
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+
+        return $stmt->fetchAll();
     }
 
     /** @return array<string, mixed>|null */
@@ -90,12 +138,31 @@ final class OrderRepository
         return $stmt->fetchAll();
     }
 
-    public function updateStatuses(int $orderId, string $status, string $paymentStatus, string $fulfillmentStatus): void
+    /** @return array<int, array<string, mixed>> */
+    public function orderNotes(int $orderId): array
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM order_notes WHERE order_id = :order_id ORDER BY created_at DESC, id DESC');
+        $stmt->execute(['order_id' => $orderId]);
+
+        return $stmt->fetchAll();
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function orderEvents(int $orderId): array
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM order_events WHERE order_id = :order_id ORDER BY created_at DESC, id DESC');
+        $stmt->execute(['order_id' => $orderId]);
+
+        return $stmt->fetchAll();
+    }
+
+    public function updateStatusesAndReference(int $orderId, string $status, string $paymentStatus, string $fulfillmentStatus, ?string $internalReference): void
     {
         $stmt = $this->pdo->prepare('UPDATE orders
             SET status = :status,
                 payment_status = :payment_status,
                 fulfillment_status = :fulfillment_status,
+                internal_reference = :internal_reference,
                 updated_at = NOW()
             WHERE id = :id');
         $stmt->execute([
@@ -103,7 +170,20 @@ final class OrderRepository
             'status' => $status,
             'payment_status' => $paymentStatus,
             'fulfillment_status' => $fulfillmentStatus,
+            'internal_reference' => $internalReference,
         ]);
+    }
+
+    public function markPacked(int $orderId): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE orders SET packed_at = NOW(), updated_at = NOW() WHERE id = :id');
+        $stmt->execute(['id' => $orderId]);
+    }
+
+    public function markShipped(int $orderId): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE orders SET shipped_at = NOW(), updated_at = NOW() WHERE id = :id');
+        $stmt->execute(['id' => $orderId]);
     }
 
     public function beginTransaction(): void

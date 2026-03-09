@@ -19,9 +19,9 @@ final class OrderService
     }
 
     /** @return array<int, array<string, mixed>> */
-    public function listOrders(): array
+    public function listOrders(array $filters = []): array
     {
-        return $this->orders->listOrders();
+        return $this->orders->listOrders($filters);
     }
 
     /** @return array<string, mixed>|null */
@@ -32,9 +32,12 @@ final class OrderService
             return null;
         }
 
-        $items = $this->orders->orderItems($id);
-
-        return ['order' => $order, 'items' => $items];
+        return [
+            'order' => $order,
+            'items' => $this->orders->orderItems($id),
+            'notes' => $this->orders->orderNotes($id),
+            'events' => $this->orders->orderEvents($id),
+        ];
     }
 
     public function createFromCart(array $checkoutData, array $cartData): string
@@ -74,6 +77,9 @@ final class OrderService
                 'total_amount' => $cartData['total_amount'],
                 'payment_status' => 'unpaid',
                 'fulfillment_status' => 'unfulfilled',
+                'internal_reference' => null,
+                'packed_at' => null,
+                'shipped_at' => null,
             ]);
 
             foreach ($cartData['items'] as $item) {
@@ -88,6 +94,8 @@ final class OrderService
                 ]);
             }
 
+            $this->orders->createOrderEvent($orderId, 'order_created', 'Order skapad via checkout.');
+
             $this->orders->commit();
 
             return $orderNumber;
@@ -97,11 +105,12 @@ final class OrderService
         }
     }
 
-    public function updateStatuses(int $orderId, string $status, string $paymentStatus, string $fulfillmentStatus): void
+    public function updateOrderAdminFields(int $orderId, string $status, string $paymentStatus, string $fulfillmentStatus, string $internalReference): void
     {
         $status = trim($status);
         $paymentStatus = trim($paymentStatus);
         $fulfillmentStatus = trim($fulfillmentStatus);
+        $internalReference = trim($internalReference);
 
         if (!in_array($status, self::ALLOWED_ORDER_STATUS, true)) {
             throw new InvalidArgumentException('Ogiltig orderstatus.');
@@ -115,7 +124,91 @@ final class OrderService
             throw new InvalidArgumentException('Ogiltig leveransstatus.');
         }
 
-        $this->orders->updateStatuses($orderId, $status, $paymentStatus, $fulfillmentStatus);
+        $order = $this->orders->findOrderById($orderId);
+        if ($order === null) {
+            throw new InvalidArgumentException('Order hittades inte.');
+        }
+
+        $this->orders->beginTransaction();
+
+        try {
+            $this->orders->updateStatusesAndReference(
+                $orderId,
+                $status,
+                $paymentStatus,
+                $fulfillmentStatus,
+                $internalReference !== '' ? $internalReference : null
+            );
+
+            if ($order['status'] !== $status) {
+                $this->orders->createOrderEvent($orderId, 'status_changed', sprintf('Orderstatus ändrad: %s → %s.', $order['status'], $status));
+            }
+
+            if ($order['payment_status'] !== $paymentStatus) {
+                $this->orders->createOrderEvent($orderId, 'payment_status_changed', sprintf('Betalstatus ändrad: %s → %s.', $order['payment_status'], $paymentStatus));
+            }
+
+            if ($order['fulfillment_status'] !== $fulfillmentStatus) {
+                $this->orders->createOrderEvent($orderId, 'fulfillment_status_changed', sprintf('Leveransstatus ändrad: %s → %s.', $order['fulfillment_status'], $fulfillmentStatus));
+            }
+
+            $previousReference = trim((string) ($order['internal_reference'] ?? ''));
+            if ($previousReference !== $internalReference) {
+                $eventMessage = $internalReference === ''
+                    ? 'Intern referens rensad.'
+                    : sprintf('Intern referens satt: %s.', $internalReference);
+                $this->orders->createOrderEvent($orderId, 'internal_reference_updated', $eventMessage);
+            }
+
+            $this->orders->commit();
+        } catch (\Throwable $e) {
+            $this->orders->rollBack();
+            throw $e;
+        }
+    }
+
+    public function addInternalNote(int $orderId, string $noteText): void
+    {
+        $noteText = trim($noteText);
+        if ($noteText === '') {
+            throw new InvalidArgumentException('Anteckning får inte vara tom.');
+        }
+
+        $this->orders->beginTransaction();
+        try {
+            $this->orders->createOrderNote($orderId, 'internal', $noteText);
+            $this->orders->createOrderEvent($orderId, 'internal_note_added', 'Intern anteckning tillagd.');
+            $this->orders->commit();
+        } catch (\Throwable $e) {
+            $this->orders->rollBack();
+            throw $e;
+        }
+    }
+
+    public function markPacked(int $orderId): void
+    {
+        $this->orders->beginTransaction();
+        try {
+            $this->orders->markPacked($orderId);
+            $this->orders->createOrderEvent($orderId, 'order_packed', 'Order markerad som packad.');
+            $this->orders->commit();
+        } catch (\Throwable $e) {
+            $this->orders->rollBack();
+            throw $e;
+        }
+    }
+
+    public function markShipped(int $orderId): void
+    {
+        $this->orders->beginTransaction();
+        try {
+            $this->orders->markShipped($orderId);
+            $this->orders->createOrderEvent($orderId, 'order_shipped', 'Order markerad som skickad.');
+            $this->orders->commit();
+        } catch (\Throwable $e) {
+            $this->orders->rollBack();
+            throw $e;
+        }
     }
 
     /** @return array<string, array<int, string>> */

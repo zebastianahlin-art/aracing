@@ -30,6 +30,11 @@
     pre { white-space:pre-wrap; margin:0; max-width:520px; overflow:auto; font-size:12px; }
     .compact th,.compact td { font-size:12px; padding:.35rem; }
     .grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:.7rem; align-items:end; }
+    .grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:.7rem; align-items:end; margin-bottom:.8rem; }
+    .actions-inline { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; margin:.5rem 0 .9rem; }
+    .actions-inline form { margin:0; }
+    .timeline-item { border:1px solid var(--line); background:#111522; border-radius:6px; padding:.45rem .55rem; margin-bottom:.45rem; }
+    .timeline-item small { color:var(--muted); }
   </style>
 </head>
 <body>

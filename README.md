@@ -235,3 +235,19 @@ Lokal manuell test:
 3. Fyll i och spara `tracking_number`, `shipping_method`, `shipped_by_name`, `shipment_note`.
 4. Verifiera att historiken visar separata events för status och försändelsefält.
 5. Öppna `/order-status?order_number={ORDERNUMMER}` och verifiera kundsynlig status.
+
+## Inköp light + lagerpåfyllnad v1
+
+Databas:
+- kör även `database/migrations/008_purchasing_light_v1.sql`
+
+Admin:
+- `/admin/purchasing` visar produkter med påfyllnadsbehov
+- `/admin/purchase-lists` listar manuella inköpsunderlag
+- `/admin/purchase-lists/{id}` visar detalj med rader, status, anteckning och vald kvantitet
+
+Lokal manuell test:
+1. Säkerställ att produkter har primär leverantörskoppling och lågt/null lager.
+2. Öppna `/admin/purchasing`, markera rader och skapa ett underlag.
+3. Öppna underlaget via `/admin/purchase-lists` och justera `selected_quantity` per rad.
+4. Uppdatera status (`draft/reviewed/exported`) samt anteckning i detaljvyn.

@@ -45,6 +45,8 @@
     <a href="/admin/categories">Categories</a>
     <a href="/admin/products">Products</a>
     <a href="/admin/orders">Orders</a>
+    <a href="/admin/purchasing">Inköpsöversikt</a>
+    <a href="/admin/purchase-lists">Inköpsunderlag</a>
     <a href="/admin/suppliers">Leverantörer</a>
     <a href="/admin/import-profiles">Importprofiler</a>
     <a href="/admin/import-runs">Importkörningar</a>

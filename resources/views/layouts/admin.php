@@ -50,6 +50,7 @@
     <a href="/admin/suppliers">Leverantörer</a>
     <a href="/admin/import-profiles">Importprofiler</a>
     <a href="/admin/import-runs">Importkörningar</a>
+    <a href="/admin/supplier-item-review">Importgranskning</a>
     <a href="/">Till storefront</a>
   </aside>
   <main><?= $content ?? '' ?></main>

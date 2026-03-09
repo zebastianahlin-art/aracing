@@ -44,6 +44,7 @@
     <a href="/admin/brands">Brands</a>
     <a href="/admin/categories">Categories</a>
     <a href="/admin/products">Products</a>
+    <a href="/admin/products/article-care">Artikelvårdskö</a>
     <a href="/admin/orders">Orders</a>
     <a href="/admin/purchasing">Inköpsöversikt</a>
     <a href="/admin/purchase-lists">Inköpsunderlag</a>

@@ -7,6 +7,7 @@ namespace App\Modules\Product\Services;
 use App\Modules\Product\Repositories\ProductAttributeRepository;
 use App\Modules\Product\Repositories\ProductImageRepository;
 use App\Modules\Product\Repositories\ProductRepository;
+use App\Modules\Product\Repositories\ProductSupplierItemLookupRepository;
 use App\Shared\Support\Slugger;
 
 final class ProductService
@@ -15,7 +16,8 @@ final class ProductService
         private readonly ProductRepository $products,
         private readonly ProductAttributeRepository $attributes,
         private readonly ProductImageRepository $images,
-        private readonly ProductSupplierLinkService $supplierLinks
+        private readonly ProductSupplierLinkService $supplierLinks,
+        private readonly ProductSupplierItemLookupRepository $supplierItems
     ) {
     }
 
@@ -42,6 +44,68 @@ final class ProductService
     public function searchForSupplierMatch(string $query): array
     {
         return $this->products->searchForSupplierMatch($query);
+    }
+
+    /** @return array{supplier_item: array<string,mixed>, product_defaults: array<string,mixed>, source_data_gaps: array<int,string>, product_data_gaps: array<int,string>}|null */
+    public function prefillDraftFromSupplierItem(int $supplierItemId): ?array
+    {
+        $item = $this->supplierItems->findById($supplierItemId);
+        if ($item === null) {
+            return null;
+        }
+
+        $name = trim((string) ($item['supplier_title'] ?? ''));
+        $sku = trim((string) ($item['supplier_sku'] ?? ''));
+
+        $defaults = [
+            'name' => $name,
+            'sku' => $sku,
+            'description' => '',
+            'sale_price' => '',
+            'stock_status' => '',
+            'stock_quantity' => '',
+            'currency_code' => 'SEK',
+            'is_active' => 0,
+            'supplier_item_id' => (int) $item['id'],
+            'link_is_primary' => 1,
+        ];
+
+        $sourceGaps = [];
+        if ($name === '') {
+            $sourceGaps[] = 'missing_supplier_title';
+        }
+        if ($sku === '') {
+            $sourceGaps[] = 'missing_supplier_sku';
+        }
+        if ($item['price'] === null) {
+            $sourceGaps[] = 'missing_supplier_price';
+        }
+        if ($item['stock_qty'] === null) {
+            $sourceGaps[] = 'missing_supplier_stock';
+        }
+
+        return [
+            'supplier_item' => $item,
+            'product_defaults' => $defaults,
+            'source_data_gaps' => $sourceGaps,
+            'product_data_gaps' => $this->computeProductDataGaps($defaults + ['brand_id' => null, 'category_id' => null]),
+        ];
+    }
+
+    /** @param array<string,mixed> $filters
+     * @return array{rows: array<int,array<string,mixed>>, filters: array<string,string>}
+     */
+    public function articleCareQueue(array $filters): array
+    {
+        $normalized = $this->normalizeArticleCareFilters($filters);
+        $rows = $this->products->articleCareQueue($normalized);
+
+        foreach ($rows as &$row) {
+            $row['care_gaps'] = $this->computeProductDataGaps($row);
+        }
+        unset($row);
+
+        return ['rows' => $rows, 'filters' => $normalized];
     }
 
     /** @return array<string, mixed>|null */
@@ -186,6 +250,65 @@ final class ProductService
             'deviation' => $deviation === '1' ? '1' : '',
             'stock_status' => in_array($stockStatus, ['i lager', 'låg lagerstatus', 'slut i lager', 'okänd'], true) ? $stockStatus : '',
         ];
+    }
+
+    /** @param array<string,mixed> $filters
+     * @return array<string,string>
+     */
+    private function normalizeArticleCareFilters(array $filters): array
+    {
+        $active = (string) ($filters['active'] ?? '');
+        $hasLink = (string) ($filters['has_supplier_link'] ?? '');
+        $gap = trim((string) ($filters['gap'] ?? ''));
+        $allowedGaps = [
+            'missing_brand',
+            'missing_category',
+            'missing_sale_price',
+            'missing_description',
+            'missing_image',
+            'missing_supplier_link',
+            'inactive',
+        ];
+
+        return [
+            'name' => trim((string) ($filters['name'] ?? '')),
+            'sku' => trim((string) ($filters['sku'] ?? '')),
+            'active' => in_array($active, ['0', '1'], true) ? $active : '',
+            'has_supplier_link' => in_array($hasLink, ['0', '1'], true) ? $hasLink : '',
+            'gap' => in_array($gap, $allowedGaps, true) ? $gap : '',
+        ];
+    }
+
+    /** @param array<string,mixed> $row
+     * @return array<int,string>
+     */
+    private function computeProductDataGaps(array $row): array
+    {
+        $gaps = [];
+
+        if (($row['brand_id'] ?? null) === null) {
+            $gaps[] = 'missing_brand';
+        }
+        if (($row['category_id'] ?? null) === null) {
+            $gaps[] = 'missing_category';
+        }
+        if (($row['sale_price'] ?? null) === null || trim((string) $row['sale_price']) === '') {
+            $gaps[] = 'missing_sale_price';
+        }
+        if (trim((string) ($row['description'] ?? '')) === '') {
+            $gaps[] = 'missing_description';
+        }
+        if ((int) ($row['has_image'] ?? 0) === 0) {
+            $gaps[] = 'missing_image';
+        }
+        if ((int) ($row['has_supplier_link'] ?? 0) === 0 && ($row['supplier_link_id'] ?? null) === null) {
+            $gaps[] = 'missing_supplier_link';
+        }
+        if ((int) ($row['is_active'] ?? 0) === 0) {
+            $gaps[] = 'inactive';
+        }
+
+        return $gaps;
     }
 
     /** @param array<string, mixed> $row

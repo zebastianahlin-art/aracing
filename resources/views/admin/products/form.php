@@ -3,7 +3,7 @@ $isEdit = is_array($product);
 $attributesText = '';
 $imagesText = '';
 $primaryLink = $product['primary_supplier_link'] ?? null;
-$selectedSupplierItemId = (string) ($primaryLink['supplier_item_id'] ?? '');
+$selectedSupplierItemId = (string) ($product['supplier_item_id'] ?? $primaryLink['supplier_item_id'] ?? '');
 if ($isEdit) {
     foreach (($product['attributes'] ?? []) as $attribute) {
         $attributesText .= $attribute['attribute_key'] . '|' . $attribute['attribute_value'] . PHP_EOL;
@@ -40,7 +40,32 @@ ob_start();
 
 <section class="card">
   <h3><?= $isEdit ? 'Redigera produkt' : 'Skapa produkt' ?></h3>
+  <?php if (!$isEdit && is_array($prefill_draft ?? null)): ?>
+    <p class="pill warn">Manuell produktupprättning från supplier_item #<?= (int) ($prefill_draft['supplier_item']['id'] ?? 0) ?> · kontrollera publicerad data innan du sparar.</p>
+    <div class="grid" style="margin-bottom:.7rem;">
+      <div class="card">
+        <strong>Källa: leverantörsdata</strong>
+        <p class="muted" style="margin:.4rem 0 0;">Leverantör: <?= htmlspecialchars((string) ($prefill_draft['supplier_item']['supplier_name'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
+        <p class="muted" style="margin:.2rem 0;">SKU: <?= htmlspecialchars((string) ($prefill_draft['supplier_item']['supplier_sku'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
+        <p class="muted" style="margin:.2rem 0;">Titel: <?= htmlspecialchars((string) ($prefill_draft['supplier_item']['supplier_title'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
+        <p class="muted" style="margin:.2rem 0;">Pris: <?= htmlspecialchars((string) ($prefill_draft['supplier_item']['price'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
+        <p class="muted" style="margin:.2rem 0;">Lager: <?= htmlspecialchars((string) ($prefill_draft['supplier_item']['stock_qty'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
+      </div>
+      <div class="card">
+        <strong>Databrister före skapande</strong>
+        <?php foreach (($prefill_draft['source_data_gaps'] ?? []) as $gap): ?>
+          <span class="pill bad"><?= htmlspecialchars((string) $gap, ENT_QUOTES, 'UTF-8') ?></span>
+        <?php endforeach; ?>
+        <?php foreach (($prefill_draft['product_data_gaps'] ?? []) as $gap): ?>
+          <span class="pill warn"><?= htmlspecialchars((string) $gap, ENT_QUOTES, 'UTF-8') ?></span>
+        <?php endforeach; ?>
+      </div>
+    </div>
+  <?php endif; ?>
   <form method="post" action="<?= $isEdit ? '/admin/products/' . (int) $product['id'] : '/admin/products' ?>">
+    <?php if ((string) ($_GET['return_to_review'] ?? '') === '1'): ?>
+      <input type="hidden" name="return_to_review" value="1">
+    <?php endif; ?>
     <div class="grid">
       <div><label>Namn</label><input required name="name" value="<?= htmlspecialchars((string) ($product['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></div>
       <div><label>Slug</label><input name="slug" value="<?= htmlspecialchars((string) ($product['slug'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></div>
@@ -72,7 +97,7 @@ ob_start();
         </select>
       </div>
       <div>
-        <label><input type="checkbox" name="link_is_primary" value="1" <?= $primaryLink !== null ? 'checked' : '' ?>> Primär koppling</label>
+        <label><input type="checkbox" name="link_is_primary" value="1" <?= (isset($product['link_is_primary']) && (int) $product['link_is_primary'] === 1) || $primaryLink !== null ? 'checked' : '' ?>> Primär koppling</label>
       </div>
     </div>
 

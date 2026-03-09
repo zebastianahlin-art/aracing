@@ -132,6 +132,10 @@ $statusLabels = [
             <input type="hidden" name="return_query" value="<?= htmlspecialchars($returnQuery, ENT_QUOTES, 'UTF-8') ?>">
             <button class="btn" type="submit">Markera granskad</button>
           </form>
+
+          <?php if ($row['product_id'] === null): ?>
+            <a class="btn" href="/admin/products/create?supplier_item_id=<?= (int) $row['id'] ?>&return_to_review=1">Skapa ny produkt</a>
+          <?php endif; ?>
         </td>
       </tr>
       <?php endforeach; ?>

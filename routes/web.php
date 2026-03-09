@@ -94,6 +94,7 @@ $app['router']->post('/cart/items/remove', [$cartController, 'remove']);
 $app['router']->get('/checkout', [$checkoutController, 'form']);
 $app['router']->post('/checkout/place-order', [$checkoutController, 'placeOrder']);
 $app['router']->get('/checkout/confirmation', [$checkoutController, 'confirmation']);
+$app['router']->get('/order-status', [$checkoutController, 'orderStatus']);
 
 $app['router']->get('/admin', [$admin, 'dashboard']);
 $app['router']->get('/admin/brands', [$brandAdmin, 'index']);
@@ -120,6 +121,8 @@ $app['router']->get('/admin/orders', [$orderAdmin, 'index']);
 $app['router']->get('/admin/orders/{id}', [$orderAdmin, 'show']);
 $app['router']->post('/admin/orders/{id}/update', [$orderAdmin, 'update']);
 $app['router']->post('/admin/orders/{id}/notes', [$orderAdmin, 'addNote']);
+$app['router']->post('/admin/orders/{id}/shipment', [$orderAdmin, 'updateShipment']);
+$app['router']->post('/admin/orders/{id}/mark-processing', [$orderAdmin, 'markProcessing']);
 $app['router']->post('/admin/orders/{id}/mark-packed', [$orderAdmin, 'markPacked']);
 $app['router']->post('/admin/orders/{id}/mark-shipped', [$orderAdmin, 'markShipped']);
 $app['router']->get('/admin/orders/{id}/print', [$orderAdmin, 'printView']);

@@ -73,16 +73,52 @@ final class OrderAdminController
 
     public function markPacked(string $id): Response
     {
-        $this->orders->markPacked((int) $id);
+        try {
+            $this->orders->markPacked((int) $id);
 
-        return $this->redirect('/admin/orders/' . (int) $id . '?message=' . urlencode('Order markerad som packad.'));
+            return $this->redirect('/admin/orders/' . (int) $id . '?message=' . urlencode('Order markerad som packad.'));
+        } catch (InvalidArgumentException $e) {
+            return $this->redirect('/admin/orders/' . (int) $id . '?error=' . urlencode($e->getMessage()));
+        }
     }
 
     public function markShipped(string $id): Response
     {
-        $this->orders->markShipped((int) $id);
+        try {
+            $this->orders->markShipped((int) $id);
 
-        return $this->redirect('/admin/orders/' . (int) $id . '?message=' . urlencode('Order markerad som skickad.'));
+            return $this->redirect('/admin/orders/' . (int) $id . '?message=' . urlencode('Order markerad som skickad.'));
+        } catch (InvalidArgumentException $e) {
+            return $this->redirect('/admin/orders/' . (int) $id . '?error=' . urlencode($e->getMessage()));
+        }
+    }
+
+    public function markProcessing(string $id): Response
+    {
+        try {
+            $this->orders->markProcessing((int) $id);
+
+            return $this->redirect('/admin/orders/' . (int) $id . '?message=' . urlencode('Order markerad som processing.'));
+        } catch (InvalidArgumentException $e) {
+            return $this->redirect('/admin/orders/' . (int) $id . '?error=' . urlencode($e->getMessage()));
+        }
+    }
+
+    public function updateShipment(string $id): Response
+    {
+        try {
+            $this->orders->updateShipmentInfo(
+                (int) $id,
+                (string) ($_POST['tracking_number'] ?? ''),
+                (string) ($_POST['shipping_method'] ?? ''),
+                (string) ($_POST['shipped_by_name'] ?? ''),
+                (string) ($_POST['shipment_note'] ?? '')
+            );
+
+            return $this->redirect('/admin/orders/' . (int) $id . '?message=' . urlencode('Försändelseinfo uppdaterad.'));
+        } catch (InvalidArgumentException $e) {
+            return $this->redirect('/admin/orders/' . (int) $id . '?error=' . urlencode($e->getMessage()));
+        }
     }
 
     public function printView(string $id): Response

@@ -8,7 +8,7 @@ $statusOptions = $statusOptions ?? [];
 
   <form method="get" action="/admin/orders" class="grid-4">
     <div>
-      <label for="search">Sök (ordernr, kund, e-post)</label>
+      <label for="search">Sök (ordernr, kund, e-post, tracking)</label>
       <input id="search" type="text" name="search" value="<?= htmlspecialchars((string) ($filters['search'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
     </div>
     <div>
@@ -47,7 +47,7 @@ $statusOptions = $statusOptions ?? [];
   <table class="table compact">
     <thead>
     <tr>
-      <th>Ordernr</th><th>Kund</th><th>Total</th><th>Status</th><th>Betalning</th><th>Leverans</th><th>Skapad</th>
+      <th>Ordernr</th><th>Kund</th><th>Total</th><th>Operativ status</th><th>Fraktinfo</th><th>Skapad</th>
     </tr>
     </thead>
     <tbody>
@@ -59,9 +59,15 @@ $statusOptions = $statusOptions ?? [];
           <small><?= htmlspecialchars((string) $order['customer_email'], ENT_QUOTES, 'UTF-8') ?></small>
         </td>
         <td><?= number_format((float) $order['total_amount'], 2, ',', ' ') ?></td>
-        <td><span class="pill"><?= htmlspecialchars((string) $order['status'], ENT_QUOTES, 'UTF-8') ?></span></td>
-        <td><span class="pill"><?= htmlspecialchars((string) $order['payment_status'], ENT_QUOTES, 'UTF-8') ?></span></td>
-        <td><span class="pill"><?= htmlspecialchars((string) $order['fulfillment_status'], ENT_QUOTES, 'UTF-8') ?></span></td>
+        <td>
+          <span class="pill"><?= htmlspecialchars((string) $order['fulfillment_status'], ENT_QUOTES, 'UTF-8') ?></span><br>
+          <small>Packad: <?= htmlspecialchars((string) ($order['packed_at'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></small><br>
+          <small>Skickad: <?= htmlspecialchars((string) ($order['shipped_at'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></small>
+        </td>
+        <td>
+          <small>Metod: <?= htmlspecialchars((string) ($order['shipping_method'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></small><br>
+          <small>Tracking: <?= htmlspecialchars((string) ($order['tracking_number'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></small>
+        </td>
         <td><?= htmlspecialchars((string) $order['created_at'], ENT_QUOTES, 'UTF-8') ?></td>
       </tr>
     <?php endforeach; ?>

@@ -339,4 +339,44 @@ final class ProductRepository
         $stmt->bindValue('is_active', $isActive, PDO::PARAM_INT);
         $stmt->execute();
     }
+    /** @param array<int, int> $ids
+     *  @return array<int, array<string, mixed>>
+     */
+    public function findActiveByIds(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $sql = 'SELECT p.id, p.name, p.slug, p.sku, p.sale_price, p.currency_code, p.stock_status, b.name AS brand_name
+'
+             . 'FROM products p
+'
+             . 'LEFT JOIN brands b ON b.id = p.brand_id
+'
+             . 'WHERE p.is_active = 1 AND p.id IN (' . $placeholders . ')';
+
+        $stmt = $this->pdo->prepare($sql);
+        foreach (array_values($ids) as $index => $id) {
+            $stmt->bindValue($index + 1, $id, PDO::PARAM_INT);
+        }
+        $stmt->execute();
+
+        $rows = $stmt->fetchAll();
+        $byId = [];
+        foreach ($rows as $row) {
+            $byId[(int) $row['id']] = $row;
+        }
+
+        $ordered = [];
+        foreach ($ids as $id) {
+            if (isset($byId[$id])) {
+                $ordered[] = $byId[$id];
+            }
+        }
+
+        return $ordered;
+    }
+
 }

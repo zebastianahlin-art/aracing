@@ -40,6 +40,7 @@
     <a href="/">Start</a>
     <a href="/cart">Kundvagn</a>
     <a href="/checkout">Checkout</a>
+    <a href="/pages/kopvillkor">Köpvillkor</a>
     <a href="/admin">Admin</a>
   </nav>
 </header>

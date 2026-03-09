@@ -285,3 +285,25 @@ Lokal manuell test:
 3. Spara produkten och verifiera i `/admin/supplier-item-review` att artikeln inte längre är omatchad.
 4. Öppna `/admin/products/article-care`, filtrera på t.ex. `Saknar sale_price` eller `Saknar leverantörskoppling` och verifiera att rätt produkter visas.
 5. Använd snabblänk `Redigera`, komplettera data och kontrollera att produkten försvinner från valda bristfilter.
+
+## CMS light + startsida/landningsytor v1
+
+Databas:
+- kör även `database/migrations/010_cms_light_v1.sql`
+
+Admin:
+- `/admin/cms/pages` listar CMS-sidor
+- `/admin/cms/pages/create` skapar ny sida (page/legal/info)
+- `/admin/cms/pages/{id}/edit` redigerar titel, slug, meta och HTML-innehåll
+- `/admin/cms/home` styr startsidans sektioner (hero, intro, featured products, featured categories, info)
+
+Storefront:
+- `/` renderar startsidessektioner från CMS-data
+- `/pages/{slug}` renderar aktiva informationssidor
+
+Lokal manuell test:
+1. Skapa en sida i `/admin/cms/pages` (t.ex. slug `kopvillkor`) och sätt den aktiv.
+2. Öppna `/pages/kopvillkor` och verifiera innehåll.
+3. Öppna `/admin/cms/home` och aktivera `hero` + `intro` + `featured_products`.
+4. Ange produkt-ID:n i `featured_products` som kommaseparerad lista och spara.
+5. Öppna `/` och verifiera att sektionerna visas enligt admininställning.

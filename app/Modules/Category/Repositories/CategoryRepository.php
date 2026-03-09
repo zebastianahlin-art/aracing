@@ -59,4 +59,26 @@ final class CategoryRepository
         $stmt->bindValue('parent_id', $parentId, $parentId !== null ? PDO::PARAM_INT : PDO::PARAM_NULL);
         $stmt->execute();
     }
+    /** @param array<int, int> $ids
+     *  @return array<int, array<string, mixed>>
+     */
+    public function findByIds(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $sql = 'SELECT id, name, slug FROM categories WHERE id IN (' . $placeholders . ') ORDER BY name ASC';
+        $stmt = $this->pdo->prepare($sql);
+
+        foreach (array_values($ids) as $index => $id) {
+            $stmt->bindValue($index + 1, $id, PDO::PARAM_INT);
+        }
+
+        $stmt->execute();
+
+        return $stmt->fetchAll();
+    }
+
 }

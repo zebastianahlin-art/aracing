@@ -22,6 +22,12 @@
     textarea { min-height:100px; }
     .grid { display:grid; gap:.7rem; grid-template-columns:1fr 1fr; }
     label { display:block; margin:.35rem 0 .2rem; color:var(--muted); }
+    .pill { display:inline-block; padding:.15rem .45rem; border-radius:999px; font-size:12px; border:1px solid #353d52; }
+    .pill.ok { color:#7ee787; border-color:#2d6a3f; background:#122018; }
+    .pill.warn { color:#ffd479; border-color:#7b5a14; background:#221b0c; }
+    .pill.bad { color:#ff8d8d; border-color:#8a2d2d; background:#2a1212; }
+    .error-box { border:1px solid #8a2d2d; background:#2a1212; color:#ffb3b3; padding:.55rem .7rem; border-radius:6px; }
+    pre { white-space:pre-wrap; margin:0; max-width:520px; overflow:auto; font-size:12px; }
   </style>
 </head>
 <body>
@@ -31,6 +37,9 @@
     <a href="/admin/brands">Brands</a>
     <a href="/admin/categories">Categories</a>
     <a href="/admin/products">Products</a>
+    <a href="/admin/suppliers">Leverantörer</a>
+    <a href="/admin/import-profiles">Importprofiler</a>
+    <a href="/admin/import-runs">Importkörningar</a>
     <a href="/">Till storefront</a>
   </aside>
   <main><?= $content ?? '' ?></main>

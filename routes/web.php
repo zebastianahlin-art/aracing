@@ -12,12 +12,24 @@ use App\Modules\Catalog\Services\CatalogService;
 use App\Modules\Category\Controllers\CategoryAdminController;
 use App\Modules\Category\Repositories\CategoryRepository;
 use App\Modules\Category\Services\CategoryService;
+use App\Modules\Import\Controllers\ImportProfileAdminController;
+use App\Modules\Import\Controllers\ImportRunAdminController;
+use App\Modules\Import\Repositories\ImportProfileRepository;
+use App\Modules\Import\Repositories\ImportRowRepository;
+use App\Modules\Import\Repositories\ImportRunRepository;
+use App\Modules\Import\Repositories\SupplierItemRepository;
+use App\Modules\Import\Services\CsvImportService;
+use App\Modules\Import\Services\ImportProfileService;
+use App\Modules\Import\Services\ImportRunService;
 use App\Modules\Product\Controllers\ProductAdminController;
 use App\Modules\Product\Repositories\ProductAttributeRepository;
 use App\Modules\Product\Repositories\ProductImageRepository;
 use App\Modules\Product\Repositories\ProductRepository;
 use App\Modules\Product\Services\ProductService;
 use App\Modules\Storefront\Controllers\StorefrontController;
+use App\Modules\Supplier\Controllers\SupplierAdminController;
+use App\Modules\Supplier\Repositories\SupplierRepository;
+use App\Modules\Supplier\Services\SupplierService;
 
 /** @var array{router: Router, view: \App\Core\View\ViewFactory, pdo: \PDO} $app */
 $brandService = new BrandService(new BrandRepository($app['pdo']));
@@ -28,12 +40,26 @@ $productService = new ProductService(
     new ProductImageRepository($app['pdo'])
 );
 $catalogService = new CatalogService(new CatalogRepository($app['pdo']));
+$supplierService = new SupplierService(new SupplierRepository($app['pdo']));
+$importProfileService = new ImportProfileService(new ImportProfileRepository($app['pdo']));
+$importRowRepository = new ImportRowRepository($app['pdo']);
+$importRunRepository = new ImportRunRepository($app['pdo']);
+$importRunService = new ImportRunService($importRunRepository, $importRowRepository);
+$csvImportService = new CsvImportService(
+    $importRunRepository,
+    $importRowRepository,
+    new SupplierItemRepository($app['pdo']),
+    $importProfileService
+);
 
 $storefront = new StorefrontController($app['view'], $catalogService);
 $admin = new AdminController($app['view']);
 $brandAdmin = new BrandAdminController($app['view'], $brandService);
 $categoryAdmin = new CategoryAdminController($app['view'], $categoryService);
 $productAdmin = new ProductAdminController($app['view'], $productService, $brandService, $categoryService);
+$supplierAdmin = new SupplierAdminController($app['view'], $supplierService);
+$importProfileAdmin = new ImportProfileAdminController($app['view'], $importProfileService, $supplierService);
+$importRunAdmin = new ImportRunAdminController($app['view'], $importRunService, $importProfileService, $csvImportService);
 
 $app['router']->get('/', [$storefront, 'home']);
 $app['router']->get('/category/{slug}', [$storefront, 'category']);
@@ -59,3 +85,19 @@ $app['router']->get('/admin/products/create', [$productAdmin, 'createForm']);
 $app['router']->post('/admin/products', [$productAdmin, 'store']);
 $app['router']->get('/admin/products/{id}/edit', [$productAdmin, 'editForm']);
 $app['router']->post('/admin/products/{id}', [$productAdmin, 'update']);
+
+$app['router']->get('/admin/suppliers', [$supplierAdmin, 'index']);
+$app['router']->get('/admin/suppliers/create', [$supplierAdmin, 'createForm']);
+$app['router']->post('/admin/suppliers', [$supplierAdmin, 'store']);
+$app['router']->get('/admin/suppliers/{id}/edit', [$supplierAdmin, 'editForm']);
+$app['router']->post('/admin/suppliers/{id}', [$supplierAdmin, 'update']);
+
+$app['router']->get('/admin/import-profiles', [$importProfileAdmin, 'index']);
+$app['router']->get('/admin/import-profiles/create', [$importProfileAdmin, 'createForm']);
+$app['router']->post('/admin/import-profiles', [$importProfileAdmin, 'store']);
+$app['router']->get('/admin/import-profiles/{id}/edit', [$importProfileAdmin, 'editForm']);
+$app['router']->post('/admin/import-profiles/{id}', [$importProfileAdmin, 'update']);
+
+$app['router']->get('/admin/import-runs', [$importRunAdmin, 'index']);
+$app['router']->post('/admin/import-runs/upload', [$importRunAdmin, 'upload']);
+$app['router']->get('/admin/import-runs/{id}', [$importRunAdmin, 'detail']);

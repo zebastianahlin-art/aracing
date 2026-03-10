@@ -24,7 +24,7 @@ final class OrderRepository
             discount_code, discount_name, discount_type, discount_value,
             order_notes,
             subtotal_amount, shipping_cost_ex_vat, shipping_cost_inc_vat, discount_amount_ex_vat, discount_amount_inc_vat, shipping_amount, total_amount,
-            payment_status, payment_method, payment_reference, payment_note, fulfillment_status,
+            payment_status, payment_method, payment_provider, payment_reference, payment_provider_reference, payment_provider_session_id, payment_provider_status, payment_note, payment_authorized_at, payment_paid_at, payment_failed_at, fulfillment_status,
             carrier_code, carrier_name, tracking_number, tracking_url,
             shipped_at, delivered_at, cancelled_at,
             internal_reference,
@@ -39,7 +39,7 @@ final class OrderRepository
             :discount_code, :discount_name, :discount_type, :discount_value,
             :order_notes,
             :subtotal_amount, :shipping_cost_ex_vat, :shipping_cost_inc_vat, :discount_amount_ex_vat, :discount_amount_inc_vat, :shipping_amount, :total_amount,
-            :payment_status, :payment_method, :payment_reference, :payment_note, :fulfillment_status,
+            :payment_status, :payment_method, :payment_provider, :payment_reference, :payment_provider_reference, :payment_provider_session_id, :payment_provider_status, :payment_note, :payment_authorized_at, :payment_paid_at, :payment_failed_at, :fulfillment_status,
             :carrier_code, :carrier_name, :tracking_number, :tracking_url,
             :shipped_at, :delivered_at, :cancelled_at,
             :internal_reference,
@@ -120,7 +120,7 @@ final class OrderRepository
         }
 
         $sql = 'SELECT id, order_number, customer_first_name, customer_last_name, customer_email,
-                order_status, payment_status, payment_method, fulfillment_status,
+                order_status, payment_status, payment_method, payment_provider, fulfillment_status,
                 shipping_method_name, shipping_cost_inc_vat, discount_code, total_amount, created_at,
                 carrier_name, tracking_number, shipped_at, delivered_at, cancelled_at
             FROM orders';
@@ -202,6 +202,38 @@ final class OrderRepository
             'payment_status' => $paymentStatus,
             'payment_reference' => $paymentReference,
             'payment_note' => $paymentNote,
+        ]);
+    }
+
+
+    public function updatePaymentProviderData(int $orderId, array $data): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE orders
+            SET payment_status = :payment_status,
+                payment_reference = :payment_reference,
+                payment_provider = :payment_provider,
+                payment_provider_reference = :payment_provider_reference,
+                payment_provider_session_id = :payment_provider_session_id,
+                payment_provider_status = :payment_provider_status,
+                payment_note = :payment_note,
+                payment_authorized_at = COALESCE(:payment_authorized_at, payment_authorized_at),
+                payment_paid_at = COALESCE(:payment_paid_at, payment_paid_at),
+                payment_failed_at = COALESCE(:payment_failed_at, payment_failed_at),
+                updated_at = NOW()
+            WHERE id = :id');
+
+        $stmt->execute([
+            'id' => $orderId,
+            'payment_status' => $data['payment_status'],
+            'payment_reference' => $data['payment_reference'] ?? null,
+            'payment_provider' => $data['payment_provider'] ?? null,
+            'payment_provider_reference' => $data['payment_provider_reference'] ?? null,
+            'payment_provider_session_id' => $data['payment_provider_session_id'] ?? null,
+            'payment_provider_status' => $data['payment_provider_status'] ?? null,
+            'payment_note' => $data['payment_note'] ?? null,
+            'payment_authorized_at' => $data['payment_authorized_at'] ?? null,
+            'payment_paid_at' => $data['payment_paid_at'] ?? null,
+            'payment_failed_at' => $data['payment_failed_at'] ?? null,
         ]);
     }
 

@@ -15,8 +15,8 @@ use RuntimeException;
 final class OrderService
 {
     private const ALLOWED_ORDER_STATUS = ['placed', 'confirmed', 'processing', 'completed', 'cancelled'];
-    private const ALLOWED_PAYMENT_STATUS = ['unpaid', 'pending', 'paid'];
-    private const ALLOWED_PAYMENT_METHODS = ['invoice_request', 'manual_card_phone', 'bank_transfer'];
+    private const ALLOWED_PAYMENT_STATUS = ['unpaid', 'pending', 'authorized', 'paid', 'failed', 'cancelled'];
+    private const ALLOWED_PAYMENT_METHODS = ['stripe_checkout', 'invoice_request', 'manual_card_phone', 'bank_transfer'];
     private const ALLOWED_FULFILLMENT_STATUS = ['unfulfilled', 'picking', 'packed', 'shipped', 'delivered', 'cancelled'];
 
     private const ORDER_TRANSITIONS = [
@@ -89,6 +89,13 @@ final class OrderService
             'payment_method' => $order['payment_method'] ?? null,
             'payment_reference' => $order['payment_reference'] ?? null,
             'payment_note' => $order['payment_note'] ?? null,
+            'payment_provider' => $order['payment_provider'] ?? null,
+            'payment_provider_reference' => $order['payment_provider_reference'] ?? null,
+            'payment_provider_session_id' => $order['payment_provider_session_id'] ?? null,
+            'payment_provider_status' => $order['payment_provider_status'] ?? null,
+            'payment_authorized_at' => $order['payment_authorized_at'] ?? null,
+            'payment_paid_at' => $order['payment_paid_at'] ?? null,
+            'payment_failed_at' => $order['payment_failed_at'] ?? null,
             'fulfillment_status' => $order['fulfillment_status'],
             'shipping_method_code' => $order['shipping_method_code'] ?? null,
             'shipping_method_name' => $order['shipping_method_name'] ?? null,
@@ -106,6 +113,17 @@ final class OrderService
             'shipped_at' => $order['shipped_at'],
             'delivered_at' => $order['delivered_at'],
         ];
+    }
+
+
+    public function findOrderIdByNumber(string $orderNumber): ?int
+    {
+        $order = $this->orders->findOrderByNumber(trim($orderNumber));
+        if ($order === null) {
+            return null;
+        }
+
+        return (int) $order['id'];
     }
 
     public function createFromCart(array $checkoutData, array $cartData): string
@@ -170,10 +188,17 @@ final class OrderService
                 'discount_amount_inc_vat' => $discountSnapshot['discount_amount_inc_vat'] ?? 0,
                 'shipping_amount' => $shippingSnapshot['shipping_cost_inc_vat'],
                 'total_amount' => $totals['grand_total'],
-                'payment_status' => 'unpaid',
+                'payment_status' => $checkoutData['payment_method'] === 'stripe_checkout' ? 'pending' : 'unpaid',
                 'payment_method' => $checkoutData['payment_method'],
+                'payment_provider' => $checkoutData['payment_method'] === 'stripe_checkout' ? 'stripe' : null,
                 'payment_reference' => null,
+                'payment_provider_reference' => null,
+                'payment_provider_session_id' => null,
+                'payment_provider_status' => null,
                 'payment_note' => null,
+                'payment_authorized_at' => null,
+                'payment_paid_at' => null,
+                'payment_failed_at' => null,
                 'fulfillment_status' => 'unfulfilled',
                 'carrier_code' => null,
                 'carrier_name' => null,
@@ -198,7 +223,7 @@ final class OrderService
             }
 
             $this->orders->createStatusHistory($orderId, 'order_status', null, 'placed', 'Order skapad via checkout.');
-            $this->orders->createStatusHistory($orderId, 'payment_status', null, 'unpaid', 'Betalning initierad.');
+            $this->orders->createStatusHistory($orderId, 'payment_status', null, (string) ($checkoutData['payment_method'] === 'stripe_checkout' ? 'pending' : 'unpaid'), 'Betalning initierad.');
             $this->orders->createStatusHistory($orderId, 'fulfillment_status', null, 'unfulfilled', 'Order väntar på plock.');
 
             if ($discountSnapshot !== null) {
@@ -394,6 +419,7 @@ final class OrderService
     public function paymentMethodLabel(?string $paymentMethod): string
     {
         return match ((string) $paymentMethod) {
+            'stripe_checkout' => 'Kort / direktbetalning (Stripe)',
             'invoice_request' => 'Fakturaförfrågan',
             'manual_card_phone' => 'Kortbetalning via telefon',
             'bank_transfer' => 'Banköverföring',
@@ -404,6 +430,7 @@ final class OrderService
     public function paymentNextStepText(?string $paymentMethod): string
     {
         return match ((string) $paymentMethod) {
+            'stripe_checkout' => 'Betalningen initieras i Stripe Checkout. Vid avbrott kan du försöka igen från orderstatus.',
             'invoice_request' => 'Vi återkommer med orderbekräftelse och betalningsinstruktion.',
             'manual_card_phone' => 'Vi kontaktar dig för att slutföra betalningen.',
             'bank_transfer' => 'Betalningsinstruktion skickas manuellt efter granskning.',

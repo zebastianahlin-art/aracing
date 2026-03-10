@@ -84,6 +84,7 @@ final class OrderEmailService
     private function paymentMethodLabel(string $paymentMethod): string
     {
         return match ($paymentMethod) {
+            'stripe_checkout' => 'Kort / direktbetalning (Stripe)',
             'invoice_request' => 'Fakturaförfrågan',
             'manual_card_phone' => 'Kortbetalning via telefon',
             'bank_transfer' => 'Banköverföring',
@@ -94,6 +95,7 @@ final class OrderEmailService
     private function paymentNextStepText(string $paymentMethod): string
     {
         return match ($paymentMethod) {
+            'stripe_checkout' => 'Betalningen hanteras i Stripe Checkout och verifieras automatiskt.',
             'invoice_request' => 'Vi återkommer med orderbekräftelse och betalningsinstruktion.',
             'manual_card_phone' => 'Vi kontaktar dig för att slutföra betalningen.',
             'bank_transfer' => 'Betalningsinstruktion skickas manuellt efter granskning.',

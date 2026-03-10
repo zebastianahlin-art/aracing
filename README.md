@@ -453,3 +453,26 @@ Snabbtest:
 2. Ange kod `RACE10` i kundvagn och verifiera rabattpost i totalsumman.
 3. Gå till checkout och verifiera att rabatt följer med.
 4. Slutför order och verifiera rabatt på orderbekräftelse, orderstatus och i admin orderdetalj.
+
+## Payment provider integration v1 (Stripe Checkout)
+
+Databas:
+- kör även `database/migrations/017_payment_provider_integration_v1.sql`
+
+Nya env-nycklar:
+- `STRIPE_PUBLISHABLE_KEY`
+- `STRIPE_SECRET_KEY`
+- `STRIPE_WEBHOOK_SECRET`
+
+Flöde i v1:
+- checkout-metoden `Kort / direktbetalning (Stripe)` initierar Stripe Checkout-session
+- ordern sparar providerfält (`payment_provider`, `payment_provider_reference`, `payment_provider_session_id`, `payment_provider_status`)
+- return endpoint: `GET /checkout/payment/return`
+- webhook endpoint: `POST /webhooks/stripe`
+- alla providerhändelser loggas i `payment_events`
+
+Lokal verifiering (test/sandbox):
+1. Sätt Stripe testnycklar i `.env`.
+2. Lägg order med Stripe-metoden via `/checkout`.
+3. Verifiera redirect till Stripe och återkomst till `/order-status`.
+4. Skicka webhook (Stripe CLI eller dashboard) till `/webhooks/stripe` och verifiera att `payment_status` samt `payment_events` uppdateras.

@@ -10,6 +10,7 @@ use App\Modules\Cart\Services\CartService;
 use App\Modules\Checkout\Services\CheckoutService;
 use App\Modules\Cms\Services\CmsPageService;
 use App\Modules\Order\Services\OrderService;
+use App\Modules\Payment\Services\PaymentService;
 use App\Modules\Shipping\Services\CheckoutTotalsService;
 use App\Modules\Shipping\Services\ShippingService;
 use Throwable;
@@ -23,7 +24,8 @@ final class CheckoutController
         private readonly OrderService $orders,
         private readonly ShippingService $shipping,
         private readonly CheckoutTotalsService $totals,
-        private readonly CmsPageService $pages
+        private readonly CmsPageService $pages,
+        private readonly PaymentService $payments
     ) {
     }
 
@@ -69,8 +71,21 @@ final class CheckoutController
             $this->carts->ensureCartItemsPurchasable($this->sessionId());
             $cartData = $this->carts->getCartBySession($this->sessionId());
             $orderNumber = $this->orders->createFromCart($checkoutData, $cartData);
-            $this->carts->clearBySession($this->sessionId());
             $_SESSION['last_order_number'] = $orderNumber;
+
+            if ($this->payments->isProviderPaymentMethod((string) ($checkoutData['payment_method'] ?? ''))) {
+                $orderId = $this->orders->findOrderIdByNumber($orderNumber);
+                if ($orderId === null) {
+                    throw new \RuntimeException('Ordern kunde inte laddas för betalning.');
+                }
+
+                $session = $this->payments->initiateProviderPayment($orderId);
+                $this->carts->clearBySession($this->sessionId());
+
+                return $this->redirect($session['redirect_url']);
+            }
+
+            $this->carts->clearBySession($this->sessionId());
 
             return $this->redirect('/checkout/confirmation');
         } catch (Throwable $e) {
@@ -109,6 +124,8 @@ final class CheckoutController
             'paymentMethodLabel' => $this->orders->paymentMethodLabel((string) ($summary['payment_method'] ?? '')),
             'paymentNextStepText' => $this->orders->paymentNextStepText((string) ($summary['payment_method'] ?? '')),
             'showNotFound' => $orderNumber !== '' && $summary === null,
+            'paymentResult' => trim((string) ($_GET['payment_result'] ?? '')),
+            'paymentMessage' => trim((string) ($_GET['payment_message'] ?? '')),
             'infoPages' => $this->pages->storefrontInfoPages(),
         ]));
     }

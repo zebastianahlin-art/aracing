@@ -9,6 +9,7 @@ use InvalidArgumentException;
 final class CheckoutService
 {
     private const PAYMENT_METHODS = [
+        'stripe_checkout',
         'invoice_request',
         'manual_card_phone',
         'bank_transfer',
@@ -59,6 +60,11 @@ final class CheckoutService
     public function paymentMethodOptions(): array
     {
         return [
+            [
+                'value' => 'stripe_checkout',
+                'label' => 'Kort / direktbetalning (Stripe)',
+                'help_text' => 'Du skickas till Stripe Checkout för säker betalning och återvänder sedan till orderstatus.',
+            ],
             [
                 'value' => 'invoice_request',
                 'label' => 'Fakturaförfrågan',

@@ -65,6 +65,10 @@ use App\Modules\Storefront\Controllers\StorefrontController;
 use App\Modules\Supplier\Controllers\SupplierAdminController;
 use App\Modules\Supplier\Repositories\SupplierRepository;
 use App\Modules\Supplier\Services\SupplierService;
+use App\Modules\Shipping\Controllers\ShippingMethodAdminController;
+use App\Modules\Shipping\Repositories\ShippingMethodRepository;
+use App\Modules\Shipping\Services\CheckoutTotalsService;
+use App\Modules\Shipping\Services\ShippingService;
 
 /** @var array{router: Router, view: \App\Core\View\ViewFactory, pdo: \PDO} $app */
 $brandService = new BrandService(new BrandRepository($app['pdo']));
@@ -94,6 +98,8 @@ $productMediaService = new ProductMediaService(
     new ProductImageStorageService()
 );
 $catalogService = new CatalogService(new CatalogRepository($app['pdo']), $inventoryService);
+$shippingService = new ShippingService(new ShippingMethodRepository($app['pdo']));
+$checkoutTotalsService = new CheckoutTotalsService();
 $supplierService = new SupplierService(new SupplierRepository($app['pdo']));
 $importProfileService = new ImportProfileService(new ImportProfileRepository($app['pdo']));
 $importRowRepository = new ImportRowRepository($app['pdo']);
@@ -109,7 +115,7 @@ $cartService = new CartService(new CartRepository($app['pdo']), new CartProductR
 $orderRepository = new OrderRepository($app['pdo']);
 $emailMessageRepository = new EmailMessageRepository($app['pdo']);
 $orderEmailService = new OrderEmailService($orderRepository, $emailMessageRepository, new TransactionalEmailSender(), $app['view']);
-$orderService = new OrderService($orderRepository, $emailMessageRepository, $orderEmailService);
+$orderService = new OrderService($orderRepository, $emailMessageRepository, $orderEmailService, $shippingService, $checkoutTotalsService);
 $cmsPageService = new CmsPageService(new CmsPageRepository($app['pdo']));
 $cmsHomeService = new CmsHomeService(
     new CmsHomeSectionRepository($app['pdo']),
@@ -126,7 +132,7 @@ $purchasingService = new PurchasingService(
 $storefront = new StorefrontController($app['view'], $catalogService, $cmsPageService);
 $cmsStorefront = new CmsStorefrontController($app['view'], $cmsHomeService, $cmsPageService);
 $cartController = new CartController($app['view'], $cartService, $cmsPageService);
-$checkoutController = new CheckoutController($app['view'], $cartService, new CheckoutService(), $orderService, $cmsPageService);
+$checkoutController = new CheckoutController($app['view'], $cartService, new CheckoutService(), $orderService, $shippingService, $checkoutTotalsService, $cmsPageService);
 $admin = new AdminController($app['view']);
 $brandAdmin = new BrandAdminController($app['view'], $brandService);
 $categoryAdmin = new CategoryAdminController($app['view'], $categoryService);
@@ -145,6 +151,7 @@ $orderAdmin = new OrderAdminController($app['view'], $orderService);
 $purchasingAdmin = new PurchasingAdminController($app['view'], $purchasingService);
 $cmsPageAdmin = new CmsPageAdminController($app['view'], $cmsPageService);
 $cmsHomeAdmin = new CmsHomeAdminController($app['view'], $cmsHomeService);
+$shippingMethodAdmin = new ShippingMethodAdminController($app['view'], $shippingService);
 
 $app['router']->get('/', [$cmsStorefront, 'home']);
 $app['router']->get('/category/{slug}', [$storefront, 'category']);
@@ -198,6 +205,12 @@ $app['router']->post('/admin/orders/{id}/shipment', [$orderAdmin, 'updateShipmen
 $app['router']->post('/admin/orders/{id}/internal-reference', [$orderAdmin, 'updateInternalReference']);
 $app['router']->get('/admin/orders/{id}/print', [$orderAdmin, 'printView']);
 
+
+$app['router']->get('/admin/shipping-methods', [$shippingMethodAdmin, 'index']);
+$app['router']->get('/admin/shipping-methods/create', [$shippingMethodAdmin, 'createForm']);
+$app['router']->post('/admin/shipping-methods', [$shippingMethodAdmin, 'store']);
+$app['router']->get('/admin/shipping-methods/{id}/edit', [$shippingMethodAdmin, 'editForm']);
+$app['router']->post('/admin/shipping-methods/{id}', [$shippingMethodAdmin, 'update']);
 
 $app['router']->get('/admin/purchasing', [$purchasingAdmin, 'refillNeeds']);
 $app['router']->post('/admin/purchasing/purchase-lists', [$purchasingAdmin, 'createPurchaseList']);

@@ -17,6 +17,9 @@ ob_start();
     <p>Betalstatus: <strong><?= htmlspecialchars((string) ($orderSummary['payment_status'] ?? 'unpaid'), ENT_QUOTES, 'UTF-8') ?></strong></p>
     <p>Betalmetod: <strong><?= htmlspecialchars((string) ($paymentMethodLabel ?? 'Ej vald'), ENT_QUOTES, 'UTF-8') ?></strong></p>
     <p>Leveransstatus: <strong><?= htmlspecialchars((string) $orderSummary['fulfillment_status'], ENT_QUOTES, 'UTF-8') ?></strong></p>
+    <p>Fraktmetod: <strong><?= htmlspecialchars((string) ($orderSummary['shipping_method_name'] ?? 'Ej vald'), ENT_QUOTES, 'UTF-8') ?></strong></p>
+    <p>Fraktkostnad: <?= number_format((float) ($orderSummary['shipping_cost_inc_vat'] ?? 0), 2, ',', ' ') ?> <?= htmlspecialchars((string) ($orderSummary['currency_code'] ?? 'SEK'), ENT_QUOTES, 'UTF-8') ?></p>
+    <p><strong>Grand total: <?= number_format((float) ($orderSummary['grand_total'] ?? 0), 2, ',', ' ') ?> <?= htmlspecialchars((string) ($orderSummary['currency_code'] ?? 'SEK'), ENT_QUOTES, 'UTF-8') ?></strong></p>
     <p>Skickad: <?= htmlspecialchars((string) ($orderSummary['shipped_at'] ?? 'Inte skickad ännu'), ENT_QUOTES, 'UTF-8') ?></p>
     <p>Trackingnummer: <?= htmlspecialchars((string) ($orderSummary['tracking_number'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
     <p>Carrier: <?= htmlspecialchars((string) ($orderSummary['carrier_name'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>

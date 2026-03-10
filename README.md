@@ -419,3 +419,18 @@ Snabbtest lokalt:
 2. Kör manuell lagerjustering i samma vy (set eller plus/minus) och verifiera att historiken uppdateras.
 3. Öppna produkten i storefront och verifiera tydlig status (`I lager`, `Tillfälligt slut`, `Beställningsvara`) samt köpbarhet.
 4. Försök lägga ej köpbar produkt i kundvagn/checkout och verifiera att server-side validering blockerar flödet.
+
+## Fraktmetoder + fraktkostnad v1
+
+Databas:
+- kör även `database/migrations/015_shipping_methods_cost_model_v1.sql`
+
+Admin:
+- `/admin/shipping-methods` för att skapa/redigera/aktivera/sortera fraktmetoder
+
+Snabbtest lokalt:
+1. Öppna `/admin/shipping-methods` och verifiera att `standard`, `express`, `pickup` finns och är aktiva.
+2. Lägg produkt i kundvagn och gå till `/checkout`.
+3. Välj fraktmetod och skapa order.
+4. Verifiera i orderbekräftelse + `/order-status` att fraktmetod, fraktkostnad och grand total visas.
+5. Öppna ordern i `/admin/orders/{id}` och verifiera snapshot-fälten för fraktmetod + kostnad.

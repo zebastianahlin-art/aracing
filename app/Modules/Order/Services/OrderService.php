@@ -10,10 +10,27 @@ use RuntimeException;
 
 final class OrderService
 {
-    private const ALLOWED_ORDER_STATUS = ['pending', 'confirmed', 'cancelled'];
+    private const ALLOWED_ORDER_STATUS = ['placed', 'confirmed', 'processing', 'completed', 'cancelled'];
     private const ALLOWED_PAYMENT_STATUS = ['unpaid', 'pending', 'paid'];
     private const ALLOWED_PAYMENT_METHODS = ['invoice_request', 'manual_card_phone', 'bank_transfer'];
-    private const ALLOWED_FULFILLMENT_STATUS = ['unfulfilled', 'processing', 'packed', 'shipped'];
+    private const ALLOWED_FULFILLMENT_STATUS = ['unfulfilled', 'picking', 'packed', 'shipped', 'delivered', 'cancelled'];
+
+    private const ORDER_TRANSITIONS = [
+        'placed' => ['confirmed', 'cancelled'],
+        'confirmed' => ['processing', 'cancelled'],
+        'processing' => ['completed', 'cancelled'],
+        'completed' => [],
+        'cancelled' => [],
+    ];
+
+    private const FULFILLMENT_TRANSITIONS = [
+        'unfulfilled' => ['picking', 'cancelled'],
+        'picking' => ['packed', 'cancelled'],
+        'packed' => ['shipped', 'cancelled'],
+        'shipped' => ['delivered'],
+        'delivered' => [],
+        'cancelled' => [],
+    ];
 
     public function __construct(private readonly OrderRepository $orders)
     {
@@ -36,8 +53,7 @@ final class OrderService
         return [
             'order' => $order,
             'items' => $this->orders->orderItems($id),
-            'notes' => $this->orders->orderNotes($id),
-            'events' => $this->orders->orderEvents($id),
+            'history' => $this->orders->orderHistory($id),
         ];
     }
 
@@ -56,15 +72,17 @@ final class OrderService
 
         return [
             'order_number' => $order['order_number'],
-            'status' => $order['status'],
+            'order_status' => $order['order_status'],
             'payment_status' => $order['payment_status'],
             'payment_method' => $order['payment_method'] ?? null,
             'payment_reference' => $order['payment_reference'] ?? null,
             'payment_note' => $order['payment_note'] ?? null,
             'fulfillment_status' => $order['fulfillment_status'],
-            'shipped_at' => $order['shipped_at'],
+            'carrier_name' => $order['carrier_name'] ?? null,
             'tracking_number' => $order['tracking_number'] ?? null,
-            'shipping_method' => $order['shipping_method'] ?? null,
+            'tracking_url' => $order['tracking_url'] ?? null,
+            'shipped_at' => $order['shipped_at'],
+            'delivered_at' => $order['delivered_at'],
         ];
     }
 
@@ -80,7 +98,8 @@ final class OrderService
         try {
             $orderId = $this->orders->createOrder([
                 'order_number' => $orderNumber,
-                'status' => 'pending',
+                'status' => 'placed',
+                'order_status' => 'placed',
                 'currency_code' => $cartData['cart']['currency_code'] ?? 'SEK',
                 'customer_email' => $checkoutData['customer_email'],
                 'customer_first_name' => $checkoutData['customer_first_name'],
@@ -108,13 +127,14 @@ final class OrderService
                 'payment_reference' => null,
                 'payment_note' => null,
                 'fulfillment_status' => 'unfulfilled',
-                'internal_reference' => null,
-                'packed_at' => null,
-                'shipped_at' => null,
+                'carrier_code' => null,
+                'carrier_name' => null,
                 'tracking_number' => null,
-                'shipping_method' => null,
-                'shipped_by_name' => null,
-                'shipment_note' => null,
+                'tracking_url' => null,
+                'shipped_at' => null,
+                'delivered_at' => null,
+                'cancelled_at' => null,
+                'internal_reference' => null,
             ]);
 
             foreach ($cartData['items'] as $item) {
@@ -129,8 +149,9 @@ final class OrderService
                 ]);
             }
 
-            $this->orders->createOrderEvent($orderId, 'order_created', 'Order skapad via checkout.');
-            $this->orders->createOrderEvent($orderId, 'payment_method_selected', sprintf('Betalmetod vald i checkout: %s.', $checkoutData['payment_method']));
+            $this->orders->createStatusHistory($orderId, 'order_status', null, 'placed', 'Order skapad via checkout.');
+            $this->orders->createStatusHistory($orderId, 'payment_status', null, 'unpaid', 'Betalning initierad.');
+            $this->orders->createStatusHistory($orderId, 'fulfillment_status', null, 'unfulfilled', 'Order väntar på plock.');
 
             $this->orders->commit();
 
@@ -141,61 +162,74 @@ final class OrderService
         }
     }
 
-    public function updateOrderAdminFields(int $orderId, string $status, string $paymentStatus, string $fulfillmentStatus, string $internalReference): void
+    public function transitionOrderStatus(int $orderId, string $targetStatus): void
     {
-        $status = trim($status);
-        $paymentStatus = trim($paymentStatus);
-        $fulfillmentStatus = trim($fulfillmentStatus);
-        $internalReference = trim($internalReference);
+        $order = $this->mustFindOrder($orderId);
+        $fromStatus = (string) $order['order_status'];
+        $targetStatus = trim($targetStatus);
 
-        if (!in_array($status, self::ALLOWED_ORDER_STATUS, true)) {
+        if (!in_array($targetStatus, self::ALLOWED_ORDER_STATUS, true)) {
             throw new InvalidArgumentException('Ogiltig orderstatus.');
         }
 
-        if (!in_array($paymentStatus, self::ALLOWED_PAYMENT_STATUS, true)) {
-            throw new InvalidArgumentException('Ogiltig betalstatus.');
+        if ($fromStatus === $targetStatus) {
+            return;
         }
 
-        if (!in_array($fulfillmentStatus, self::ALLOWED_FULFILLMENT_STATUS, true)) {
-            throw new InvalidArgumentException('Ogiltig leveransstatus.');
-        }
-
-        $order = $this->orders->findOrderById($orderId);
-        if ($order === null) {
-            throw new InvalidArgumentException('Order hittades inte.');
+        if (!in_array($targetStatus, self::ORDER_TRANSITIONS[$fromStatus] ?? [], true)) {
+            throw new InvalidArgumentException('Otillåten orderstatus-övergång.');
         }
 
         $this->orders->beginTransaction();
-
         try {
-            $this->orders->updateStatusesAndReference(
-                $orderId,
-                $status,
-                $paymentStatus,
-                $fulfillmentStatus,
-                $internalReference !== '' ? $internalReference : null
-            );
-
-            if ($order['status'] !== $status) {
-                $this->orders->createOrderEvent($orderId, 'status_changed', sprintf('Orderstatus ändrad: %s → %s.', $order['status'], $status));
+            $this->orders->updateOrderStatus($orderId, $targetStatus);
+            $this->orders->createStatusHistory($orderId, 'order_status', $fromStatus, $targetStatus, 'Orderstatus uppdaterad av admin.');
+            if ($targetStatus === 'cancelled') {
+                $this->orders->updateShippingData($orderId, ['cancelled_at' => date('Y-m-d H:i:s')]);
             }
+            $this->orders->commit();
+        } catch (\Throwable $e) {
+            $this->orders->rollBack();
+            throw $e;
+        }
+    }
 
-            if ($order['payment_status'] !== $paymentStatus) {
-                $this->orders->createOrderEvent($orderId, 'payment_status_changed', sprintf('Betalstatus ändrad: %s → %s.', $order['payment_status'], $paymentStatus));
+    public function transitionFulfillmentStatus(int $orderId, string $targetStatus): void
+    {
+        $order = $this->mustFindOrder($orderId);
+        $fromStatus = (string) $order['fulfillment_status'];
+        $targetStatus = trim($targetStatus);
+
+        if (!in_array($targetStatus, self::ALLOWED_FULFILLMENT_STATUS, true)) {
+            throw new InvalidArgumentException('Ogiltig fulfillment-status.');
+        }
+
+        if ($fromStatus === $targetStatus) {
+            return;
+        }
+
+        if (!in_array($targetStatus, self::FULFILLMENT_TRANSITIONS[$fromStatus] ?? [], true)) {
+            throw new InvalidArgumentException('Otillåten fulfillment-övergång.');
+        }
+
+        $shippingPatch = [];
+        if ($targetStatus === 'shipped' && empty($order['shipped_at'])) {
+            $shippingPatch['shipped_at'] = date('Y-m-d H:i:s');
+        }
+        if ($targetStatus === 'delivered' && empty($order['delivered_at'])) {
+            $shippingPatch['delivered_at'] = date('Y-m-d H:i:s');
+        }
+        if ($targetStatus === 'cancelled' && empty($order['cancelled_at'])) {
+            $shippingPatch['cancelled_at'] = date('Y-m-d H:i:s');
+        }
+
+        $this->orders->beginTransaction();
+        try {
+            $this->orders->updateFulfillmentStatus($orderId, $targetStatus);
+            $this->orders->createStatusHistory($orderId, 'fulfillment_status', $fromStatus, $targetStatus, 'Fulfillment-status uppdaterad av admin.');
+            if ($shippingPatch !== []) {
+                $this->orders->updateShippingData($orderId, $shippingPatch);
             }
-
-            if ($order['fulfillment_status'] !== $fulfillmentStatus) {
-                $this->orders->createOrderEvent($orderId, 'fulfillment_status_changed', sprintf('Leveransstatus ändrad: %s → %s.', $order['fulfillment_status'], $fulfillmentStatus));
-            }
-
-            $previousReference = trim((string) ($order['internal_reference'] ?? ''));
-            if ($previousReference !== $internalReference) {
-                $eventMessage = $internalReference === ''
-                    ? 'Intern referens rensad.'
-                    : sprintf('Intern referens satt: %s.', $internalReference);
-                $this->orders->createOrderEvent($orderId, 'internal_reference_updated', $eventMessage);
-            }
-
             $this->orders->commit();
         } catch (\Throwable $e) {
             $this->orders->rollBack();
@@ -205,38 +239,27 @@ final class OrderService
 
     public function updatePaymentAdminFields(int $orderId, string $paymentStatus, string $paymentReference, string $paymentNote): void
     {
+        $order = $this->mustFindOrder($orderId);
         $paymentStatus = trim($paymentStatus);
-        $paymentReference = trim($paymentReference);
-        $paymentNote = trim($paymentNote);
 
         if (!in_array($paymentStatus, self::ALLOWED_PAYMENT_STATUS, true)) {
             throw new InvalidArgumentException('Ogiltig betalstatus.');
         }
 
-        $order = $this->orders->findOrderById($orderId);
-        if ($order === null) {
-            throw new InvalidArgumentException('Order hittades inte.');
-        }
+        $paymentReference = trim($paymentReference);
+        $paymentNote = trim($paymentNote);
 
         $this->orders->beginTransaction();
         try {
-            $this->orders->updatePaymentAdminFields(
+            $this->orders->updatePaymentStatus(
                 $orderId,
                 $paymentStatus,
                 $paymentReference !== '' ? $paymentReference : null,
                 $paymentNote !== '' ? $paymentNote : null
             );
 
-            if ($order['payment_status'] !== $paymentStatus) {
-                $this->orders->createOrderEvent($orderId, 'payment_status_changed', sprintf('Betalstatus ändrad: %s → %s.', $order['payment_status'], $paymentStatus));
-            }
-
-            $previousReference = trim((string) ($order['payment_reference'] ?? ''));
-            if ($previousReference !== $paymentReference) {
-                $message = $paymentReference === ''
-                    ? 'Betalreferens rensad.'
-                    : sprintf('Betalreferens uppdaterad: %s.', $paymentReference);
-                $this->orders->createOrderEvent($orderId, 'payment_reference_updated', $message);
+            if ((string) $order['payment_status'] !== $paymentStatus) {
+                $this->orders->createStatusHistory($orderId, 'payment_status', (string) $order['payment_status'], $paymentStatus, 'Betalstatus uppdaterad av admin.');
             }
 
             $this->orders->commit();
@@ -246,17 +269,43 @@ final class OrderService
         }
     }
 
-    public function addInternalNote(int $orderId, string $noteText): void
+    public function addAdminNote(int $orderId, string $noteText): void
     {
+        $this->mustFindOrder($orderId);
         $noteText = trim($noteText);
         if ($noteText === '') {
             throw new InvalidArgumentException('Anteckning får inte vara tom.');
         }
 
+        $this->orders->createStatusHistory($orderId, 'note', null, null, $noteText);
+    }
+
+    public function updateShipmentInfo(int $orderId, array $input): void
+    {
+        $order = $this->mustFindOrder($orderId);
+
+        $payload = [
+            'carrier_code' => $this->nullable($input['carrier_code'] ?? null),
+            'carrier_name' => $this->nullable($input['carrier_name'] ?? null),
+            'tracking_number' => $this->nullable($input['tracking_number'] ?? null),
+            'tracking_url' => $this->nullable($input['tracking_url'] ?? null),
+            'shipped_at' => $this->nullable($input['shipped_at'] ?? null),
+            'delivered_at' => null,
+            'cancelled_at' => null,
+        ];
+
         $this->orders->beginTransaction();
         try {
-            $this->orders->createOrderNote($orderId, 'internal', $noteText);
-            $this->orders->createOrderEvent($orderId, 'internal_note_added', 'Intern anteckning tillagd.');
+            $this->orders->updateShippingData($orderId, $payload);
+
+            foreach (['carrier_code', 'carrier_name', 'tracking_number', 'tracking_url', 'shipped_at'] as $field) {
+                $from = $this->nullable($order[$field] ?? null);
+                $to = $payload[$field];
+                if ($from !== $to) {
+                    $this->orders->createStatusHistory($orderId, 'shipping', $from, $to, sprintf('%s uppdaterad.', $field));
+                }
+            }
+
             $this->orders->commit();
         } catch (\Throwable $e) {
             $this->orders->rollBack();
@@ -264,124 +313,17 @@ final class OrderService
         }
     }
 
-    public function markProcessing(int $orderId): void
+    public function updateInternalReference(int $orderId, string $internalReference): void
     {
-        $order = $this->orders->findOrderById($orderId);
-        if ($order === null) {
-            throw new InvalidArgumentException('Order hittades inte.');
+        $order = $this->mustFindOrder($orderId);
+        $next = $this->nullable($internalReference);
+        $previous = $this->nullable($order['internal_reference'] ?? null);
+        if ($next === $previous) {
+            return;
         }
 
-        $this->orders->beginTransaction();
-        try {
-            $this->orders->updateFulfillmentStatus($orderId, 'processing');
-            $this->orders->createOrderEvent($orderId, 'order_processing', 'Order markerad som processing.');
-            if (($order['fulfillment_status'] ?? '') !== 'processing') {
-                $this->orders->createOrderEvent($orderId, 'fulfillment_status_changed', sprintf('Leveransstatus ändrad: %s → processing.', (string) $order['fulfillment_status']));
-            }
-            $this->orders->commit();
-        } catch (\Throwable $e) {
-            $this->orders->rollBack();
-            throw $e;
-        }
-    }
-
-    public function markPacked(int $orderId): void
-    {
-        $order = $this->orders->findOrderById($orderId);
-        if ($order === null) {
-            throw new InvalidArgumentException('Order hittades inte.');
-        }
-
-        $this->orders->beginTransaction();
-        try {
-            $this->orders->markPacked($orderId);
-            $this->orders->createOrderEvent($orderId, 'order_packed', 'Order markerad som packad.');
-            if (($order['fulfillment_status'] ?? '') !== 'packed') {
-                $this->orders->createOrderEvent($orderId, 'fulfillment_status_changed', sprintf('Leveransstatus ändrad: %s → packed.', (string) $order['fulfillment_status']));
-            }
-            $this->orders->commit();
-        } catch (\Throwable $e) {
-            $this->orders->rollBack();
-            throw $e;
-        }
-    }
-
-    public function markShipped(int $orderId): void
-    {
-        $order = $this->orders->findOrderById($orderId);
-        if ($order === null) {
-            throw new InvalidArgumentException('Order hittades inte.');
-        }
-
-        $this->orders->beginTransaction();
-        try {
-            $this->orders->markShipped($orderId);
-            $this->orders->createOrderEvent($orderId, 'order_shipped', 'Order markerad som skickad.');
-            if (($order['fulfillment_status'] ?? '') !== 'shipped') {
-                $this->orders->createOrderEvent($orderId, 'fulfillment_status_changed', sprintf('Leveransstatus ändrad: %s → shipped.', (string) $order['fulfillment_status']));
-            }
-            $this->orders->commit();
-        } catch (\Throwable $e) {
-            $this->orders->rollBack();
-            throw $e;
-        }
-    }
-
-    public function updateShipmentInfo(int $orderId, string $trackingNumber, string $shippingMethod, string $shippedByName, string $shipmentNote): void
-    {
-        $order = $this->orders->findOrderById($orderId);
-        if ($order === null) {
-            throw new InvalidArgumentException('Order hittades inte.');
-        }
-
-        $trackingNumber = trim($trackingNumber);
-        $shippingMethod = trim($shippingMethod);
-        $shippedByName = trim($shippedByName);
-        $shipmentNote = trim($shipmentNote);
-
-        $this->orders->beginTransaction();
-        try {
-            $this->orders->updateShipmentInfo(
-                $orderId,
-                $trackingNumber !== '' ? $trackingNumber : null,
-                $shippingMethod !== '' ? $shippingMethod : null,
-                $shippedByName !== '' ? $shippedByName : null,
-                $shipmentNote !== '' ? $shipmentNote : null
-            );
-
-            if (trim((string) ($order['tracking_number'] ?? '')) !== $trackingNumber) {
-                $message = $trackingNumber === ''
-                    ? 'Trackingnummer rensat.'
-                    : sprintf('Trackingnummer uppdaterat: %s.', $trackingNumber);
-                $this->orders->createOrderEvent($orderId, 'tracking_number_updated', $message);
-            }
-
-            if (trim((string) ($order['shipping_method'] ?? '')) !== $shippingMethod) {
-                $message = $shippingMethod === ''
-                    ? 'Fraktmetod rensad.'
-                    : sprintf('Fraktmetod uppdaterad: %s.', $shippingMethod);
-                $this->orders->createOrderEvent($orderId, 'shipping_method_updated', $message);
-            }
-
-            if (trim((string) ($order['shipment_note'] ?? '')) !== $shipmentNote) {
-                $message = $shipmentNote === ''
-                    ? 'Försändelsenotering rensad.'
-                    : 'Försändelsenotering uppdaterad.';
-                $this->orders->createOrderEvent($orderId, 'shipment_note_updated', $message);
-            }
-
-            if (trim((string) ($order['shipped_by_name'] ?? '')) !== $shippedByName) {
-                $message = $shippedByName === ''
-                    ? 'Skickad av rensad.'
-                    : sprintf('Skickad av uppdaterad: %s.', $shippedByName);
-                $this->orders->createOrderEvent($orderId, 'shipped_by_name_updated', $message);
-            }
-
-            $this->orders->commit();
-        } catch (\Throwable $e) {
-            $this->orders->rollBack();
-            throw $e;
-        }
+        $this->orders->updateInternalReference($orderId, $next);
+        $this->orders->createStatusHistory($orderId, 'note', $previous, $next, 'Intern referens uppdaterad.');
     }
 
     public function paymentMethodLabel(?string $paymentMethod): string
@@ -408,11 +350,29 @@ final class OrderService
     public function statusOptions(): array
     {
         return [
-            'status' => self::ALLOWED_ORDER_STATUS,
+            'order_status' => self::ALLOWED_ORDER_STATUS,
             'payment_status' => self::ALLOWED_PAYMENT_STATUS,
             'payment_method' => self::ALLOWED_PAYMENT_METHODS,
             'fulfillment_status' => self::ALLOWED_FULFILLMENT_STATUS,
         ];
+    }
+
+    /** @return array<string, mixed> */
+    private function mustFindOrder(int $orderId): array
+    {
+        $order = $this->orders->findOrderById($orderId);
+        if ($order === null) {
+            throw new InvalidArgumentException('Order hittades inte.');
+        }
+
+        return $order;
+    }
+
+    private function nullable(mixed $value): ?string
+    {
+        $normalized = trim((string) $value);
+
+        return $normalized === '' ? null : $normalized;
     }
 
     private function generateOrderNumber(): string

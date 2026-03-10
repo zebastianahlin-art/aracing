@@ -37,6 +37,9 @@ use App\Modules\Import\Services\CsvImportService;
 use App\Modules\Import\Services\ImportProfileService;
 use App\Modules\Import\Services\ImportRunService;
 use App\Modules\Import\Services\SupplierItemReviewService;
+use App\Modules\Inventory\Repositories\InventoryRepository;
+use App\Modules\Inventory\Repositories\StockMovementRepository;
+use App\Modules\Inventory\Services\InventoryService;
 use App\Modules\Order\Controllers\OrderAdminController;
 use App\Modules\Order\Repositories\EmailMessageRepository;
 use App\Modules\Order\Repositories\OrderRepository;
@@ -67,6 +70,11 @@ use App\Modules\Supplier\Services\SupplierService;
 $brandService = new BrandService(new BrandRepository($app['pdo']));
 $categoryService = new CategoryService(new CategoryRepository($app['pdo']));
 $supplierItemRepository = new SupplierItemRepository($app['pdo']);
+$inventoryService = new InventoryService(
+    new InventoryRepository($app['pdo']),
+    new StockMovementRepository($app['pdo'])
+);
+
 $productSupplierLinkService = new ProductSupplierLinkService(
     new ProductSupplierLinkRepository($app['pdo']),
     new ProductSupplierItemLookupRepository($app['pdo']),
@@ -77,14 +85,15 @@ $productService = new ProductService(
     new ProductAttributeRepository($app['pdo']),
     new ProductImageRepository($app['pdo']),
     $productSupplierLinkService,
-    new ProductSupplierItemLookupRepository($app['pdo'])
+    new ProductSupplierItemLookupRepository($app['pdo']),
+    $inventoryService
 );
 $productMediaService = new ProductMediaService(
     new ProductRepository($app['pdo']),
     new ProductImageRepository($app['pdo']),
     new ProductImageStorageService()
 );
-$catalogService = new CatalogService(new CatalogRepository($app['pdo']));
+$catalogService = new CatalogService(new CatalogRepository($app['pdo']), $inventoryService);
 $supplierService = new SupplierService(new SupplierRepository($app['pdo']));
 $importProfileService = new ImportProfileService(new ImportProfileRepository($app['pdo']));
 $importRowRepository = new ImportRowRepository($app['pdo']);
@@ -96,7 +105,7 @@ $csvImportService = new CsvImportService(
     $supplierItemRepository,
     $importProfileService
 );
-$cartService = new CartService(new CartRepository($app['pdo']), new CartProductRepository($app['pdo']));
+$cartService = new CartService(new CartRepository($app['pdo']), new CartProductRepository($app['pdo']), $inventoryService);
 $orderRepository = new OrderRepository($app['pdo']);
 $emailMessageRepository = new EmailMessageRepository($app['pdo']);
 $orderEmailService = new OrderEmailService($orderRepository, $emailMessageRepository, new TransactionalEmailSender(), $app['view']);

@@ -15,7 +15,7 @@ final class CatalogRepository
     /** @return array<int, array<string, mixed>> */
     public function latestActiveProducts(int $limit = 12): array
     {
-        $stmt = $this->pdo->prepare('SELECT p.id, p.name, p.slug, p.sku, p.description, p.sale_price, p.currency_code, p.stock_status, p.stock_quantity, b.name AS brand_name,
+        $stmt = $this->pdo->prepare('SELECT p.id, p.name, p.slug, p.sku, p.description, p.sale_price, p.currency_code, p.stock_status, p.stock_quantity, p.backorder_allowed, b.name AS brand_name,
             (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.is_primary DESC, pi.sort_order ASC, pi.id ASC LIMIT 1) AS image_url
             FROM products p
             LEFT JOIN brands b ON b.id = p.brand_id
@@ -55,7 +55,7 @@ final class CatalogRepository
         $params = [];
         $where = $this->buildListingWhere($filters, $params);
 
-        $sql = 'SELECT p.id, p.name, p.slug, p.sku, p.sale_price, p.currency_code, p.stock_status, p.stock_quantity, b.name AS brand_name,
+        $sql = 'SELECT p.id, p.name, p.slug, p.sku, p.sale_price, p.currency_code, p.stock_status, p.stock_quantity, p.backorder_allowed, b.name AS brand_name,
             (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.is_primary DESC, pi.sort_order ASC, pi.id ASC LIMIT 1) AS image_url
             FROM products p
             LEFT JOIN brands b ON b.id = p.brand_id
@@ -107,10 +107,10 @@ final class CatalogRepository
     /** @return array<int, string> */
     public function filterStockStatuses(): array
     {
-        $rows = $this->pdo->query('SELECT DISTINCT stock_status
+        $rows = $this->pdo->query("SELECT DISTINCT stock_status
             FROM products
-            WHERE is_active = 1 AND stock_status IS NOT NULL AND stock_status <> ""
-            ORDER BY stock_status ASC')->fetchAll();
+            WHERE is_active = 1
+            ORDER BY FIELD(stock_status, 'in_stock', 'out_of_stock', 'backorder')")->fetchAll();
 
         return array_map(static fn (array $row): string => (string) $row['stock_status'], $rows);
     }
@@ -118,7 +118,7 @@ final class CatalogRepository
     /** @return array<string, mixed>|null */
     public function activeProductBySlug(string $slug): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT p.id, p.name, p.slug, p.sku, p.description, p.sale_price, p.currency_code, p.stock_status, p.stock_quantity, b.name AS brand_name,
+        $stmt = $this->pdo->prepare('SELECT p.id, p.name, p.slug, p.sku, p.description, p.sale_price, p.currency_code, p.stock_status, p.stock_quantity, p.backorder_allowed, b.name AS brand_name,
             (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.is_primary DESC, pi.sort_order ASC, pi.id ASC LIMIT 1) AS image_url
             FROM products p
             LEFT JOIN brands b ON b.id = p.brand_id

@@ -1,5 +1,5 @@
 <?php
-$filters = $filters ?? ['name' => '', 'sku' => '', 'active' => '', 'has_link' => '', 'deviation' => '', 'stock_status' => ''];
+$filters = $filters ?? ['name' => '', 'sku' => '', 'active' => '', 'has_link' => '', 'deviation' => '', 'low_stock' => '', 'stock_status' => ''];
 ?>
 <?php ob_start(); ?>
 <section class="card">
@@ -42,11 +42,18 @@ $filters = $filters ?? ['name' => '', 'sku' => '', 'active' => '', 'has_link' =>
       </select>
     </div>
     <div>
+      <label for="low_stock">Låg/ingen lagerstatus</label>
+      <select id="low_stock" name="low_stock">
+        <option value="">Alla</option>
+        <option value="1" <?= $filters['low_stock'] === '1' ? 'selected' : '' ?>>Antal <= 0</option>
+      </select>
+    </div>
+    <div>
       <label for="stock_status">Lagerstatus</label>
       <select id="stock_status" name="stock_status">
         <option value="">Alla</option>
-        <?php foreach (['i lager', 'låg lagerstatus', 'slut i lager', 'okänd'] as $status): ?>
-          <option value="<?= htmlspecialchars($status, ENT_QUOTES, 'UTF-8') ?>" <?= $filters['stock_status'] === $status ? 'selected' : '' ?>><?= htmlspecialchars(ucfirst($status), ENT_QUOTES, 'UTF-8') ?></option>
+        <?php foreach (['in_stock', 'out_of_stock', 'backorder'] as $status): ?>
+          <option value="<?= htmlspecialchars($status, ENT_QUOTES, 'UTF-8') ?>" <?= $filters['stock_status'] === $status ? 'selected' : '' ?>><?= htmlspecialchars($status, ENT_QUOTES, 'UTF-8') ?></option>
         <?php endforeach; ?>
       </select>
     </div>
@@ -87,8 +94,9 @@ $filters = $filters ?? ['name' => '', 'sku' => '', 'active' => '', 'has_link' =>
           </td>
           <td>
             Pris: <?= $product['sale_price'] !== null ? htmlspecialchars((string) $product['sale_price'], ENT_QUOTES, 'UTF-8') . ' ' . htmlspecialchars((string) ($product['currency_code'] ?? 'SEK'), ENT_QUOTES, 'UTF-8') : '-' ?><br>
-            Lagerstatus: <?= htmlspecialchars((string) ($product['stock_status'] ?? 'okänd'), ENT_QUOTES, 'UTF-8') ?><br>
-            Antal: <?= $product['stock_quantity'] !== null ? (int) $product['stock_quantity'] : '-' ?>
+            Lagerstatus: <?= htmlspecialchars((string) ($product['stock_status'] ?? 'out_of_stock'), ENT_QUOTES, 'UTF-8') ?><br>
+            Antal: <?= (int) ($product['stock_quantity'] ?? 0) ?><br>
+            Backorder: <?= (int) ($product['backorder_allowed'] ?? 0) === 1 ? 'Ja' : 'Nej' ?>
           </td>
           <td>
             Leverantör: <?= htmlspecialchars((string) ($product['supplier_name'] ?? '-'), ENT_QUOTES, 'UTF-8') ?><br>

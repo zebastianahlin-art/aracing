@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Cart\Services;
 
+use App\Modules\Inventory\Services\InventoryService;
 use App\Modules\Cart\Repositories\CartProductRepository;
 use App\Modules\Cart\Repositories\CartRepository;
 use RuntimeException;
@@ -12,7 +13,8 @@ final class CartService
 {
     public function __construct(
         private readonly CartRepository $carts,
-        private readonly CartProductRepository $products
+        private readonly CartProductRepository $products,
+        private readonly InventoryService $inventory
     ) {
     }
 
@@ -50,7 +52,7 @@ final class CartService
             throw new RuntimeException('Produkten är inte tillgänglig för köp.');
         }
 
-        if (($product['stock_status'] ?? '') === 'out_of_stock') {
+        if ($this->inventory->isPurchasable($product) === false) {
             throw new RuntimeException('Produkten är slut i lager och kan inte läggas i kundvagnen.');
         }
 
@@ -113,5 +115,30 @@ final class CartService
 
         $this->carts->clearCart((int) $cart['id']);
         $this->carts->touchCart((int) $cart['id']);
+    }
+
+    public function ensureCartItemsPurchasable(string $sessionId): void
+    {
+        $cartData = $this->getCartBySession($sessionId);
+        $items = $cartData['items'] ?? [];
+        if ($items === []) {
+            return;
+        }
+
+        $productIds = array_map(static fn (array $item): int => (int) $item['product_id'], $items);
+        $rows = $this->products->activeProductsByIds($productIds);
+        $byId = [];
+        foreach ($rows as $row) {
+            $byId[(int) $row['id']] = $row;
+        }
+
+        foreach ($items as $item) {
+            $productId = (int) $item['product_id'];
+            $product = $byId[$productId] ?? null;
+
+            if ($product === null || $this->inventory->isPurchasable($product) === false || $product['sale_price'] === null) {
+                throw new RuntimeException('En eller flera produkter i kundvagnen är inte längre köpbara. Uppdatera kundvagnen innan checkout.');
+            }
+        }
     }
 }

@@ -29,9 +29,9 @@ ob_start();
     <?php else: ?>
       <p class="muted">Pris saknas just nu. Skicka prisförfrågan via <a href="/pages/kontakt">kontakt</a>.</p>
     <?php endif; ?>
-    <p class="muted">Lagerstatus: <?= htmlspecialchars((string) ($product['stock_status'] ?? 'okänd'), ENT_QUOTES, 'UTF-8') ?><?= $product['stock_quantity'] !== null ? ' (' . (int) $product['stock_quantity'] . ')' : '' ?></p>
+    <p class="muted">Lagerstatus: <?= htmlspecialchars((string) ($product['storefront_stock_label'] ?? 'Tillfälligt slut'), ENT_QUOTES, 'UTF-8') ?> (<?= (int) ($product['stock_quantity'] ?? 0) ?>)</p>
 
-    <?php $canBuy = ($product['stock_status'] ?? '') !== 'out_of_stock' && $product['sale_price'] !== null; ?>
+    <?php $canBuy = (bool) ($product['is_purchasable'] ?? false) && $product['sale_price'] !== null; ?>
     <?php if ($canBuy): ?>
       <form method="post" action="/cart/items" class="inline-form">
         <input type="hidden" name="product_id" value="<?= (int) $product['id'] ?>">

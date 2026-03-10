@@ -14,10 +14,14 @@ ob_start();
   <?php if (($orderSummary ?? null) !== null): ?>
     <p>Ordernummer: <strong><?= htmlspecialchars((string) $orderSummary['order_number'], ENT_QUOTES, 'UTF-8') ?></strong></p>
     <p>Status: <strong><?= htmlspecialchars((string) $orderSummary['status'], ENT_QUOTES, 'UTF-8') ?></strong></p>
+    <p>Betalstatus: <strong><?= htmlspecialchars((string) ($orderSummary['payment_status'] ?? 'unpaid'), ENT_QUOTES, 'UTF-8') ?></strong></p>
+    <p>Betalmetod: <strong><?= htmlspecialchars((string) ($paymentMethodLabel ?? 'Ej vald'), ENT_QUOTES, 'UTF-8') ?></strong></p>
     <p>Leveransstatus: <strong><?= htmlspecialchars((string) $orderSummary['fulfillment_status'], ENT_QUOTES, 'UTF-8') ?></strong></p>
     <p>Skickad: <?= htmlspecialchars((string) ($orderSummary['shipped_at'] ?? 'Inte skickad ännu'), ENT_QUOTES, 'UTF-8') ?></p>
     <p>Trackingnummer: <?= htmlspecialchars((string) ($orderSummary['tracking_number'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
     <p>Fraktmetod: <?= htmlspecialchars((string) ($orderSummary['shipping_method'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
+    <p>Betalreferens: <?= htmlspecialchars((string) ($orderSummary['payment_reference'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
+    <p>Betalningsinfo: <?= nl2br(htmlspecialchars((string) ($orderSummary['payment_note'] ?? ($paymentNextStepText ?? '-')), ENT_QUOTES, 'UTF-8')) ?></p>
   <?php elseif (($showNotFound ?? false) === true): ?>
     <p class="err-msg">Ingen order hittades för det angivna ordernumret.</p>
   <?php else: ?>

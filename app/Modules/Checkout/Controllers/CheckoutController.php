@@ -29,6 +29,7 @@ final class CheckoutController
             'cartData' => $this->carts->getCartBySession($this->sessionId()),
             'error' => trim((string) ($_GET['error'] ?? '')),
             'infoPages' => $this->pages->storefrontInfoPages(),
+            'paymentMethodOptions' => $this->checkout->paymentMethodOptions(),
         ]));
     }
 
@@ -55,6 +56,8 @@ final class CheckoutController
         return new Response($this->views->render('storefront.order_confirmation', [
             'orderNumber' => is_string($orderNumber) ? $orderNumber : null,
             'publicOrder' => $publicOrder,
+            'paymentMethodLabel' => $this->orders->paymentMethodLabel((string) ($publicOrder['payment_method'] ?? '')),
+            'paymentNextStepText' => $this->orders->paymentNextStepText((string) ($publicOrder['payment_method'] ?? '')),
             'infoPages' => $this->pages->storefrontInfoPages(),
         ]));
     }
@@ -67,6 +70,8 @@ final class CheckoutController
         return new Response($this->views->render('storefront.order_status', [
             'queryOrderNumber' => $orderNumber,
             'orderSummary' => $summary,
+            'paymentMethodLabel' => $this->orders->paymentMethodLabel((string) ($summary['payment_method'] ?? '')),
+            'paymentNextStepText' => $this->orders->paymentNextStepText((string) ($summary['payment_method'] ?? '')),
             'showNotFound' => $orderNumber !== '' && $summary === null,
             'infoPages' => $this->pages->storefrontInfoPages(),
         ]));

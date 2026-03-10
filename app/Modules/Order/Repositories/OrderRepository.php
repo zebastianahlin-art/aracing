@@ -22,7 +22,7 @@ final class OrderRepository
             shipping_address_line_1, shipping_address_line_2, shipping_postal_code, shipping_city, shipping_country,
             order_notes,
             subtotal_amount, shipping_amount, total_amount,
-            payment_status, fulfillment_status,
+            payment_status, payment_method, payment_reference, payment_note, fulfillment_status,
             internal_reference, packed_at, shipped_at,
             tracking_number, shipping_method, shipped_by_name, shipment_note,
             created_at, updated_at
@@ -34,7 +34,7 @@ final class OrderRepository
             :shipping_address_line_1, :shipping_address_line_2, :shipping_postal_code, :shipping_city, :shipping_country,
             :order_notes,
             :subtotal_amount, :shipping_amount, :total_amount,
-            :payment_status, :fulfillment_status,
+            :payment_status, :payment_method, :payment_reference, :payment_note, :fulfillment_status,
             :internal_reference, :packed_at, :shipped_at,
             :tracking_number, :shipping_method, :shipped_by_name, :shipment_note,
             NOW(), NOW()
@@ -108,7 +108,7 @@ final class OrderRepository
             $params['search'] = '%' . $search . '%';
         }
 
-        foreach (['status', 'payment_status', 'fulfillment_status'] as $field) {
+        foreach (['status', 'payment_status', 'payment_method', 'fulfillment_status'] as $field) {
             $value = trim((string) ($filters[$field] ?? ''));
             if ($value !== '') {
                 $conditions[] = $field . ' = :' . $field;
@@ -117,7 +117,7 @@ final class OrderRepository
         }
 
         $sql = 'SELECT id, order_number, customer_first_name, customer_last_name, customer_email,
-                status, payment_status, fulfillment_status, total_amount, created_at,
+                status, payment_status, payment_method, fulfillment_status, total_amount, created_at,
                 tracking_number, shipping_method, packed_at, shipped_at
             FROM orders';
 
@@ -195,6 +195,23 @@ final class OrderRepository
             'payment_status' => $paymentStatus,
             'fulfillment_status' => $fulfillmentStatus,
             'internal_reference' => $internalReference,
+        ]);
+    }
+
+
+    public function updatePaymentAdminFields(int $orderId, string $paymentStatus, ?string $paymentReference, ?string $paymentNote): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE orders
+            SET payment_status = :payment_status,
+                payment_reference = :payment_reference,
+                payment_note = :payment_note,
+                updated_at = NOW()
+            WHERE id = :id');
+        $stmt->execute([
+            'id' => $orderId,
+            'payment_status' => $paymentStatus,
+            'payment_reference' => $paymentReference,
+            'payment_note' => $paymentNote,
         ]);
     }
 

@@ -21,6 +21,7 @@ final class OrderAdminController
             'search' => trim((string) ($_GET['search'] ?? '')),
             'status' => trim((string) ($_GET['status'] ?? '')),
             'payment_status' => trim((string) ($_GET['payment_status'] ?? '')),
+            'payment_method' => trim((string) ($_GET['payment_method'] ?? '')),
             'fulfillment_status' => trim((string) ($_GET['fulfillment_status'] ?? '')),
         ];
 
@@ -55,6 +56,23 @@ final class OrderAdminController
             );
 
             return $this->redirect('/admin/orders/' . (int) $id . '?message=' . urlencode('Order uppdaterad.'));
+        } catch (InvalidArgumentException $e) {
+            return $this->redirect('/admin/orders/' . (int) $id . '?error=' . urlencode($e->getMessage()));
+        }
+    }
+
+
+    public function updatePayment(string $id): Response
+    {
+        try {
+            $this->orders->updatePaymentAdminFields(
+                (int) $id,
+                (string) ($_POST['payment_status'] ?? ''),
+                (string) ($_POST['payment_reference'] ?? ''),
+                (string) ($_POST['payment_note'] ?? '')
+            );
+
+            return $this->redirect('/admin/orders/' . (int) $id . '?message=' . urlencode('Betalningsinfo uppdaterad.'));
         } catch (InvalidArgumentException $e) {
             return $this->redirect('/admin/orders/' . (int) $id . '?error=' . urlencode($e->getMessage()));
         }

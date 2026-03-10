@@ -8,6 +8,12 @@ use InvalidArgumentException;
 
 final class CheckoutService
 {
+    private const PAYMENT_METHODS = [
+        'invoice_request',
+        'manual_card_phone',
+        'bank_transfer',
+    ];
+
     /** @param array<string, mixed> $input
      *  @return array<string, string|null>
      */
@@ -44,6 +50,29 @@ final class CheckoutService
             'shipping_city' => $this->required($input['shipping_city'] ?? null, 'Fyll i stad för leveransadress.'),
             'shipping_country' => strtoupper($this->required($input['shipping_country'] ?? null, 'Fyll i landkod för leveransadress.')),
             'order_notes' => $this->nullable($input['order_notes'] ?? null),
+            'payment_method' => $this->paymentMethod($input['payment_method'] ?? null),
+        ];
+    }
+
+    /** @return array<int, array<string, string>> */
+    public function paymentMethodOptions(): array
+    {
+        return [
+            [
+                'value' => 'invoice_request',
+                'label' => 'Fakturaförfrågan',
+                'help_text' => 'Vi granskar ordern och återkommer med bekräftelse och betalningsinstruktion.',
+            ],
+            [
+                'value' => 'manual_card_phone',
+                'label' => 'Kortbetalning via telefon',
+                'help_text' => 'Vi kontaktar dig manuellt för att slutföra kortbetalningen.',
+            ],
+            [
+                'value' => 'bank_transfer',
+                'label' => 'Banköverföring',
+                'help_text' => 'Betalningsinstruktion skickas manuellt efter ordergranskning.',
+            ],
         ];
     }
 
@@ -62,5 +91,15 @@ final class CheckoutService
         $normalized = trim((string) $value);
 
         return $normalized === '' ? null : $normalized;
+    }
+
+    private function paymentMethod(mixed $value): string
+    {
+        $paymentMethod = trim((string) $value);
+        if (!in_array($paymentMethod, self::PAYMENT_METHODS, true)) {
+            throw new InvalidArgumentException('Välj en giltig betalmetod.');
+        }
+
+        return $paymentMethod;
     }
 }

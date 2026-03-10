@@ -176,6 +176,7 @@ $app['router']->post('/admin/products/{id}/images/{imageId}/delete', [$productAd
 $app['router']->get('/admin/orders', [$orderAdmin, 'index']);
 $app['router']->get('/admin/orders/{id}', [$orderAdmin, 'show']);
 $app['router']->post('/admin/orders/{id}/update', [$orderAdmin, 'update']);
+$app['router']->post('/admin/orders/{id}/payment', [$orderAdmin, 'updatePayment']);
 $app['router']->post('/admin/orders/{id}/notes', [$orderAdmin, 'addNote']);
 $app['router']->post('/admin/orders/{id}/shipment', [$orderAdmin, 'updateShipment']);
 $app['router']->post('/admin/orders/{id}/mark-processing', [$orderAdmin, 'markProcessing']);

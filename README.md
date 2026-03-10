@@ -213,6 +213,28 @@ Lokal manuell test:
 5. Klicka `Markera packad` och `Markera skickad` och verifiera tidsstämplar + historik.
 6. Öppna utskriftsvyn och kontrollera att sidan är ren för vanlig webbutskrift.
 
+
+## Betalningsförberedelser v1 (utan extern provider)
+
+Databas:
+- kör även `database/migrations/011_order_payment_preparations_v1.sql`
+
+Storefront:
+- `/checkout` har nu val av betalmetod (`invoice_request`, `manual_card_phone`, `bank_transfer`).
+- orderbekräftelse och `/order-status` visar betalmetod, betalstatus och nästa steg.
+
+Admin:
+- `/admin/orders` visar betalmetod tydligt och har filter på betalmetod.
+- `/admin/orders/{id}` visar betalningsöversikt och separat formulär för manuell uppföljning av `payment_status`, `payment_reference` och `payment_note`.
+- orderhistorik loggar events när betalstatus eller betalreferens ändras.
+
+Lokal manuell test:
+1. Lägg produkter i kundvagn och slutför checkout med olika betalmetoder.
+2. Verifiera orderbekräftelse + `/order-status` för vald metod och betalstatus.
+3. Öppna `/admin/orders`, filtrera på betalmetod och kontrollera resultat.
+4. Öppna en order i admin och uppdatera betalstatus/referens/notering.
+5. Verifiera att eventhistoriken innehåller rader för ändrad betalstatus och betalreferens.
+
 ## Pris/lager v2 + operativ produktöversikt (admin)
 
 Admin:

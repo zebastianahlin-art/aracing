@@ -4,18 +4,19 @@ declare(strict_types=1);
 
 namespace App\Modules\Catalog\Services;
 
+use App\Modules\Inventory\Services\InventoryService;
 use App\Modules\Catalog\Repositories\CatalogRepository;
 
 final class CatalogService
 {
-    public function __construct(private readonly CatalogRepository $catalog)
+    public function __construct(private readonly CatalogRepository $catalog, private readonly InventoryService $inventory)
     {
     }
 
     /** @return array<int, array<string, mixed>> */
     public function latestProducts(int $limit = 12): array
     {
-        return $this->catalog->latestActiveProducts($limit);
+        return $this->decorateProducts($this->catalog->latestActiveProducts($limit));
     }
 
     /** @param array<string, mixed> $query
@@ -39,7 +40,7 @@ final class CatalogService
 
         return [
             'category' => $category,
-            'products' => $this->catalog->searchActiveProducts($filters),
+            'products' => $this->decorateProducts($this->catalog->searchActiveProducts($filters)),
             'total' => $this->catalog->countActiveProducts($filters),
             'filters' => $filters,
             'filterOptions' => $this->filterOptions(),
@@ -54,7 +55,7 @@ final class CatalogService
         $filters = $this->normalizeFilters($query, null);
 
         return [
-            'products' => $this->catalog->searchActiveProducts($filters),
+            'products' => $this->decorateProducts($this->catalog->searchActiveProducts($filters)),
             'total' => $this->catalog->countActiveProducts($filters),
             'filters' => $filters,
             'filterOptions' => $this->filterOptions(),
@@ -72,8 +73,34 @@ final class CatalogService
 
         $product['attributes'] = $this->catalog->productAttributes((int) $product['id']);
         $product['images'] = $this->catalog->productImages((int) $product['id']);
+        $product = $this->decorateProduct($product);
 
         return $product;
+    }
+
+    /** @param array<int,array<string,mixed>> $rows
+     * @return array<int,array<string,mixed>>
+     */
+    private function decorateProducts(array $rows): array
+    {
+        foreach ($rows as &$row) {
+            $row = $this->decorateProduct($row);
+        }
+        unset($row);
+
+        return $rows;
+    }
+
+    /** @param array<string,mixed> $row
+     * @return array<string,mixed>
+     */
+    private function decorateProduct(array $row): array
+    {
+        $availability = $this->inventory->storefrontAvailability($row);
+        $row['is_purchasable'] = $availability['is_purchasable'];
+        $row['storefront_stock_label'] = $availability['label'];
+
+        return $row;
     }
 
     /** @param array<string, mixed> $query

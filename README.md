@@ -384,3 +384,15 @@ Snabb lokal verifiering:
 2. Kontrollera att länkar syns i storefront header/footer.
 3. Kontrollera trust-block på start-, kategori-, produkt-, kundvagn- och checkout-sidor.
 4. Kontrollera checkout med fel (t.ex. tom e-post) för tydlig feltext och hjälpruta.
+
+## Order lifecycle + fulfillment v1 (utan fraktintegration)
+
+Databas:
+- kör även `database/migrations/012_order_lifecycle_fulfillment_v1.sql`
+
+Lokal snabbtest:
+1. Lägg en order via checkout.
+2. Öppna `/admin/orders/{id}` och använd actions för orderstatus (`placed -> confirmed -> processing -> completed` eller `cancelled`).
+3. Använd fulfillment-actions (`unfulfilled -> picking -> packed -> shipped -> delivered` eller `cancelled`).
+4. Uppdatera `carrier_name`, `tracking_number`, `tracking_url`, `shipped_at` manuellt och verifiera att timeline uppdateras.
+5. Verifiera storefront på `/checkout/confirmation` och `/order-status` visar `order_status`, `payment_status`, `fulfillment_status` samt leverans-/trackinginfo.

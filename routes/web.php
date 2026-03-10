@@ -108,10 +108,10 @@ $purchasingService = new PurchasingService(
     new PurchaseListItemRepository($app['pdo'])
 );
 
-$storefront = new StorefrontController($app['view'], $catalogService);
+$storefront = new StorefrontController($app['view'], $catalogService, $cmsPageService);
 $cmsStorefront = new CmsStorefrontController($app['view'], $cmsHomeService, $cmsPageService);
-$cartController = new CartController($app['view'], $cartService);
-$checkoutController = new CheckoutController($app['view'], $cartService, new CheckoutService(), $orderService);
+$cartController = new CartController($app['view'], $cartService, $cmsPageService);
+$checkoutController = new CheckoutController($app['view'], $cartService, new CheckoutService(), $orderService, $cmsPageService);
 $admin = new AdminController($app['view']);
 $brandAdmin = new BrandAdminController($app['view'], $brandService);
 $categoryAdmin = new CategoryAdminController($app['view'], $categoryService);

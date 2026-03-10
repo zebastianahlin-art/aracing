@@ -12,6 +12,12 @@ $lockCategory = false;
 require __DIR__ . '/partials/listing-filters.php';
 ?>
 
+
+<section class="trust-grid" aria-label="Trygghetsinformation sök">
+  <article class="trust-item"><strong>Saknas pris?</strong><p class="muted">Vissa artiklar säljs via förfrågan. Kontakta oss för offert.</p></article>
+  <article class="trust-item"><strong>Specialisthjälp</strong><p class="muted">Vi hjälper dig hitta rätt motorsportdel snabbt.</p></article>
+</section>
+
 <?php if ($products === []): ?>
   <section class="panel">
     <h3>Inga produkter hittades</h3>
@@ -28,7 +34,7 @@ require __DIR__ . '/partials/listing-filters.php';
         <?php endif; ?>
         <h3><a href="/product/<?= htmlspecialchars((string) $product['slug'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $product['name'], ENT_QUOTES, 'UTF-8') ?></a></h3>
         <p class="muted">Varumärke: <?= htmlspecialchars((string) ($product['brand_name'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
-        <?php if ($product['sale_price'] !== null): ?><p><strong><?= htmlspecialchars((string) $product['sale_price'], ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars((string) ($product['currency_code'] ?? 'SEK'), ENT_QUOTES, 'UTF-8') ?></strong></p><?php else: ?><p class="muted">Pris visas vid förfrågan</p><?php endif; ?>
+        <?php if ($product['sale_price'] !== null): ?><p><strong><?= htmlspecialchars((string) $product['sale_price'], ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars((string) ($product['currency_code'] ?? 'SEK'), ENT_QUOTES, 'UTF-8') ?></strong></p><?php else: ?><p class="muted">Pris visas vid förfrågan – kontakta oss</p><?php endif; ?>
         <p class="muted">Lager: <?= htmlspecialchars((string) ($product['stock_status'] ?? 'okänd'), ENT_QUOTES, 'UTF-8') ?></p>
       </article>
     <?php endforeach; ?>

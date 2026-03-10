@@ -8,6 +8,7 @@ use App\Core\Http\Response;
 use App\Core\View\ViewFactory;
 use App\Modules\Cart\Services\CartService;
 use App\Modules\Checkout\Services\CheckoutService;
+use App\Modules\Cms\Services\CmsPageService;
 use App\Modules\Order\Services\OrderService;
 use Throwable;
 
@@ -17,7 +18,8 @@ final class CheckoutController
         private readonly ViewFactory $views,
         private readonly CartService $carts,
         private readonly CheckoutService $checkout,
-        private readonly OrderService $orders
+        private readonly OrderService $orders,
+        private readonly CmsPageService $pages
     ) {
     }
 
@@ -26,6 +28,7 @@ final class CheckoutController
         return new Response($this->views->render('storefront.checkout', [
             'cartData' => $this->carts->getCartBySession($this->sessionId()),
             'error' => trim((string) ($_GET['error'] ?? '')),
+            'infoPages' => $this->pages->storefrontInfoPages(),
         ]));
     }
 
@@ -52,6 +55,7 @@ final class CheckoutController
         return new Response($this->views->render('storefront.order_confirmation', [
             'orderNumber' => is_string($orderNumber) ? $orderNumber : null,
             'publicOrder' => $publicOrder,
+            'infoPages' => $this->pages->storefrontInfoPages(),
         ]));
     }
 
@@ -64,6 +68,7 @@ final class CheckoutController
             'queryOrderNumber' => $orderNumber,
             'orderSummary' => $summary,
             'showNotFound' => $orderNumber !== '' && $summary === null,
+            'infoPages' => $this->pages->storefrontInfoPages(),
         ]));
     }
 

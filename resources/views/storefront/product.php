@@ -26,6 +26,8 @@ ob_start();
     <p><?= nl2br(htmlspecialchars((string) ($product['description'] ?? ''), ENT_QUOTES, 'UTF-8')) ?></p>
     <?php if ($product['sale_price'] !== null): ?>
       <p><strong>Pris: <?= htmlspecialchars((string) $product['sale_price'], ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars((string) ($product['currency_code'] ?? 'SEK'), ENT_QUOTES, 'UTF-8') ?></strong></p>
+    <?php else: ?>
+      <p class="muted">Pris saknas just nu. Skicka prisförfrågan via <a href="/pages/kontakt">kontakt</a>.</p>
     <?php endif; ?>
     <p class="muted">Lagerstatus: <?= htmlspecialchars((string) ($product['stock_status'] ?? 'okänd'), ENT_QUOTES, 'UTF-8') ?><?= $product['stock_quantity'] !== null ? ' (' . (int) $product['stock_quantity'] . ')' : '' ?></p>
 
@@ -40,6 +42,12 @@ ob_start();
     <?php else: ?>
       <p class="muted">Produkten kan inte köpas just nu (saknar pris eller är slut i lager).</p>
     <?php endif; ?>
+
+    <section class="trust-grid" aria-label="Trygghetsinformation produkt">
+      <article class="trust-item"><strong>Snabb kontakt</strong><p class="muted">Fråga om produkten via <a href="/pages/kontakt">kontakt</a>.</p></article>
+      <article class="trust-item"><strong>Frakt & retur</strong><p class="muted">Läs <a href="/pages/fraktinfo">fraktinfo</a> och <a href="/pages/retur-reklamation">retur/reklamation</a>.</p></article>
+      <article class="trust-item"><strong>Motorsportspecialist</strong><p class="muted">Vi fokuserar på tydlig produktdata för racing.</p></article>
+    </section>
 
     <h3>Attribut</h3>
     <?php if (($product['attributes'] ?? []) === []): ?>

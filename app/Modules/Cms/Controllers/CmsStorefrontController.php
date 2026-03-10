@@ -20,7 +20,10 @@ final class CmsStorefrontController
 
     public function home(): Response
     {
-        return new Response($this->views->render('storefront.home', $this->home->storefrontHomeData()));
+        $payload = $this->home->storefrontHomeData();
+        $payload['infoPages'] = $this->pages->storefrontInfoPages();
+
+        return new Response($this->views->render('storefront.home', $payload));
     }
 
     public function page(string $slug): Response
@@ -30,6 +33,9 @@ final class CmsStorefrontController
             return new Response('Sidan hittades inte.', 404, ['Content-Type' => 'text/html; charset=UTF-8']);
         }
 
-        return new Response($this->views->render('storefront.page', ['page' => $page]));
+        return new Response($this->views->render('storefront.page', [
+            'page' => $page,
+            'infoPages' => $this->pages->storefrontInfoPages(),
+        ]));
     }
 }

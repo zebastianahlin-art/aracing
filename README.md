@@ -396,3 +396,15 @@ Lokal snabbtest:
 3. Använd fulfillment-actions (`unfulfilled -> picking -> packed -> shipped -> delivered` eller `cancelled`).
 4. Uppdatera `carrier_name`, `tracking_number`, `tracking_url`, `shipped_at` manuellt och verifiera att timeline uppdateras.
 5. Verifiera storefront på `/checkout/confirmation` och `/order-status` visar `order_status`, `payment_status`, `fulfillment_status` samt leverans-/trackinginfo.
+
+## Transactional email v1 för orderflöde (utan extern ESP)
+
+Databas:
+- kör även `database/migrations/013_transactional_email_v1.sql`
+
+Lokal snabbtest:
+1. Säkerställ att servern kan skicka via PHP `mail()` i din miljö (alternativt verifiera failed-logg i admin om lokal mailserver saknas).
+2. Lägg en order via checkout och verifiera att orderbekräftelse loggas i `email_messages`.
+3. Markera ordern som `shipped` i admin och verifiera loggrad för `order_shipped`.
+4. Annullera ordern via orderstatus eller fulfillmentstatus och verifiera loggrad för `order_cancelled`.
+5. Öppna `/admin/orders/{id}` och kontrollera sektionen `E-posthistorik` (typ, mottagare, ämne, status, sent_at och feltext).

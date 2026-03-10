@@ -3,6 +3,7 @@ ob_start();
 $order = $detail['order'] ?? null;
 $items = $detail['items'] ?? [];
 $history = $detail['history'] ?? [];
+$emails = $detail['emails'] ?? [];
 
 $canConfirm = ($order['order_status'] ?? '') === 'placed';
 $canProcessing = ($order['order_status'] ?? '') === 'confirmed';
@@ -123,6 +124,27 @@ $canCancelFulfillment = in_array((string) ($order['fulfillment_status'] ?? ''), 
           <td><?= number_format((float) $item['line_total'], 2, ',', ' ') ?></td>
         </tr>
       <?php endforeach; ?>
+      </tbody>
+    </table>
+
+    <h3>E-posthistorik</h3>
+    <table class="table compact">
+      <thead><tr><th>Typ</th><th>Mottagare</th><th>Ämne</th><th>Status</th><th>Skickad</th><th>Fel</th></tr></thead>
+      <tbody>
+      <?php if ($emails === []): ?>
+        <tr><td colspan="6">Ingen e-post loggad för ordern ännu.</td></tr>
+      <?php else: ?>
+        <?php foreach ($emails as $email): ?>
+          <tr>
+            <td><?= htmlspecialchars((string) $email['email_type'], ENT_QUOTES, 'UTF-8') ?></td>
+            <td><?= htmlspecialchars((string) $email['recipient_email'], ENT_QUOTES, 'UTF-8') ?></td>
+            <td><?= htmlspecialchars((string) $email['subject'], ENT_QUOTES, 'UTF-8') ?></td>
+            <td><span class="pill"><?= htmlspecialchars((string) $email['status'], ENT_QUOTES, 'UTF-8') ?></span></td>
+            <td><?= htmlspecialchars((string) ($email['sent_at'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></td>
+            <td><?= nl2br(htmlspecialchars((string) ($email['error_message'] ?? '-'), ENT_QUOTES, 'UTF-8')) ?></td>
+          </tr>
+        <?php endforeach; ?>
+      <?php endif; ?>
       </tbody>
     </table>
 

@@ -7,12 +7,16 @@ namespace App\Modules\Order\Controllers;
 use App\Core\Http\Response;
 use App\Core\View\ViewFactory;
 use App\Modules\Order\Services\OrderService;
+use App\Modules\Payment\Repositories\PaymentEventRepository;
 use InvalidArgumentException;
 
 final class OrderAdminController
 {
-    public function __construct(private readonly ViewFactory $views, private readonly OrderService $orders)
-    {
+    public function __construct(
+        private readonly ViewFactory $views,
+        private readonly OrderService $orders,
+        private readonly PaymentEventRepository $paymentEvents
+    ) {
     }
 
     public function index(): Response
@@ -41,6 +45,7 @@ final class OrderAdminController
             'statusOptions' => $this->orders->statusOptions(),
             'error' => trim((string) ($_GET['error'] ?? '')),
             'message' => trim((string) ($_GET['message'] ?? '')),
+            'paymentEvents' => $detail !== null ? $this->paymentEvents->forOrder((int) ($detail['order']['id'] ?? 0)) : [],
         ]));
     }
 

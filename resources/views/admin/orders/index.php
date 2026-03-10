@@ -47,7 +47,7 @@ $statusOptions = $statusOptions ?? [];
   <table class="table compact">
     <thead>
     <tr>
-      <th>Ordernr</th><th>Kund</th><th>Fraktmetod</th><th>Rabatt</th><th>Total</th><th>Status</th><th>Leverans</th><th>Skapad</th>
+      <th>Ordernr</th><th>Kund</th><th>Fraktmetod</th><th>Rabatt</th><th>Total</th><th>Status</th><th>Provider</th><th>Leverans</th><th>Skapad</th>
     </tr>
     </thead>
     <tbody>
@@ -66,6 +66,7 @@ $statusOptions = $statusOptions ?? [];
           <small>Betalning: <span class="pill"><?= htmlspecialchars((string) $order['payment_status'], ENT_QUOTES, 'UTF-8') ?></span></small><br>
           <small>Fulfillment: <span class="pill"><?= htmlspecialchars((string) $order['fulfillment_status'], ENT_QUOTES, 'UTF-8') ?></span></small>
         </td>
+        <td><small><?= htmlspecialchars((string) ($order['payment_provider'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></small></td>
         <td>
           <small>Carrier: <?= htmlspecialchars((string) ($order['carrier_name'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></small><br>
           <small>Tracking: <?= htmlspecialchars((string) ($order['tracking_number'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></small><br>

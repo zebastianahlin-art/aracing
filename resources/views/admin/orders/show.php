@@ -35,6 +35,22 @@ $canCancelFulfillment = in_array((string) ($order['fulfillment_status'] ?? ''), 
       <?php if ($canDelivered): ?><form method="post" action="/admin/orders/<?= (int) $order['id'] ?>/fulfillment-status"><input type="hidden" name="fulfillment_status" value="delivered"><button class="btn" type="submit">Markera levererad</button></form><?php endif; ?>
     </div>
 
+    <h3>Betalhändelser</h3>
+    <table class="table compact">
+      <thead><tr><th>Tid</th><th>Typ</th><th>Provider-event</th><th>Ref</th><th>Status</th></tr></thead>
+      <tbody>
+      <?php foreach (($paymentEvents ?? []) as $event): ?>
+        <tr>
+          <td><?= htmlspecialchars((string) ($event['created_at'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+          <td><?= htmlspecialchars((string) ($event['event_type'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+          <td><?= htmlspecialchars((string) ($event['provider_event_id'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></td>
+          <td><?= htmlspecialchars((string) ($event['payment_reference'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></td>
+          <td><?= htmlspecialchars((string) ($event['status_before'] ?? '-'), ENT_QUOTES, 'UTF-8') ?> → <?= htmlspecialchars((string) ($event['status_after'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></td>
+        </tr>
+      <?php endforeach; ?>
+      </tbody>
+    </table>
+
     <div class="grid">
       <div>
         <h3>Kund</h3>
@@ -58,6 +74,14 @@ $canCancelFulfillment = in_array((string) ($order['fulfillment_status'] ?? ''), 
         <p>
           Orderstatus: <span class="pill"><?= htmlspecialchars((string) $order['order_status'], ENT_QUOTES, 'UTF-8') ?></span><br>
           Betalstatus: <span class="pill"><?= htmlspecialchars((string) $order['payment_status'], ENT_QUOTES, 'UTF-8') ?></span><br>
+          Betalmetod: <?= htmlspecialchars((string) ($order['payment_method'] ?? '-'), ENT_QUOTES, 'UTF-8') ?><br>
+          Betalprovider: <?= htmlspecialchars((string) ($order['payment_provider'] ?? '-'), ENT_QUOTES, 'UTF-8') ?><br>
+          Provider status: <?= htmlspecialchars((string) ($order['payment_provider_status'] ?? '-'), ENT_QUOTES, 'UTF-8') ?><br>
+          Provider session: <?= htmlspecialchars((string) ($order['payment_provider_session_id'] ?? '-'), ENT_QUOTES, 'UTF-8') ?><br>
+          Provider reference: <?= htmlspecialchars((string) ($order['payment_provider_reference'] ?? '-'), ENT_QUOTES, 'UTF-8') ?><br>
+          Authorized: <?= htmlspecialchars((string) ($order['payment_authorized_at'] ?? '-'), ENT_QUOTES, 'UTF-8') ?><br>
+          Paid: <?= htmlspecialchars((string) ($order['payment_paid_at'] ?? '-'), ENT_QUOTES, 'UTF-8') ?><br>
+          Failed: <?= htmlspecialchars((string) ($order['payment_failed_at'] ?? '-'), ENT_QUOTES, 'UTF-8') ?><br>
           Fulfillment: <span class="pill"><?= htmlspecialchars((string) $order['fulfillment_status'], ENT_QUOTES, 'UTF-8') ?></span>
         </p>
 

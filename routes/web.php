@@ -49,6 +49,10 @@ use App\Modules\Order\Repositories\OrderRepository;
 use App\Modules\Order\Services\OrderEmailService;
 use App\Modules\Order\Services\OrderService;
 use App\Modules\Order\Services\TransactionalEmailSender;
+use App\Modules\Payment\Clients\StripeCheckoutClient;
+use App\Modules\Payment\Controllers\PaymentController;
+use App\Modules\Payment\Repositories\PaymentEventRepository;
+use App\Modules\Payment\Services\PaymentService;
 use App\Modules\Product\Controllers\ProductAdminController;
 use App\Modules\Product\Repositories\ProductAttributeRepository;
 use App\Modules\Product\Repositories\ProductImageRepository;
@@ -120,6 +124,13 @@ $orderRepository = new OrderRepository($app['pdo']);
 $emailMessageRepository = new EmailMessageRepository($app['pdo']);
 $orderEmailService = new OrderEmailService($orderRepository, $emailMessageRepository, new TransactionalEmailSender(), $app['view']);
 $orderService = new OrderService($orderRepository, $emailMessageRepository, $orderEmailService, $shippingService, $checkoutTotalsService, $discountService);
+$paymentEventRepository = new PaymentEventRepository($app['pdo']);
+$stripeClient = new StripeCheckoutClient(
+    (string) $app['config']->get('payment.stripe.secret_key', ''),
+    (string) $app['config']->get('payment.stripe.webhook_secret', '')
+);
+$paymentService = new PaymentService($orderRepository, $paymentEventRepository, $stripeClient, $app['config']);
+$paymentController = new PaymentController($paymentService);
 $cmsPageService = new CmsPageService(new CmsPageRepository($app['pdo']));
 $cmsHomeService = new CmsHomeService(
     new CmsHomeSectionRepository($app['pdo']),
@@ -136,7 +147,7 @@ $purchasingService = new PurchasingService(
 $storefront = new StorefrontController($app['view'], $catalogService, $cmsPageService);
 $cmsStorefront = new CmsStorefrontController($app['view'], $cmsHomeService, $cmsPageService);
 $cartController = new CartController($app['view'], $cartService, $cmsPageService);
-$checkoutController = new CheckoutController($app['view'], $cartService, new CheckoutService(), $orderService, $shippingService, $checkoutTotalsService, $cmsPageService);
+$checkoutController = new CheckoutController($app['view'], $cartService, new CheckoutService(), $orderService, $shippingService, $checkoutTotalsService, $cmsPageService, $paymentService);
 $admin = new AdminController($app['view']);
 $brandAdmin = new BrandAdminController($app['view'], $brandService);
 $categoryAdmin = new CategoryAdminController($app['view'], $categoryService);
@@ -151,7 +162,7 @@ $supplierItemReviewService = new SupplierItemReviewService(
     new ProductSupplierItemLookupRepository($app['pdo'])
 );
 $supplierItemReviewAdmin = new SupplierItemReviewAdminController($app['view'], $supplierItemReviewService, $supplierService, $importRunService, $productService);
-$orderAdmin = new OrderAdminController($app['view'], $orderService);
+$orderAdmin = new OrderAdminController($app['view'], $orderService, $paymentEventRepository);
 $purchasingAdmin = new PurchasingAdminController($app['view'], $purchasingService);
 $cmsPageAdmin = new CmsPageAdminController($app['view'], $cmsPageService);
 $cmsHomeAdmin = new CmsHomeAdminController($app['view'], $cmsHomeService);
@@ -174,6 +185,8 @@ $app['router']->post('/cart/discount/remove', [$cartController, 'removeDiscount'
 $app['router']->get('/checkout', [$checkoutController, 'form']);
 $app['router']->post('/checkout/place-order', [$checkoutController, 'placeOrder']);
 $app['router']->get('/checkout/confirmation', [$checkoutController, 'confirmation']);
+$app['router']->get('/checkout/payment/return', [$paymentController, 'stripeReturn']);
+$app['router']->post('/webhooks/stripe', [$paymentController, 'stripeWebhook']);
 $app['router']->get('/order-status', [$checkoutController, 'orderStatus']);
 
 $app['router']->get('/admin', [$admin, 'dashboard']);

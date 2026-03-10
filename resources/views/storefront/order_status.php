@@ -3,6 +3,10 @@ ob_start();
 ?>
 <section class="panel">
   <h2>Orderstatus</h2>
+  <?php if (($paymentMessage ?? '') !== ''): ?>
+    <p class="muted"><?= htmlspecialchars((string) $paymentMessage, ENT_QUOTES, 'UTF-8') ?></p>
+  <?php endif; ?>
+
   <form method="get" action="/order-status" class="inline-form">
     <div style="flex:1;">
       <label for="order_number">Ordernummer</label>
@@ -16,6 +20,7 @@ ob_start();
     <p>Orderstatus: <strong><?= htmlspecialchars((string) $orderSummary['order_status'], ENT_QUOTES, 'UTF-8') ?></strong></p>
     <p>Betalstatus: <strong><?= htmlspecialchars((string) ($orderSummary['payment_status'] ?? 'unpaid'), ENT_QUOTES, 'UTF-8') ?></strong></p>
     <p>Betalmetod: <strong><?= htmlspecialchars((string) ($paymentMethodLabel ?? 'Ej vald'), ENT_QUOTES, 'UTF-8') ?></strong></p>
+    <p>Betalprovider: <strong><?= htmlspecialchars((string) ($orderSummary['payment_provider'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></strong></p>
     <p>Leveransstatus: <strong><?= htmlspecialchars((string) $orderSummary['fulfillment_status'], ENT_QUOTES, 'UTF-8') ?></strong></p>
     <p>Fraktmetod: <strong><?= htmlspecialchars((string) ($orderSummary['shipping_method_name'] ?? 'Ej vald'), ENT_QUOTES, 'UTF-8') ?></strong></p>
     <p>Fraktkostnad: <?= number_format((float) ($orderSummary['shipping_cost_inc_vat'] ?? 0), 2, ',', ' ') ?> <?= htmlspecialchars((string) ($orderSummary['currency_code'] ?? 'SEK'), ENT_QUOTES, 'UTF-8') ?></p>

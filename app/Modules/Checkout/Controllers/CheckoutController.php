@@ -47,7 +47,8 @@ final class CheckoutController
 
         $totalsPreview = $this->totals->calculate(
             (float) ($cartData['subtotal_amount'] ?? 0),
-            (float) ($selectedMethod['price_inc_vat'] ?? 0)
+            (float) ($selectedMethod['price_inc_vat'] ?? 0),
+            (float) ($cartData['discount_amount_inc_vat'] ?? 0)
         );
 
         return new Response($this->views->render('storefront.checkout', [

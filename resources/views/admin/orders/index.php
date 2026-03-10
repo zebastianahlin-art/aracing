@@ -47,7 +47,7 @@ $statusOptions = $statusOptions ?? [];
   <table class="table compact">
     <thead>
     <tr>
-      <th>Ordernr</th><th>Kund</th><th>Fraktmetod</th><th>Total</th><th>Status</th><th>Leverans</th><th>Skapad</th>
+      <th>Ordernr</th><th>Kund</th><th>Fraktmetod</th><th>Rabatt</th><th>Total</th><th>Status</th><th>Leverans</th><th>Skapad</th>
     </tr>
     </thead>
     <tbody>
@@ -59,6 +59,7 @@ $statusOptions = $statusOptions ?? [];
           <small><?= htmlspecialchars((string) $order['customer_email'], ENT_QUOTES, 'UTF-8') ?></small>
         </td>
         <td><?= htmlspecialchars((string) ($order['shipping_method_name'] ?? '-'), ENT_QUOTES, 'UTF-8') ?><br><small><?= number_format((float) ($order['shipping_cost_inc_vat'] ?? 0), 2, ',', ' ') ?></small></td>
+        <td><?= htmlspecialchars((string) ($order['discount_code'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></td>
         <td><?= number_format((float) $order['total_amount'], 2, ',', ' ') ?></td>
         <td>
           <small>Order: <span class="pill"><?= htmlspecialchars((string) $order['order_status'], ENT_QUOTES, 'UTF-8') ?></span></small><br>

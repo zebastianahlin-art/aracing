@@ -59,6 +59,9 @@ $items = $detail['items'] ?? [];
     </tbody>
   </table>
 
+  <p><strong>Produkter:</strong> <?= number_format((float) $order['subtotal_amount'], 2, ',', ' ') ?> <?= htmlspecialchars((string) $order['currency_code'], ENT_QUOTES, 'UTF-8') ?></p>
+  <p><strong>Rabatt:</strong> -<?= number_format((float) ($order['discount_amount_inc_vat'] ?? 0), 2, ',', ' ') ?> <?= htmlspecialchars((string) $order['currency_code'], ENT_QUOTES, 'UTF-8') ?></p>
+  <p><strong>Frakt:</strong> <?= number_format((float) ($order['shipping_cost_inc_vat'] ?? 0), 2, ',', ' ') ?> <?= htmlspecialchars((string) $order['currency_code'], ENT_QUOTES, 'UTF-8') ?></p>
   <p><strong>Total:</strong> <?= number_format((float) $order['total_amount'], 2, ',', ' ') ?> <?= htmlspecialchars((string) $order['currency_code'], ENT_QUOTES, 'UTF-8') ?></p>
 <?php endif; ?>
 </body>

@@ -15,6 +15,9 @@ ob_start();
       <p>Fraktmetod: <strong><?= htmlspecialchars((string) ($publicOrder['shipping_method_name'] ?? 'Ej vald'), ENT_QUOTES, 'UTF-8') ?></strong></p>
       <p>Produktsubtotal: <?= number_format((float) ($publicOrder['product_subtotal'] ?? 0), 2, ',', ' ') ?> <?= htmlspecialchars((string) ($publicOrder['currency_code'] ?? 'SEK'), ENT_QUOTES, 'UTF-8') ?></p>
       <p>Fraktkostnad: <?= number_format((float) ($publicOrder['shipping_cost_inc_vat'] ?? 0), 2, ',', ' ') ?> <?= htmlspecialchars((string) ($publicOrder['currency_code'] ?? 'SEK'), ENT_QUOTES, 'UTF-8') ?></p>
+      <?php if ((float) ($publicOrder['discount_amount_inc_vat'] ?? 0) > 0): ?>
+        <p>Rabatt<?= (($publicOrder['discount_code'] ?? '') !== '') ? ' (' . htmlspecialchars((string) $publicOrder['discount_code'], ENT_QUOTES, 'UTF-8') . ')' : '' ?>: -<?= number_format((float) ($publicOrder['discount_amount_inc_vat'] ?? 0), 2, ',', ' ') ?> <?= htmlspecialchars((string) ($publicOrder['currency_code'] ?? 'SEK'), ENT_QUOTES, 'UTF-8') ?></p>
+      <?php endif; ?>
       <p><strong>Grand total: <?= number_format((float) ($publicOrder['grand_total'] ?? 0), 2, ',', ' ') ?> <?= htmlspecialchars((string) ($publicOrder['currency_code'] ?? 'SEK'), ENT_QUOTES, 'UTF-8') ?></strong></p>
       <p class="muted">Nästa steg: <?= htmlspecialchars((string) ($paymentNextStepText ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
       <p>Skickad: <?= htmlspecialchars((string) ($publicOrder['shipped_at'] ?? 'Inte skickad ännu'), ENT_QUOTES, 'UTF-8') ?></p>

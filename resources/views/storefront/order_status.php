@@ -19,6 +19,9 @@ ob_start();
     <p>Leveransstatus: <strong><?= htmlspecialchars((string) $orderSummary['fulfillment_status'], ENT_QUOTES, 'UTF-8') ?></strong></p>
     <p>Fraktmetod: <strong><?= htmlspecialchars((string) ($orderSummary['shipping_method_name'] ?? 'Ej vald'), ENT_QUOTES, 'UTF-8') ?></strong></p>
     <p>Fraktkostnad: <?= number_format((float) ($orderSummary['shipping_cost_inc_vat'] ?? 0), 2, ',', ' ') ?> <?= htmlspecialchars((string) ($orderSummary['currency_code'] ?? 'SEK'), ENT_QUOTES, 'UTF-8') ?></p>
+    <?php if ((float) ($orderSummary['discount_amount_inc_vat'] ?? 0) > 0): ?>
+      <p>Rabatt<?= (($orderSummary['discount_code'] ?? '') !== '') ? ' (' . htmlspecialchars((string) $orderSummary['discount_code'], ENT_QUOTES, 'UTF-8') . ')' : '' ?>: -<?= number_format((float) ($orderSummary['discount_amount_inc_vat'] ?? 0), 2, ',', ' ') ?> <?= htmlspecialchars((string) ($orderSummary['currency_code'] ?? 'SEK'), ENT_QUOTES, 'UTF-8') ?></p>
+    <?php endif; ?>
     <p><strong>Grand total: <?= number_format((float) ($orderSummary['grand_total'] ?? 0), 2, ',', ' ') ?> <?= htmlspecialchars((string) ($orderSummary['currency_code'] ?? 'SEK'), ENT_QUOTES, 'UTF-8') ?></strong></p>
     <p>Skickad: <?= htmlspecialchars((string) ($orderSummary['shipped_at'] ?? 'Inte skickad ännu'), ENT_QUOTES, 'UTF-8') ?></p>
     <p>Trackingnummer: <?= htmlspecialchars((string) ($orderSummary['tracking_number'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>

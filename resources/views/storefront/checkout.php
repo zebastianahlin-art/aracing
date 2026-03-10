@@ -46,6 +46,19 @@ $currency = (string) ($cartData['cart']['currency_code'] ?? 'SEK');
             <label>Ordernotering</label><textarea name="order_notes" rows="4" placeholder="T.ex. företagsnamn, referens eller önskemål"></textarea>
           </section>
 
+
+          <section class="panel" style="margin-bottom:.8rem;">
+            <h3>Betalmetod</h3>
+            <p class="muted">Välj hur du vill slutföra betalningen. Ingen extern onlinebetalning sker i detta steg.</p>
+            <?php foreach (($paymentMethodOptions ?? []) as $method): ?>
+              <label style="display:block; margin-bottom:.6rem; border:1px solid rgba(255,255,255,.12); border-radius:10px; padding:.7rem;">
+                <input type="radio" name="payment_method" value="<?= htmlspecialchars((string) $method['value'], ENT_QUOTES, 'UTF-8') ?>" <?= ($method['value'] === 'invoice_request') ? 'checked' : '' ?> required>
+                <strong><?= htmlspecialchars((string) $method['label'], ENT_QUOTES, 'UTF-8') ?></strong><br>
+                <small class="muted"><?= htmlspecialchars((string) $method['help_text'], ENT_QUOTES, 'UTF-8') ?></small>
+              </label>
+            <?php endforeach; ?>
+          </section>
+
           <button type="submit" class="btn-primary">Skapa order</button>
         </form>
       </div>

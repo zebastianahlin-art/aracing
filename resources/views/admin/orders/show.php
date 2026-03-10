@@ -47,6 +47,14 @@ $events = $detail['events'] ?? [];
           Skickad: <?= htmlspecialchars((string) ($order['shipped_at'] ?? '-'), ENT_QUOTES, 'UTF-8') ?>
         </p>
 
+        <h3>Betalningsöversikt</h3>
+        <p>
+          Betalmetod: <strong><?= htmlspecialchars((string) ($order['payment_method'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></strong><br>
+          Betalstatus: <strong><?= htmlspecialchars((string) ($order['payment_status'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></strong><br>
+          Betalreferens: <?= htmlspecialchars((string) ($order['payment_reference'] ?? '-'), ENT_QUOTES, 'UTF-8') ?><br>
+          Betalningsnotering: <?= nl2br(htmlspecialchars((string) ($order['payment_note'] ?? '-'), ENT_QUOTES, 'UTF-8')) ?>
+        </p>
+
         <h3>Manuell försändelseinfo</h3>
         <form method="post" action="/admin/orders/<?= (int) $order['id'] ?>/shipment">
           <label for="tracking_number">Trackingnummer</label>
@@ -83,21 +91,35 @@ $events = $detail['events'] ?? [];
       </tbody>
     </table>
 
-    <h3>Uppdatera order</h3>
-    <form method="post" action="/admin/orders/<?= (int) $order['id'] ?>/update" class="grid-4">
-      <div>
-        <label>Orderstatus</label>
-        <select name="status">
-          <?php foreach (($statusOptions['status'] ?? []) as $status): ?>
-            <option value="<?= htmlspecialchars((string) $status, ENT_QUOTES, 'UTF-8') ?>" <?= $order['status'] === $status ? 'selected' : '' ?>><?= htmlspecialchars((string) $status, ENT_QUOTES, 'UTF-8') ?></option>
-          <?php endforeach; ?>
-        </select>
-      </div>
+    <h3>Uppdatera betalning</h3>
+    <form method="post" action="/admin/orders/<?= (int) $order['id'] ?>/payment" class="grid-4">
       <div>
         <label>Betalstatus</label>
         <select name="payment_status">
           <?php foreach (($statusOptions['payment_status'] ?? []) as $status): ?>
             <option value="<?= htmlspecialchars((string) $status, ENT_QUOTES, 'UTF-8') ?>" <?= $order['payment_status'] === $status ? 'selected' : '' ?>><?= htmlspecialchars((string) $status, ENT_QUOTES, 'UTF-8') ?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+      <div>
+        <label>Betalreferens</label>
+        <input type="text" name="payment_reference" value="<?= htmlspecialchars((string) ($order['payment_reference'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+      </div>
+      <div>
+        <label>Betalningsnotering</label>
+        <textarea name="payment_note"><?= htmlspecialchars((string) ($order['payment_note'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
+      </div>
+      <div><button class="btn" type="submit">Spara betalningsinfo</button></div>
+    </form>
+
+    <h3>Uppdatera order</h3>
+    <form method="post" action="/admin/orders/<?= (int) $order['id'] ?>/update" class="grid-4">
+      <input type="hidden" name="payment_status" value="<?= htmlspecialchars((string) ($order['payment_status'] ?? 'unpaid'), ENT_QUOTES, 'UTF-8') ?>">
+      <div>
+        <label>Orderstatus</label>
+        <select name="status">
+          <?php foreach (($statusOptions['status'] ?? []) as $status): ?>
+            <option value="<?= htmlspecialchars((string) $status, ENT_QUOTES, 'UTF-8') ?>" <?= $order['status'] === $status ? 'selected' : '' ?>><?= htmlspecialchars((string) $status, ENT_QUOTES, 'UTF-8') ?></option>
           <?php endforeach; ?>
         </select>
       </div>

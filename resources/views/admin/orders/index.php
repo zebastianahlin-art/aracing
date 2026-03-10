@@ -30,6 +30,15 @@ $statusOptions = $statusOptions ?? [];
       </select>
     </div>
     <div>
+      <label for="payment_method">Betalmetod</label>
+      <select id="payment_method" name="payment_method">
+        <option value="">Alla</option>
+        <?php foreach (($statusOptions['payment_method'] ?? []) as $paymentMethod): ?>
+          <option value="<?= htmlspecialchars((string) $paymentMethod, ENT_QUOTES, 'UTF-8') ?>" <?= ($filters['payment_method'] ?? '') === $paymentMethod ? 'selected' : '' ?>><?= htmlspecialchars((string) $paymentMethod, ENT_QUOTES, 'UTF-8') ?></option>
+        <?php endforeach; ?>
+      </select>
+    </div>
+    <div>
       <label for="fulfillment_status">Leveransstatus</label>
       <select id="fulfillment_status" name="fulfillment_status">
         <option value="">Alla</option>
@@ -47,7 +56,7 @@ $statusOptions = $statusOptions ?? [];
   <table class="table compact">
     <thead>
     <tr>
-      <th>Ordernr</th><th>Kund</th><th>Total</th><th>Operativ status</th><th>Fraktinfo</th><th>Skapad</th>
+      <th>Ordernr</th><th>Kund</th><th>Total</th><th>Betalning</th><th>Operativ status</th><th>Fraktinfo</th><th>Skapad</th>
     </tr>
     </thead>
     <tbody>
@@ -59,6 +68,10 @@ $statusOptions = $statusOptions ?? [];
           <small><?= htmlspecialchars((string) $order['customer_email'], ENT_QUOTES, 'UTF-8') ?></small>
         </td>
         <td><?= number_format((float) $order['total_amount'], 2, ',', ' ') ?></td>
+        <td>
+          <span class="pill"><?= htmlspecialchars((string) $order['payment_status'], ENT_QUOTES, 'UTF-8') ?></span><br>
+          <small>Metod: <?= htmlspecialchars((string) ($order['payment_method'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></small>
+        </td>
         <td>
           <span class="pill"><?= htmlspecialchars((string) $order['fulfillment_status'], ENT_QUOTES, 'UTF-8') ?></span><br>
           <small>Packad: <?= htmlspecialchars((string) ($order['packed_at'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></small><br>

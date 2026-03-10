@@ -12,6 +12,7 @@ final class OrderService
 {
     private const ALLOWED_ORDER_STATUS = ['pending', 'confirmed', 'cancelled'];
     private const ALLOWED_PAYMENT_STATUS = ['unpaid', 'pending', 'paid'];
+    private const ALLOWED_PAYMENT_METHODS = ['invoice_request', 'manual_card_phone', 'bank_transfer'];
     private const ALLOWED_FULFILLMENT_STATUS = ['unfulfilled', 'processing', 'packed', 'shipped'];
 
     public function __construct(private readonly OrderRepository $orders)
@@ -56,6 +57,10 @@ final class OrderService
         return [
             'order_number' => $order['order_number'],
             'status' => $order['status'],
+            'payment_status' => $order['payment_status'],
+            'payment_method' => $order['payment_method'] ?? null,
+            'payment_reference' => $order['payment_reference'] ?? null,
+            'payment_note' => $order['payment_note'] ?? null,
             'fulfillment_status' => $order['fulfillment_status'],
             'shipped_at' => $order['shipped_at'],
             'tracking_number' => $order['tracking_number'] ?? null,
@@ -99,6 +104,9 @@ final class OrderService
                 'shipping_amount' => 0,
                 'total_amount' => $cartData['total_amount'],
                 'payment_status' => 'unpaid',
+                'payment_method' => $checkoutData['payment_method'],
+                'payment_reference' => null,
+                'payment_note' => null,
                 'fulfillment_status' => 'unfulfilled',
                 'internal_reference' => null,
                 'packed_at' => null,
@@ -122,6 +130,7 @@ final class OrderService
             }
 
             $this->orders->createOrderEvent($orderId, 'order_created', 'Order skapad via checkout.');
+            $this->orders->createOrderEvent($orderId, 'payment_method_selected', sprintf('Betalmetod vald i checkout: %s.', $checkoutData['payment_method']));
 
             $this->orders->commit();
 
@@ -185,6 +194,49 @@ final class OrderService
                     ? 'Intern referens rensad.'
                     : sprintf('Intern referens satt: %s.', $internalReference);
                 $this->orders->createOrderEvent($orderId, 'internal_reference_updated', $eventMessage);
+            }
+
+            $this->orders->commit();
+        } catch (\Throwable $e) {
+            $this->orders->rollBack();
+            throw $e;
+        }
+    }
+
+    public function updatePaymentAdminFields(int $orderId, string $paymentStatus, string $paymentReference, string $paymentNote): void
+    {
+        $paymentStatus = trim($paymentStatus);
+        $paymentReference = trim($paymentReference);
+        $paymentNote = trim($paymentNote);
+
+        if (!in_array($paymentStatus, self::ALLOWED_PAYMENT_STATUS, true)) {
+            throw new InvalidArgumentException('Ogiltig betalstatus.');
+        }
+
+        $order = $this->orders->findOrderById($orderId);
+        if ($order === null) {
+            throw new InvalidArgumentException('Order hittades inte.');
+        }
+
+        $this->orders->beginTransaction();
+        try {
+            $this->orders->updatePaymentAdminFields(
+                $orderId,
+                $paymentStatus,
+                $paymentReference !== '' ? $paymentReference : null,
+                $paymentNote !== '' ? $paymentNote : null
+            );
+
+            if ($order['payment_status'] !== $paymentStatus) {
+                $this->orders->createOrderEvent($orderId, 'payment_status_changed', sprintf('Betalstatus ändrad: %s → %s.', $order['payment_status'], $paymentStatus));
+            }
+
+            $previousReference = trim((string) ($order['payment_reference'] ?? ''));
+            if ($previousReference !== $paymentReference) {
+                $message = $paymentReference === ''
+                    ? 'Betalreferens rensad.'
+                    : sprintf('Betalreferens uppdaterad: %s.', $paymentReference);
+                $this->orders->createOrderEvent($orderId, 'payment_reference_updated', $message);
             }
 
             $this->orders->commit();
@@ -332,12 +384,33 @@ final class OrderService
         }
     }
 
+    public function paymentMethodLabel(?string $paymentMethod): string
+    {
+        return match ((string) $paymentMethod) {
+            'invoice_request' => 'Fakturaförfrågan',
+            'manual_card_phone' => 'Kortbetalning via telefon',
+            'bank_transfer' => 'Banköverföring',
+            default => 'Ej vald',
+        };
+    }
+
+    public function paymentNextStepText(?string $paymentMethod): string
+    {
+        return match ((string) $paymentMethod) {
+            'invoice_request' => 'Vi återkommer med orderbekräftelse och betalningsinstruktion.',
+            'manual_card_phone' => 'Vi kontaktar dig för att slutföra betalningen.',
+            'bank_transfer' => 'Betalningsinstruktion skickas manuellt efter granskning.',
+            default => 'Vi kontaktar dig vid behov med betalningsinformation.',
+        };
+    }
+
     /** @return array<string, array<int, string>> */
     public function statusOptions(): array
     {
         return [
             'status' => self::ALLOWED_ORDER_STATUS,
             'payment_status' => self::ALLOWED_PAYMENT_STATUS,
+            'payment_method' => self::ALLOWED_PAYMENT_METHODS,
             'fulfillment_status' => self::ALLOWED_FULFILLMENT_STATUS,
         ];
     }

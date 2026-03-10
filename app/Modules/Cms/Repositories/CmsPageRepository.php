@@ -38,6 +38,35 @@ final class CmsPageRepository
         return $row !== false ? $row : null;
     }
 
+    /** @param array<int, string> $slugs
+     *  @return array<int, array<string, mixed>>
+     */
+    public function findActiveBySlugs(array $slugs): array
+    {
+        $normalizedSlugs = [];
+        foreach ($slugs as $slug) {
+            $value = trim((string) $slug);
+            if ($value !== '') {
+                $normalizedSlugs[] = $value;
+            }
+        }
+
+        if ($normalizedSlugs === []) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($normalizedSlugs), '?'));
+        $sql = sprintf(
+            'SELECT id, title, slug, page_type FROM cms_pages WHERE is_active = 1 AND slug IN (%s)',
+            $placeholders
+        );
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($normalizedSlugs);
+
+        return $stmt->fetchAll();
+    }
+
     public function create(array $data): int
     {
         $stmt = $this->pdo->prepare('INSERT INTO cms_pages (title, slug, page_type, is_active, meta_title, meta_description, content_html, created_at, updated_at) VALUES (:title, :slug, :page_type, :is_active, :meta_title, :meta_description, :content_html, NOW(), NOW())');

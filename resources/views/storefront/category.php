@@ -11,6 +11,12 @@ ob_start();
   <?php endif; ?>
 </section>
 
+<section class="trust-grid" aria-label="Trygghetsinformation kategori">
+  <article class="trust-item"><strong>Frågor om passform?</strong><p class="muted">Kontakta oss via <a href="/pages/kontakt">kontakt</a> innan köp.</p></article>
+  <article class="trust-item"><strong>Leveransinformation</strong><p class="muted">Detaljer finns på sidan <a href="/pages/fraktinfo">Fraktinfo</a>.</p></article>
+  <article class="trust-item"><strong>Trygg retur</strong><p class="muted">Läs <a href="/pages/retur-reklamation">retur/reklamation</a> för villkor.</p></article>
+</section>
+
 <?php if ($category !== null): ?>
   <?php
   $action = '/category/' . urlencode((string) $category['slug']);
@@ -31,7 +37,7 @@ ob_start();
           <?php endif; ?>
           <h3><a href="/product/<?= htmlspecialchars((string) $product['slug'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $product['name'], ENT_QUOTES, 'UTF-8') ?></a></h3>
           <p class="muted">Varumärke: <?= htmlspecialchars((string) ($product['brand_name'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
-          <?php if ($product['sale_price'] !== null): ?><p><strong><?= htmlspecialchars((string) $product['sale_price'], ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars((string) ($product['currency_code'] ?? 'SEK'), ENT_QUOTES, 'UTF-8') ?></strong></p><?php else: ?><p class="muted">Pris visas vid förfrågan</p><?php endif; ?>
+          <?php if ($product['sale_price'] !== null): ?><p><strong><?= htmlspecialchars((string) $product['sale_price'], ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars((string) ($product['currency_code'] ?? 'SEK'), ENT_QUOTES, 'UTF-8') ?></strong></p><?php else: ?><p class="muted">Pris visas vid förfrågan – kontakta oss.</p><?php endif; ?>
           <p class="muted">Lager: <?= htmlspecialchars((string) ($product['stock_status'] ?? 'okänd'), ENT_QUOTES, 'UTF-8') ?></p>
         </article>
       <?php endforeach; ?>

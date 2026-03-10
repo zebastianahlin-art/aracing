@@ -7,11 +7,12 @@ namespace App\Modules\Cart\Controllers;
 use App\Core\Http\Response;
 use App\Core\View\ViewFactory;
 use App\Modules\Cart\Services\CartService;
+use App\Modules\Cms\Services\CmsPageService;
 use RuntimeException;
 
 final class CartController
 {
-    public function __construct(private readonly ViewFactory $views, private readonly CartService $carts)
+    public function __construct(private readonly ViewFactory $views, private readonly CartService $carts, private readonly CmsPageService $pages)
     {
     }
 
@@ -24,6 +25,7 @@ final class CartController
             'cartData' => $this->carts->getCartBySession($this->sessionId()),
             'message' => $message,
             'error' => $error,
+            'infoPages' => $this->pages->storefrontInfoPages(),
         ]));
     }
 

@@ -12,6 +12,7 @@ ob_start();
       </div>
       <div>
         <label>Slug</label>
+        <p class="muted">För trust-/infosidor använd gärna: kontakt, kopvillkor, retur-reklamation, fraktinfo, om-oss.</p>
         <input name="slug" value="<?= htmlspecialchars((string) ($page['slug'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
       </div>
       <div>

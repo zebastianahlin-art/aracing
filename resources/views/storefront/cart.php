@@ -46,6 +46,12 @@ $items = $cartData['items'] ?? [];
     <p><a class="btn-primary" href="/checkout">Till checkout</a></p>
   <?php endif; ?>
 </section>
+
+<section class="trust-grid" aria-label="Kundvagnsinformation">
+  <article class="trust-item"><strong>Snabb orderhjälp</strong><p class="muted">Behöver du hjälp innan checkout? <a href="/pages/kontakt">Kontakta oss</a>.</p></article>
+  <article class="trust-item"><strong>Villkor & retur</strong><p class="muted"><a href="/pages/kopvillkor">Köpvillkor</a> och <a href="/pages/retur-reklamation">retur/reklamation</a>.</p></article>
+</section>
+
 <?php
 $content = (string) ob_get_clean();
 $title = 'Kundvagn | A-Racing';

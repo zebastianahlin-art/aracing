@@ -11,6 +11,8 @@
     header, main, footer { max-width:1100px; margin:0 auto; padding:1rem; }
     nav a { color:var(--text); text-decoration:none; margin-right:1rem; }
     nav a:hover { color:var(--accent); }
+    .top-links { margin-top:.55rem; display:flex; gap:.9rem; flex-wrap:wrap; }
+    .top-links a { color:var(--muted); font-size:13px; }
     .panel { background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:1rem; }
     .accent { color:var(--accent); }
     .product-grid { display:grid; gap:.8rem; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); }
@@ -21,6 +23,8 @@
     .thumb-strip { display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.7rem; }
     .thumb-strip img { width:110px; height:82px; object-fit:cover; border:1px solid #2f3240; }
     .muted { color:var(--muted); font-size:13px; }
+    .trust-grid { display:grid; gap:.6rem; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); margin:.8rem 0; }
+    .trust-item { border:1px solid var(--line); border-radius:8px; padding:.7rem; background:#131319; }
     .image-strip { display:grid; gap:.6rem; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); margin-top:1rem; }
     .image-item { border:1px solid var(--line); padding:.45rem; border-radius:8px; }
     img { max-width:100%; border-radius:6px; }
@@ -37,9 +41,12 @@
     .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
     .ok-msg { color:#7ee787; }
     .err-msg { color:#ff9c9c; }
+    .footer-links { display:flex; gap:.8rem; flex-wrap:wrap; margin-top:.4rem; }
+    @media (max-width: 800px) { .grid-2 { grid-template-columns:1fr; } }
   </style>
 </head>
 <body>
+<?php $infoPages = $infoPages ?? []; ?>
 <header>
   <h1>A-<span class="accent">Racing</span></h1>
   <nav>
@@ -47,11 +54,27 @@
     <a href="/search">Sök</a>
     <a href="/cart">Kundvagn</a>
     <a href="/checkout">Checkout</a>
-    <a href="/pages/kopvillkor">Köpvillkor</a>
+    <a href="/order-status">Orderstatus</a>
     <a href="/admin">Admin</a>
   </nav>
+  <?php if ($infoPages !== []): ?>
+    <div class="top-links" aria-label="Informationssidor">
+      <?php foreach ($infoPages as $pageLink): ?>
+        <a href="<?= htmlspecialchars((string) $pageLink['url'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $pageLink['label'], ENT_QUOTES, 'UTF-8') ?></a>
+      <?php endforeach; ?>
+    </div>
+  <?php endif; ?>
 </header>
 <main><?= $content ?? '' ?></main>
-<footer><small>Serverrenderad storefront - katalog kopplad till databas</small></footer>
+<footer>
+  <small>Serverrenderad storefront - katalog kopplad till databas</small>
+  <?php if ($infoPages !== []): ?>
+    <div class="footer-links">
+      <?php foreach ($infoPages as $pageLink): ?>
+        <a href="<?= htmlspecialchars((string) $pageLink['url'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $pageLink['label'], ENT_QUOTES, 'UTF-8') ?></a>
+      <?php endforeach; ?>
+    </div>
+  <?php endif; ?>
+</footer>
 </body>
 </html>

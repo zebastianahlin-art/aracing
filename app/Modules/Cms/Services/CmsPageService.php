@@ -9,6 +9,14 @@ use App\Shared\Support\Slugger;
 
 final class CmsPageService
 {
+
+    private const STOREFRONT_INFO_SLUGS = [
+        'kontakt' => 'Kontakt',
+        'kopvillkor' => 'Köpvillkor',
+        'retur-reklamation' => 'Retur / reklamation',
+        'fraktinfo' => 'Fraktinfo',
+        'om-oss' => 'Om oss',
+    ];
     public function __construct(private readonly CmsPageRepository $pages)
     {
     }
@@ -29,6 +37,32 @@ final class CmsPageService
     public function getActiveBySlug(string $slug): ?array
     {
         return $this->pages->findActiveBySlug($slug);
+    }
+
+
+    /** @return array<int, array<string, string>> */
+    public function storefrontInfoPages(): array
+    {
+        $rows = $this->pages->findActiveBySlugs(array_keys(self::STOREFRONT_INFO_SLUGS));
+        $mapped = [];
+        foreach ($rows as $row) {
+            $slug = (string) ($row['slug'] ?? '');
+            if ($slug !== '') {
+                $mapped[$slug] = $row;
+            }
+        }
+
+        $result = [];
+        foreach (self::STOREFRONT_INFO_SLUGS as $slug => $label) {
+            $title = isset($mapped[$slug]['title']) ? (string) $mapped[$slug]['title'] : $label;
+            $result[] = [
+                'label' => $title,
+                'slug' => $slug,
+                'url' => '/pages/' . $slug,
+            ];
+        }
+
+        return $result;
     }
 
     /** @param array<string, mixed> $input */

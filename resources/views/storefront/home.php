@@ -59,6 +59,14 @@ ob_start();
 </section>
 <?php endif; ?>
 
+
+<section class="trust-grid" aria-label="Trygghetsinformation">
+  <article class="trust-item"><strong>Snabb leverans</strong><p class="muted">Vi skickar lagervaror snabbt och kommunicerar status tydligt.</p></article>
+  <article class="trust-item"><strong>Retur & reklamation</strong><p class="muted">Smidig hantering via tydliga villkor och kontaktväg.</p></article>
+  <article class="trust-item"><strong>Motorsportprofil</strong><p class="muted">Specialiserat sortiment för racing och prestanda.</p></article>
+  <article class="trust-item"><strong>Behöver du hjälp?</strong><p class="muted">Se <a href="/pages/kontakt">kontakt</a> för snabb support.</p></article>
+</section>
+
 <?php if ($info !== null): ?>
 <section class="panel">
   <h3><?= htmlspecialchars((string) ($info['title'] ?? 'Info'), ENT_QUOTES, 'UTF-8') ?></h3>

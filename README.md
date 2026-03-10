@@ -346,3 +346,19 @@ Lokal manuell test:
 2. Öppna `/search` och sök på namn, SKU och varumärke.
 3. Testa filterkombinationer (kategori, brand, pris, lagerstatus) samt sortering.
 4. Öppna en `/category/{slug}` och verifiera träffräknare, filter/sortering och tomt-resultat-läge.
+
+## Kundförtroende-sidor + storefront polish v1
+
+Storefronten visar nu informationssidor i både header och footer via CMS light.
+Skapa/uppdatera sidor i admin under `/admin/cms/pages` med följande slugs för att fylla trust-navigationen:
+- `kontakt`
+- `kopvillkor`
+- `retur-reklamation`
+- `fraktinfo`
+- `om-oss`
+
+Snabb lokal verifiering:
+1. Aktivera/uppdatera ovan sidor i CMS.
+2. Kontrollera att länkar syns i storefront header/footer.
+3. Kontrollera trust-block på start-, kategori-, produkt-, kundvagn- och checkout-sidor.
+4. Kontrollera checkout med fel (t.ex. tom e-post) för tydlig feltext och hjälpruta.

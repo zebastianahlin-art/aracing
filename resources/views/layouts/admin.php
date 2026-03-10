@@ -46,6 +46,7 @@
     <a href="/admin/products">Products</a>
     <a href="/admin/products/article-care">Artikelvårdskö</a>
     <a href="/admin/orders">Orders</a>
+    <a href="/admin/shipping-methods">Fraktmetoder</a>
     <a href="/admin/purchasing">Inköpsöversikt</a>
     <a href="/admin/purchase-lists">Inköpsunderlag</a>
     <a href="/admin/suppliers">Leverantörer</a>

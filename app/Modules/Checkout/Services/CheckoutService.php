@@ -50,6 +50,7 @@ final class CheckoutService
             'shipping_city' => $this->required($input['shipping_city'] ?? null, 'Fyll i stad för leveransadress.'),
             'shipping_country' => strtoupper($this->required($input['shipping_country'] ?? null, 'Fyll i landkod för leveransadress.')),
             'order_notes' => $this->nullable($input['order_notes'] ?? null),
+            'shipping_method_code' => $this->shippingMethodCode($input['shipping_method_code'] ?? null),
             'payment_method' => $this->paymentMethod($input['payment_method'] ?? null),
         ];
     }
@@ -91,6 +92,17 @@ final class CheckoutService
         $normalized = trim((string) $value);
 
         return $normalized === '' ? null : $normalized;
+    }
+
+
+    private function shippingMethodCode(mixed $value): string
+    {
+        $shippingMethodCode = trim((string) $value);
+        if ($shippingMethodCode === '') {
+            throw new InvalidArgumentException('Välj en fraktmetod.');
+        }
+
+        return $shippingMethodCode;
     }
 
     private function paymentMethod(mixed $value): string

@@ -2,6 +2,13 @@
 ob_start();
 $items = $cartData['items'] ?? [];
 $currency = (string) ($cartData['cart']['currency_code'] ?? 'SEK');
+$shippingMethods = $shippingMethods ?? [];
+$selectedShippingMethodCode = (string) ($selectedShippingMethodCode ?? '');
+$totalsPreview = $totalsPreview ?? [
+  'product_subtotal' => (float) ($cartData['subtotal_amount'] ?? 0),
+  'shipping_cost' => 0,
+  'grand_total' => (float) ($cartData['total_amount'] ?? 0),
+];
 ?>
 <section class="panel">
   <h2>Checkout</h2>
@@ -46,6 +53,17 @@ $currency = (string) ($cartData['cart']['currency_code'] ?? 'SEK');
             <label>Ordernotering</label><textarea name="order_notes" rows="4" placeholder="T.ex. företagsnamn, referens eller önskemål"></textarea>
           </section>
 
+          <section class="panel" style="margin-bottom:.8rem;">
+            <h3>Fraktmetod</h3>
+            <?php foreach ($shippingMethods as $method): ?>
+              <label style="display:block; margin-bottom:.6rem; border:1px solid rgba(255,255,255,.12); border-radius:10px; padding:.7rem;">
+                <input type="radio" name="shipping_method_code" value="<?= htmlspecialchars((string) $method['code'], ENT_QUOTES, 'UTF-8') ?>" <?= ((string) $method['code'] === $selectedShippingMethodCode) ? 'checked' : '' ?> required>
+                <strong><?= htmlspecialchars((string) $method['name'], ENT_QUOTES, 'UTF-8') ?></strong>
+                <small style="float:right;"><?= number_format((float) $method['price_inc_vat'], 2, ',', ' ') ?> <?= htmlspecialchars($currency, ENT_QUOTES, 'UTF-8') ?></small><br>
+                <small class="muted"><?= htmlspecialchars((string) ($method['description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></small>
+              </label>
+            <?php endforeach; ?>
+          </section>
 
           <section class="panel" style="margin-bottom:.8rem;">
             <h3>Betalmetod</h3>
@@ -78,17 +96,9 @@ $currency = (string) ($cartData['cart']['currency_code'] ?? 'SEK');
             <?php endforeach; ?>
             </tbody>
           </table>
-          <p><strong>Ordertotalt: <?= number_format((float) ($cartData['total_amount'] ?? 0), 2, ',', ' ') ?> <?= htmlspecialchars($currency, ENT_QUOTES, 'UTF-8') ?></strong></p>
-        </section>
-
-        <section class="panel">
-          <h3>Leverans, retur och hjälp</h3>
-          <ul>
-            <li>Leveransinformation: <a href="/pages/fraktinfo">Fraktinfo</a></li>
-            <li>Returer/reklamation: <a href="/pages/retur-reklamation">Retur / reklamation</a></li>
-            <li>Kontakt: <a href="/pages/kontakt">Kontakta oss</a></li>
-            <li>Villkor: <a href="/pages/kopvillkor">Köpvillkor</a></li>
-          </ul>
+          <p>Produktsubtotal: <?= number_format((float) $totalsPreview['product_subtotal'], 2, ',', ' ') ?> <?= htmlspecialchars($currency, ENT_QUOTES, 'UTF-8') ?></p>
+          <p>Frakt: <?= number_format((float) $totalsPreview['shipping_cost'], 2, ',', ' ') ?> <?= htmlspecialchars($currency, ENT_QUOTES, 'UTF-8') ?></p>
+          <p><strong>Grand total: <?= number_format((float) $totalsPreview['grand_total'], 2, ',', ' ') ?> <?= htmlspecialchars($currency, ENT_QUOTES, 'UTF-8') ?></strong></p>
         </section>
       </aside>
     </div>

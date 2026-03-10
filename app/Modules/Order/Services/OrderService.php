@@ -6,6 +6,8 @@ namespace App\Modules\Order\Services;
 
 use App\Modules\Order\Repositories\EmailMessageRepository;
 use App\Modules\Order\Repositories\OrderRepository;
+use App\Modules\Shipping\Services\CheckoutTotalsService;
+use App\Modules\Shipping\Services\ShippingService;
 use InvalidArgumentException;
 use RuntimeException;
 
@@ -36,7 +38,9 @@ final class OrderService
     public function __construct(
         private readonly OrderRepository $orders,
         private readonly EmailMessageRepository $emailMessages,
-        private readonly OrderEmailService $orderEmails
+        private readonly OrderEmailService $orderEmails,
+        private readonly ShippingService $shipping,
+        private readonly CheckoutTotalsService $totals
     )
     {
     }
@@ -84,6 +88,13 @@ final class OrderService
             'payment_reference' => $order['payment_reference'] ?? null,
             'payment_note' => $order['payment_note'] ?? null,
             'fulfillment_status' => $order['fulfillment_status'],
+            'shipping_method_code' => $order['shipping_method_code'] ?? null,
+            'shipping_method_name' => $order['shipping_method_name'] ?? null,
+            'shipping_method_description' => $order['shipping_method_description'] ?? null,
+            'shipping_cost_inc_vat' => (float) ($order['shipping_cost_inc_vat'] ?? 0),
+            'product_subtotal' => (float) ($order['subtotal_amount'] ?? 0),
+            'grand_total' => (float) ($order['total_amount'] ?? 0),
+            'currency_code' => $order['currency_code'] ?? 'SEK',
             'carrier_name' => $order['carrier_name'] ?? null,
             'tracking_number' => $order['tracking_number'] ?? null,
             'tracking_url' => $order['tracking_url'] ?? null,
@@ -97,6 +108,10 @@ final class OrderService
         if (($cartData['items'] ?? []) === []) {
             throw new RuntimeException('Kundvagnen är tom.');
         }
+
+        $selectedMethod = $this->shipping->validateSelectedMethod((string) ($checkoutData['shipping_method_code'] ?? ''));
+        $shippingSnapshot = $this->shipping->buildOrderSnapshot($selectedMethod);
+        $totals = $this->totals->calculate((float) ($cartData['subtotal_amount'] ?? 0), (float) $shippingSnapshot['shipping_cost_inc_vat']);
 
         $orderNumber = $this->generateOrderNumber();
         $this->orders->beginTransaction();
@@ -124,10 +139,15 @@ final class OrderService
                 'shipping_postal_code' => $checkoutData['shipping_postal_code'],
                 'shipping_city' => $checkoutData['shipping_city'],
                 'shipping_country' => $checkoutData['shipping_country'],
+                'shipping_method_code' => $shippingSnapshot['shipping_method_code'],
+                'shipping_method_name' => $shippingSnapshot['shipping_method_name'],
+                'shipping_method_description' => $shippingSnapshot['shipping_method_description'],
                 'order_notes' => $checkoutData['order_notes'],
-                'subtotal_amount' => $cartData['subtotal_amount'],
-                'shipping_amount' => 0,
-                'total_amount' => $cartData['total_amount'],
+                'subtotal_amount' => $totals['product_subtotal'],
+                'shipping_cost_ex_vat' => $shippingSnapshot['shipping_cost_ex_vat'],
+                'shipping_cost_inc_vat' => $shippingSnapshot['shipping_cost_inc_vat'],
+                'shipping_amount' => $shippingSnapshot['shipping_cost_inc_vat'],
+                'total_amount' => $totals['grand_total'],
                 'payment_status' => 'unpaid',
                 'payment_method' => $checkoutData['payment_method'],
                 'payment_reference' => null,

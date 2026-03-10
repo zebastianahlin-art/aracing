@@ -10,6 +10,8 @@ use App\Modules\Cart\Services\CartService;
 use App\Modules\Checkout\Services\CheckoutService;
 use App\Modules\Cms\Services\CmsPageService;
 use App\Modules\Order\Services\OrderService;
+use App\Modules\Shipping\Services\CheckoutTotalsService;
+use App\Modules\Shipping\Services\ShippingService;
 use Throwable;
 
 final class CheckoutController
@@ -19,17 +21,43 @@ final class CheckoutController
         private readonly CartService $carts,
         private readonly CheckoutService $checkout,
         private readonly OrderService $orders,
+        private readonly ShippingService $shipping,
+        private readonly CheckoutTotalsService $totals,
         private readonly CmsPageService $pages
     ) {
     }
 
     public function form(): Response
     {
+        $cartData = $this->carts->getCartBySession($this->sessionId());
+        $shippingMethods = $this->shipping->listActiveForCheckout();
+        $selectedCode = trim((string) ($_GET['shipping_method_code'] ?? ($shippingMethods[0]['code'] ?? '')));
+
+        $selectedMethod = null;
+        foreach ($shippingMethods as $method) {
+            if ((string) $method['code'] === $selectedCode) {
+                $selectedMethod = $method;
+                break;
+            }
+        }
+        if ($selectedMethod === null && $shippingMethods !== []) {
+            $selectedMethod = $shippingMethods[0];
+            $selectedCode = (string) $selectedMethod['code'];
+        }
+
+        $totalsPreview = $this->totals->calculate(
+            (float) ($cartData['subtotal_amount'] ?? 0),
+            (float) ($selectedMethod['price_inc_vat'] ?? 0)
+        );
+
         return new Response($this->views->render('storefront.checkout', [
-            'cartData' => $this->carts->getCartBySession($this->sessionId()),
+            'cartData' => $cartData,
             'error' => trim((string) ($_GET['error'] ?? '')),
             'infoPages' => $this->pages->storefrontInfoPages(),
             'paymentMethodOptions' => $this->checkout->paymentMethodOptions(),
+            'shippingMethods' => $shippingMethods,
+            'selectedShippingMethodCode' => $selectedCode,
+            'totalsPreview' => $totalsPreview,
         ]));
     }
 
@@ -45,7 +73,13 @@ final class CheckoutController
 
             return $this->redirect('/checkout/confirmation');
         } catch (Throwable $e) {
-            return $this->redirect('/checkout?error=' . urlencode($e->getMessage()));
+            $shippingMethodCode = trim((string) ($_POST['shipping_method_code'] ?? ''));
+            $query = '/checkout?error=' . urlencode($e->getMessage());
+            if ($shippingMethodCode !== '') {
+                $query .= '&shipping_method_code=' . urlencode($shippingMethodCode);
+            }
+
+            return $this->redirect($query);
         }
     }
 

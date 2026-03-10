@@ -61,6 +61,16 @@ $canCancelFulfillment = in_array((string) ($order['fulfillment_status'] ?? ''), 
           Fulfillment: <span class="pill"><?= htmlspecialchars((string) $order['fulfillment_status'], ENT_QUOTES, 'UTF-8') ?></span>
         </p>
 
+        <h3>Fraktmetod (snapshot)</h3>
+        <p>
+          Metod: <?= htmlspecialchars((string) ($order['shipping_method_name'] ?? '-'), ENT_QUOTES, 'UTF-8') ?> (<?= htmlspecialchars((string) ($order['shipping_method_code'] ?? '-'), ENT_QUOTES, 'UTF-8') ?>)<br>
+          Beskrivning: <?= nl2br(htmlspecialchars((string) ($order['shipping_method_description'] ?? '-'), ENT_QUOTES, 'UTF-8')) ?><br>
+          Frakt ex moms: <?= number_format((float) ($order['shipping_cost_ex_vat'] ?? 0), 2, ',', ' ') ?><br>
+          Frakt inkl moms: <?= number_format((float) ($order['shipping_cost_inc_vat'] ?? 0), 2, ',', ' ') ?><br>
+          Produktsubtotal: <?= number_format((float) ($order['subtotal_amount'] ?? 0), 2, ',', ' ') ?><br>
+          Grand total: <strong><?= number_format((float) ($order['total_amount'] ?? 0), 2, ',', ' ') ?></strong>
+        </p>
+
         <h3>Leveransinfo</h3>
         <p>
           Carrier: <?= htmlspecialchars((string) ($order['carrier_name'] ?? '-'), ENT_QUOTES, 'UTF-8') ?> (<?= htmlspecialchars((string) ($order['carrier_code'] ?? '-'), ENT_QUOTES, 'UTF-8') ?>)<br>

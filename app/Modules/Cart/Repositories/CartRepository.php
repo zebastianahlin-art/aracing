@@ -15,7 +15,7 @@ final class CartRepository
     /** @return array<string, mixed>|null */
     public function findBySessionId(string $sessionId): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT id, session_id, currency_code FROM carts WHERE session_id = :session_id LIMIT 1');
+        $stmt = $this->pdo->prepare('SELECT id, session_id, currency_code, discount_code FROM carts WHERE session_id = :session_id LIMIT 1');
         $stmt->execute(['session_id' => $sessionId]);
         $row = $stmt->fetch();
 
@@ -24,7 +24,7 @@ final class CartRepository
 
     public function createForSession(string $sessionId, string $currencyCode): int
     {
-        $stmt = $this->pdo->prepare('INSERT INTO carts (session_id, currency_code, created_at, updated_at) VALUES (:session_id, :currency_code, NOW(), NOW())');
+        $stmt = $this->pdo->prepare('INSERT INTO carts (session_id, currency_code, discount_code, created_at, updated_at) VALUES (:session_id, :currency_code, NULL, NOW(), NOW())');
         $stmt->execute(['session_id' => $sessionId, 'currency_code' => $currencyCode]);
 
         return (int) $this->pdo->lastInsertId();
@@ -82,6 +82,13 @@ final class CartRepository
     {
         $stmt = $this->pdo->prepare('DELETE FROM cart_items WHERE cart_id = :cart_id');
         $stmt->execute(['cart_id' => $cartId]);
+    }
+
+
+    public function updateDiscountCode(int $cartId, ?string $discountCode): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE carts SET discount_code = :discount_code, updated_at = NOW() WHERE id = :id');
+        $stmt->execute(['id' => $cartId, 'discount_code' => $discountCode]);
     }
 
     public function touchCart(int $cartId): void

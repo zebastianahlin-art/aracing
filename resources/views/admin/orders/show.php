@@ -61,6 +61,14 @@ $canCancelFulfillment = in_array((string) ($order['fulfillment_status'] ?? ''), 
           Fulfillment: <span class="pill"><?= htmlspecialchars((string) $order['fulfillment_status'], ENT_QUOTES, 'UTF-8') ?></span>
         </p>
 
+        <h3>Rabatt (snapshot)</h3>
+        <p>
+          Kod: <?= htmlspecialchars((string) ($order['discount_code'] ?? '-'), ENT_QUOTES, 'UTF-8') ?><br>
+          Namn: <?= htmlspecialchars((string) ($order['discount_name'] ?? '-'), ENT_QUOTES, 'UTF-8') ?><br>
+          Typ/värde: <?= htmlspecialchars((string) ($order['discount_type'] ?? '-'), ENT_QUOTES, 'UTF-8') ?> / <?= number_format((float) ($order['discount_value'] ?? 0), 2, ',', ' ') ?><br>
+          Faktisk rabatt: -<?= number_format((float) ($order['discount_amount_inc_vat'] ?? 0), 2, ',', ' ') ?>
+        </p>
+
         <h3>Fraktmetod (snapshot)</h3>
         <p>
           Metod: <?= htmlspecialchars((string) ($order['shipping_method_name'] ?? '-'), ENT_QUOTES, 'UTF-8') ?> (<?= htmlspecialchars((string) ($order['shipping_method_code'] ?? '-'), ENT_QUOTES, 'UTF-8') ?>)<br>

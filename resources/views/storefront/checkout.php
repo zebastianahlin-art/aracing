@@ -7,6 +7,7 @@ $selectedShippingMethodCode = (string) ($selectedShippingMethodCode ?? '');
 $totalsPreview = $totalsPreview ?? [
   'product_subtotal' => (float) ($cartData['subtotal_amount'] ?? 0),
   'shipping_cost' => 0,
+  'discount_amount' => (float) ($cartData['discount_amount_inc_vat'] ?? 0),
   'grand_total' => (float) ($cartData['total_amount'] ?? 0),
 ];
 ?>
@@ -96,7 +97,11 @@ $totalsPreview = $totalsPreview ?? [
             <?php endforeach; ?>
             </tbody>
           </table>
+          <?php if (($cartData['active_discount'] ?? null) !== null): ?>
+            <p>Aktiv kampanj: <strong><?= htmlspecialchars((string) (($cartData['active_discount']['name'] ?? '') !== '' ? $cartData['active_discount']['name'] : $cartData['active_discount']['code']), ENT_QUOTES, 'UTF-8') ?></strong></p>
+          <?php endif; ?>
           <p>Produktsubtotal: <?= number_format((float) $totalsPreview['product_subtotal'], 2, ',', ' ') ?> <?= htmlspecialchars($currency, ENT_QUOTES, 'UTF-8') ?></p>
+          <p>Rabatt: -<?= number_format((float) ($totalsPreview['discount_amount'] ?? 0), 2, ',', ' ') ?> <?= htmlspecialchars($currency, ENT_QUOTES, 'UTF-8') ?></p>
           <p>Frakt: <?= number_format((float) $totalsPreview['shipping_cost'], 2, ',', ' ') ?> <?= htmlspecialchars($currency, ENT_QUOTES, 'UTF-8') ?></p>
           <p><strong>Grand total: <?= number_format((float) $totalsPreview['grand_total'], 2, ',', ' ') ?> <?= htmlspecialchars($currency, ENT_QUOTES, 'UTF-8') ?></strong></p>
         </section>

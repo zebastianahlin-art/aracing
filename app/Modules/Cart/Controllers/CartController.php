@@ -59,6 +59,24 @@ final class CartController
         return $this->redirect('/cart?message=' . urlencode('Raden togs bort.'));
     }
 
+
+    public function applyDiscount(): Response
+    {
+        try {
+            $this->carts->applyDiscountCode($this->sessionId(), (string) ($_POST['discount_code'] ?? ''));
+
+            return $this->redirect('/cart?message=' . urlencode('Kampanjkoden aktiverades.'));
+        } catch (RuntimeException|\InvalidArgumentException $e) {
+            return $this->redirect('/cart?error=' . urlencode($e->getMessage()));
+        }
+    }
+
+    public function removeDiscount(): Response
+    {
+        $this->carts->removeDiscountCode($this->sessionId());
+
+        return $this->redirect('/cart?message=' . urlencode('Kampanjkoden togs bort.'));
+    }
     private function sessionId(): string
     {
         return session_id();

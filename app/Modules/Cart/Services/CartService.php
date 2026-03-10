@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Modules\Cart\Services;
 
+use App\Modules\Discount\Services\DiscountService;
 use App\Modules\Inventory\Services\InventoryService;
 use App\Modules\Cart\Repositories\CartProductRepository;
 use App\Modules\Cart\Repositories\CartRepository;
+use App\Modules\Shipping\Services\CheckoutTotalsService;
 use RuntimeException;
 
 final class CartService
@@ -14,7 +16,9 @@ final class CartService
     public function __construct(
         private readonly CartRepository $carts,
         private readonly CartProductRepository $products,
-        private readonly InventoryService $inventory
+        private readonly InventoryService $inventory,
+        private readonly DiscountService $discounts,
+        private readonly CheckoutTotalsService $totals
     ) {
     }
 
@@ -24,7 +28,7 @@ final class CartService
         $cart = $this->carts->findBySessionId($sessionId);
         if ($cart === null) {
             $cartId = $this->carts->createForSession($sessionId, 'SEK');
-            $cart = ['id' => $cartId, 'session_id' => $sessionId, 'currency_code' => 'SEK'];
+            $cart = ['id' => $cartId, 'session_id' => $sessionId, 'currency_code' => 'SEK', 'discount_code' => null];
         }
 
         $items = $this->carts->itemsForCart((int) $cart['id']);
@@ -35,11 +39,29 @@ final class CartService
             $subtotal += $item['line_total'];
         }
 
+        $activeDiscount = null;
+        $discountAmount = 0.0;
+        $discountError = null;
+        $discountCode = trim((string) ($cart['discount_code'] ?? ''));
+        if ($discountCode !== '') {
+            try {
+                $activeDiscount = $this->discounts->validateCodeForSubtotal($discountCode, $subtotal);
+                $discountAmount = $this->discounts->calculateDiscountAmount($activeDiscount, $subtotal);
+            } catch (\InvalidArgumentException $e) {
+                $discountError = $e->getMessage();
+            }
+        }
+
+        $calculatedTotals = $this->totals->calculate($subtotal, 0.0, $discountAmount);
+
         return [
             'cart' => $cart,
             'items' => $items,
-            'subtotal_amount' => $subtotal,
-            'total_amount' => $subtotal,
+            'active_discount' => $activeDiscount,
+            'discount_error' => $discountError,
+            'subtotal_amount' => $calculatedTotals['product_subtotal'],
+            'discount_amount_inc_vat' => $calculatedTotals['discount_amount'],
+            'total_amount' => $calculatedTotals['grand_total'],
         ];
     }
 
@@ -106,6 +128,24 @@ final class CartService
         $this->carts->touchCart((int) $cart['id']);
     }
 
+    public function applyDiscountCode(string $sessionId, string $inputCode): void
+    {
+        $cartData = $this->getCartBySession($sessionId);
+        $cart = $cartData['cart'];
+        $subtotal = (float) ($cartData['subtotal_amount'] ?? 0);
+        $discount = $this->discounts->validateCodeForSubtotal($inputCode, $subtotal);
+        $this->discounts->calculateDiscountAmount($discount, $subtotal);
+
+        $this->carts->updateDiscountCode((int) $cart['id'], (string) $discount['code']);
+    }
+
+    public function removeDiscountCode(string $sessionId): void
+    {
+        $cartData = $this->getCartBySession($sessionId);
+        $cart = $cartData['cart'];
+        $this->carts->updateDiscountCode((int) $cart['id'], null);
+    }
+
     public function clearBySession(string $sessionId): void
     {
         $cart = $this->carts->findBySessionId($sessionId);
@@ -114,6 +154,7 @@ final class CartService
         }
 
         $this->carts->clearCart((int) $cart['id']);
+        $this->carts->updateDiscountCode((int) $cart['id'], null);
         $this->carts->touchCart((int) $cart['id']);
     }
 

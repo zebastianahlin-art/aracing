@@ -16,6 +16,9 @@ use App\Modules\Catalog\Services\CatalogService;
 use App\Modules\Category\Controllers\CategoryAdminController;
 use App\Modules\Category\Repositories\CategoryRepository;
 use App\Modules\Category\Services\CategoryService;
+use App\Modules\Discount\Controllers\DiscountCodeAdminController;
+use App\Modules\Discount\Repositories\DiscountCodeRepository;
+use App\Modules\Discount\Services\DiscountService;
 use App\Modules\Checkout\Controllers\CheckoutController;
 use App\Modules\Cms\Controllers\CmsHomeAdminController;
 use App\Modules\Cms\Controllers\CmsPageAdminController;
@@ -100,6 +103,7 @@ $productMediaService = new ProductMediaService(
 $catalogService = new CatalogService(new CatalogRepository($app['pdo']), $inventoryService);
 $shippingService = new ShippingService(new ShippingMethodRepository($app['pdo']));
 $checkoutTotalsService = new CheckoutTotalsService();
+$discountService = new DiscountService(new DiscountCodeRepository($app['pdo']));
 $supplierService = new SupplierService(new SupplierRepository($app['pdo']));
 $importProfileService = new ImportProfileService(new ImportProfileRepository($app['pdo']));
 $importRowRepository = new ImportRowRepository($app['pdo']);
@@ -111,11 +115,11 @@ $csvImportService = new CsvImportService(
     $supplierItemRepository,
     $importProfileService
 );
-$cartService = new CartService(new CartRepository($app['pdo']), new CartProductRepository($app['pdo']), $inventoryService);
+$cartService = new CartService(new CartRepository($app['pdo']), new CartProductRepository($app['pdo']), $inventoryService, $discountService, $checkoutTotalsService);
 $orderRepository = new OrderRepository($app['pdo']);
 $emailMessageRepository = new EmailMessageRepository($app['pdo']);
 $orderEmailService = new OrderEmailService($orderRepository, $emailMessageRepository, new TransactionalEmailSender(), $app['view']);
-$orderService = new OrderService($orderRepository, $emailMessageRepository, $orderEmailService, $shippingService, $checkoutTotalsService);
+$orderService = new OrderService($orderRepository, $emailMessageRepository, $orderEmailService, $shippingService, $checkoutTotalsService, $discountService);
 $cmsPageService = new CmsPageService(new CmsPageRepository($app['pdo']));
 $cmsHomeService = new CmsHomeService(
     new CmsHomeSectionRepository($app['pdo']),
@@ -152,6 +156,7 @@ $purchasingAdmin = new PurchasingAdminController($app['view'], $purchasingServic
 $cmsPageAdmin = new CmsPageAdminController($app['view'], $cmsPageService);
 $cmsHomeAdmin = new CmsHomeAdminController($app['view'], $cmsHomeService);
 $shippingMethodAdmin = new ShippingMethodAdminController($app['view'], $shippingService);
+$discountCodeAdmin = new DiscountCodeAdminController($app['view'], $discountService);
 
 $app['router']->get('/', [$cmsStorefront, 'home']);
 $app['router']->get('/category/{slug}', [$storefront, 'category']);
@@ -163,6 +168,8 @@ $app['router']->get('/cart', [$cartController, 'show']);
 $app['router']->post('/cart/items', [$cartController, 'add']);
 $app['router']->post('/cart/items/update', [$cartController, 'update']);
 $app['router']->post('/cart/items/remove', [$cartController, 'remove']);
+$app['router']->post('/cart/discount/apply', [$cartController, 'applyDiscount']);
+$app['router']->post('/cart/discount/remove', [$cartController, 'removeDiscount']);
 
 $app['router']->get('/checkout', [$checkoutController, 'form']);
 $app['router']->post('/checkout/place-order', [$checkoutController, 'placeOrder']);
@@ -207,6 +214,11 @@ $app['router']->get('/admin/orders/{id}/print', [$orderAdmin, 'printView']);
 
 
 $app['router']->get('/admin/shipping-methods', [$shippingMethodAdmin, 'index']);
+$app['router']->get('/admin/discount-codes', [$discountCodeAdmin, 'index']);
+$app['router']->get('/admin/discount-codes/create', [$discountCodeAdmin, 'createForm']);
+$app['router']->post('/admin/discount-codes', [$discountCodeAdmin, 'store']);
+$app['router']->get('/admin/discount-codes/{id}/edit', [$discountCodeAdmin, 'editForm']);
+$app['router']->post('/admin/discount-codes/{id}', [$discountCodeAdmin, 'update']);
 $app['router']->get('/admin/shipping-methods/create', [$shippingMethodAdmin, 'createForm']);
 $app['router']->post('/admin/shipping-methods', [$shippingMethodAdmin, 'store']);
 $app['router']->get('/admin/shipping-methods/{id}/edit', [$shippingMethodAdmin, 'editForm']);

@@ -21,8 +21,9 @@ final class OrderRepository
             shipping_first_name, shipping_last_name, shipping_phone,
             shipping_address_line_1, shipping_address_line_2, shipping_postal_code, shipping_city, shipping_country,
             shipping_method_code, shipping_method_name, shipping_method_description,
+            discount_code, discount_name, discount_type, discount_value,
             order_notes,
-            subtotal_amount, shipping_cost_ex_vat, shipping_cost_inc_vat, shipping_amount, total_amount,
+            subtotal_amount, shipping_cost_ex_vat, shipping_cost_inc_vat, discount_amount_ex_vat, discount_amount_inc_vat, shipping_amount, total_amount,
             payment_status, payment_method, payment_reference, payment_note, fulfillment_status,
             carrier_code, carrier_name, tracking_number, tracking_url,
             shipped_at, delivered_at, cancelled_at,
@@ -35,8 +36,9 @@ final class OrderRepository
             :shipping_first_name, :shipping_last_name, :shipping_phone,
             :shipping_address_line_1, :shipping_address_line_2, :shipping_postal_code, :shipping_city, :shipping_country,
             :shipping_method_code, :shipping_method_name, :shipping_method_description,
+            :discount_code, :discount_name, :discount_type, :discount_value,
             :order_notes,
-            :subtotal_amount, :shipping_cost_ex_vat, :shipping_cost_inc_vat, :shipping_amount, :total_amount,
+            :subtotal_amount, :shipping_cost_ex_vat, :shipping_cost_inc_vat, :discount_amount_ex_vat, :discount_amount_inc_vat, :shipping_amount, :total_amount,
             :payment_status, :payment_method, :payment_reference, :payment_note, :fulfillment_status,
             :carrier_code, :carrier_name, :tracking_number, :tracking_url,
             :shipped_at, :delivered_at, :cancelled_at,
@@ -119,7 +121,7 @@ final class OrderRepository
 
         $sql = 'SELECT id, order_number, customer_first_name, customer_last_name, customer_email,
                 order_status, payment_status, payment_method, fulfillment_status,
-                shipping_method_name, shipping_cost_inc_vat, total_amount, created_at,
+                shipping_method_name, shipping_cost_inc_vat, discount_code, total_amount, created_at,
                 carrier_name, tracking_number, shipped_at, delivered_at, cancelled_at
             FROM orders';
 

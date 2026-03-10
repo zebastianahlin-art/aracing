@@ -6,6 +6,7 @@ namespace App\Modules\Order\Services;
 
 use App\Modules\Order\Repositories\EmailMessageRepository;
 use App\Modules\Order\Repositories\OrderRepository;
+use App\Modules\Discount\Services\DiscountService;
 use App\Modules\Shipping\Services\CheckoutTotalsService;
 use App\Modules\Shipping\Services\ShippingService;
 use InvalidArgumentException;
@@ -40,7 +41,8 @@ final class OrderService
         private readonly EmailMessageRepository $emailMessages,
         private readonly OrderEmailService $orderEmails,
         private readonly ShippingService $shipping,
-        private readonly CheckoutTotalsService $totals
+        private readonly CheckoutTotalsService $totals,
+        private readonly DiscountService $discounts
     )
     {
     }
@@ -92,6 +94,9 @@ final class OrderService
             'shipping_method_name' => $order['shipping_method_name'] ?? null,
             'shipping_method_description' => $order['shipping_method_description'] ?? null,
             'shipping_cost_inc_vat' => (float) ($order['shipping_cost_inc_vat'] ?? 0),
+            'discount_code' => $order['discount_code'] ?? null,
+            'discount_name' => $order['discount_name'] ?? null,
+            'discount_amount_inc_vat' => (float) ($order['discount_amount_inc_vat'] ?? 0),
             'product_subtotal' => (float) ($order['subtotal_amount'] ?? 0),
             'grand_total' => (float) ($order['total_amount'] ?? 0),
             'currency_code' => $order['currency_code'] ?? 'SEK',
@@ -111,7 +116,18 @@ final class OrderService
 
         $selectedMethod = $this->shipping->validateSelectedMethod((string) ($checkoutData['shipping_method_code'] ?? ''));
         $shippingSnapshot = $this->shipping->buildOrderSnapshot($selectedMethod);
-        $totals = $this->totals->calculate((float) ($cartData['subtotal_amount'] ?? 0), (float) $shippingSnapshot['shipping_cost_inc_vat']);
+        $productSubtotal = (float) ($cartData['subtotal_amount'] ?? 0);
+
+        $discount = null;
+        $discountAmount = 0.0;
+        $cartDiscountCode = trim((string) ($cartData['cart']['discount_code'] ?? ''));
+        if ($cartDiscountCode !== '') {
+            $discount = $this->discounts->validateCodeForSubtotal($cartDiscountCode, $productSubtotal);
+            $discountAmount = $this->discounts->calculateDiscountAmount($discount, $productSubtotal);
+        }
+
+        $totals = $this->totals->calculate($productSubtotal, (float) $shippingSnapshot['shipping_cost_inc_vat'], $discountAmount);
+        $discountSnapshot = $this->discounts->buildOrderSnapshot($discount, $discountAmount);
 
         $orderNumber = $this->generateOrderNumber();
         $this->orders->beginTransaction();
@@ -142,10 +158,16 @@ final class OrderService
                 'shipping_method_code' => $shippingSnapshot['shipping_method_code'],
                 'shipping_method_name' => $shippingSnapshot['shipping_method_name'],
                 'shipping_method_description' => $shippingSnapshot['shipping_method_description'],
+                'discount_code' => $discountSnapshot['discount_code'] ?? null,
+                'discount_name' => $discountSnapshot['discount_name'] ?? null,
+                'discount_type' => $discountSnapshot['discount_type'] ?? null,
+                'discount_value' => $discountSnapshot['discount_value'] ?? null,
                 'order_notes' => $checkoutData['order_notes'],
                 'subtotal_amount' => $totals['product_subtotal'],
                 'shipping_cost_ex_vat' => $shippingSnapshot['shipping_cost_ex_vat'],
                 'shipping_cost_inc_vat' => $shippingSnapshot['shipping_cost_inc_vat'],
+                'discount_amount_ex_vat' => $discountSnapshot['discount_amount_ex_vat'] ?? 0,
+                'discount_amount_inc_vat' => $discountSnapshot['discount_amount_inc_vat'] ?? 0,
                 'shipping_amount' => $shippingSnapshot['shipping_cost_inc_vat'],
                 'total_amount' => $totals['grand_total'],
                 'payment_status' => 'unpaid',
@@ -178,6 +200,10 @@ final class OrderService
             $this->orders->createStatusHistory($orderId, 'order_status', null, 'placed', 'Order skapad via checkout.');
             $this->orders->createStatusHistory($orderId, 'payment_status', null, 'unpaid', 'Betalning initierad.');
             $this->orders->createStatusHistory($orderId, 'fulfillment_status', null, 'unfulfilled', 'Order väntar på plock.');
+
+            if ($discountSnapshot !== null) {
+                $this->discounts->incrementUsageCount((int) $discountSnapshot['discount_id']);
+            }
 
             $this->orders->commit();
         } catch (\Throwable $e) {

@@ -434,3 +434,22 @@ Snabbtest lokalt:
 3. Välj fraktmetod och skapa order.
 4. Verifiera i orderbekräftelse + `/order-status` att fraktmetod, fraktkostnad och grand total visas.
 5. Öppna ordern i `/admin/orders/{id}` och verifiera snapshot-fälten för fraktmetod + kostnad.
+
+
+## Discounts / promotions v1 (kampanjkoder)
+
+Databas:
+- kör även `database/migrations/016_discounts_promotions_v1.sql`
+
+Storefront:
+- kundvagn (`/cart`) har fält för kampanjkod + ta bort kod
+- checkout (`/checkout`) återanvänder samma rabattberäkning och visar rabatt i totalsammanfattning
+
+Admin:
+- `/admin/discount-codes` för att skapa/redigera/aktivera kampanjkoder
+
+Snabbtest:
+1. Lägg produkt i kundvagn.
+2. Ange kod `RACE10` i kundvagn och verifiera rabattpost i totalsumman.
+3. Gå till checkout och verifiera att rabatt följer med.
+4. Slutför order och verifiera rabatt på orderbekräftelse, orderstatus och i admin orderdetalj.

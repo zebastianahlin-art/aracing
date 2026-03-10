@@ -10,7 +10,7 @@ if ($isEdit) {
 }
 
 $selectedSupplierId = (string) ($selected_supplier_id ?? '');
-$stockOptions = ['i lager', 'låg lagerstatus', 'slut i lager', 'okänd'];
+$stockOptions = ['in_stock', 'out_of_stock', 'backorder'];
 $filterAction = $isEdit ? '/admin/products/' . (int) $product['id'] . '/edit' : '/admin/products/create';
 $mediaError = (string) ($_GET['media_error'] ?? '');
 ob_start();
@@ -76,8 +76,9 @@ ob_start();
     <div class="grid">
       <div><label>Sale price</label><input name="sale_price" value="<?= htmlspecialchars((string) ($product['sale_price'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="0.00"></div>
       <div><label>Valuta</label><input name="currency_code" value="<?= htmlspecialchars((string) ($product['currency_code'] ?? 'SEK'), ENT_QUOTES, 'UTF-8') ?>"></div>
-      <div><label>Lagerstatus</label><select name="stock_status"><option value="">Välj status</option><?php foreach ($stockOptions as $option): ?><option value="<?= htmlspecialchars($option, ENT_QUOTES, 'UTF-8') ?>" <?= (string) ($product['stock_status'] ?? '') === $option ? 'selected' : '' ?>><?= htmlspecialchars(ucfirst($option), ENT_QUOTES, 'UTF-8') ?></option><?php endforeach; ?></select></div>
-      <div><label>Lagervärde (qty)</label><input name="stock_quantity" value="<?= htmlspecialchars((string) ($product['stock_quantity'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></div>
+      <div><label>Lagerstatus</label><select name="stock_status"><?php foreach ($stockOptions as $option): ?><option value="<?= htmlspecialchars($option, ENT_QUOTES, 'UTF-8') ?>" <?= (string) ($product['stock_status'] ?? 'out_of_stock') === $option ? 'selected' : '' ?>><?= htmlspecialchars($option, ENT_QUOTES, 'UTF-8') ?></option><?php endforeach; ?></select></div>
+      <div><label>Lagervärde (qty)</label><input name="stock_quantity" value="<?= htmlspecialchars((string) ($product['stock_quantity'] ?? 0), ENT_QUOTES, 'UTF-8') ?>"></div>
+      <div><label><input type="checkbox" name="backorder_allowed" value="1" <?= (int) ($product['backorder_allowed'] ?? 0) === 1 ? 'checked' : '' ?>> Tillåt backorder</label></div>
     </div>
 
     <h4>Leverantörskoppling (v1)</h4>
@@ -114,6 +115,54 @@ ob_start();
     <br><button class="btn" type="submit">Spara</button>
   </form>
 </section>
+
+
+
+<?php if ($isEdit): ?>
+<section class="card" style="margin-top:.8rem;">
+  <h4>Manuell lagerjustering</h4>
+  <form method="post" action="/admin/products/<?= (int) $product['id'] ?>/operations">
+    <input type="hidden" name="action" value="manual_adjust_stock">
+    <div class="grid">
+      <div>
+        <label>Justeringssätt</label>
+        <select name="stock_adjustment_mode">
+          <option value="set">Sätt absolut lagersaldo</option>
+          <option value="delta">Justera med plus/minus</option>
+        </select>
+      </div>
+      <div><label>Nytt lagersaldo (set)</label><input type="number" name="stock_quantity" min="0" value="<?= (int) ($product['stock_quantity'] ?? 0) ?>"></div>
+      <div><label>Delta (+/-)</label><input type="number" name="stock_delta" value="0"></div>
+      <div><label>Status vid set</label><select name="stock_status"><?php foreach ($stockOptions as $option): ?><option value="<?= htmlspecialchars($option, ENT_QUOTES, 'UTF-8') ?>" <?= (string) ($product['stock_status'] ?? 'out_of_stock') === $option ? 'selected' : '' ?>><?= htmlspecialchars($option, ENT_QUOTES, 'UTF-8') ?></option><?php endforeach; ?></select></div>
+      <div><label><input type="checkbox" name="backorder_allowed" value="1" <?= (int) ($product['backorder_allowed'] ?? 0) === 1 ? 'checked' : '' ?>> Tillåt backorder (set)</label></div>
+    </div>
+    <label>Kommentar</label><input name="stock_comment" placeholder="Orsak till justering">
+    <button class="btn" type="submit">Spara lagerjustering</button>
+  </form>
+
+  <h4>Senaste lagerhändelser</h4>
+  <?php $movements = $stock_movements ?? []; ?>
+  <?php if ($movements === []): ?>
+    <p class="muted">Ingen lagerhistorik ännu.</p>
+  <?php else: ?>
+    <table class="table compact">
+      <thead><tr><th>Typ</th><th>Delta</th><th>Från</th><th>Till</th><th>Kommentar</th><th>Skapad</th></tr></thead>
+      <tbody>
+      <?php foreach ($movements as $movement): ?>
+        <tr>
+          <td><?= htmlspecialchars((string) $movement['movement_type'], ENT_QUOTES, 'UTF-8') ?></td>
+          <td><?= (int) $movement['quantity_delta'] ?></td>
+          <td><?= (int) $movement['previous_quantity'] ?></td>
+          <td><?= (int) $movement['new_quantity'] ?></td>
+          <td><?= htmlspecialchars((string) ($movement['comment'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+          <td><?= htmlspecialchars((string) $movement['created_at'], ENT_QUOTES, 'UTF-8') ?></td>
+        </tr>
+      <?php endforeach; ?>
+      </tbody>
+    </table>
+  <?php endif; ?>
+</section>
+<?php endif; ?>
 
 <?php if ($isEdit): ?>
 <section id="media" class="card" style="margin-top:.8rem;">

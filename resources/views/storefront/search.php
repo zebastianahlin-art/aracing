@@ -35,7 +35,8 @@ require __DIR__ . '/partials/listing-filters.php';
         <h3><a href="/product/<?= htmlspecialchars((string) $product['slug'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $product['name'], ENT_QUOTES, 'UTF-8') ?></a></h3>
         <p class="muted">Varumärke: <?= htmlspecialchars((string) ($product['brand_name'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
         <?php if ($product['sale_price'] !== null): ?><p><strong><?= htmlspecialchars((string) $product['sale_price'], ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars((string) ($product['currency_code'] ?? 'SEK'), ENT_QUOTES, 'UTF-8') ?></strong></p><?php else: ?><p class="muted">Pris visas vid förfrågan – kontakta oss</p><?php endif; ?>
-        <p class="muted">Lager: <?= htmlspecialchars((string) ($product['stock_status'] ?? 'okänd'), ENT_QUOTES, 'UTF-8') ?></p>
+        <p class="muted">Lager: <?= htmlspecialchars((string) ($product['storefront_stock_label'] ?? 'Tillfälligt slut'), ENT_QUOTES, 'UTF-8') ?></p>
+          <?php if (!(bool) ($product['is_purchasable'] ?? false)): ?><p class="pill bad">Ej köpbar just nu</p><?php endif; ?>
       </article>
     <?php endforeach; ?>
   </div>

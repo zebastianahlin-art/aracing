@@ -25,6 +25,8 @@ final class ProductRepository
                        p.currency_code,
                        p.stock_status,
                        p.stock_quantity,
+                       p.backorder_allowed,
+                       p.stock_updated_at,
                        p.is_active,
                        b.name AS brand_name,
                        c.name AS category_name,
@@ -73,6 +75,11 @@ final class ProductRepository
         if ($stockStatus !== '') {
             $where[] = 'p.stock_status = :stock_status';
             $params['stock_status'] = $stockStatus;
+        }
+
+        $lowStock = (string) ($filters['low_stock'] ?? '');
+        if ($lowStock === '1') {
+            $where[] = 'p.stock_quantity <= 0';
         }
 
         $deviation = $filters['deviation'] ?? '';
@@ -218,7 +225,7 @@ final class ProductRepository
     /** @return array<string, mixed>|null */
     public function findById(int $id): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT id, brand_id, category_id, name, slug, sku, description, sale_price, currency_code, stock_status, stock_quantity, is_active FROM products WHERE id = :id');
+        $stmt = $this->pdo->prepare('SELECT id, brand_id, category_id, name, slug, sku, description, sale_price, currency_code, stock_status, stock_quantity, backorder_allowed, stock_updated_at, is_active FROM products WHERE id = :id');
         $stmt->execute(['id' => $id]);
         $row = $stmt->fetch();
 
@@ -238,6 +245,8 @@ final class ProductRepository
                     currency_code,
                     stock_status,
                     stock_quantity,
+                    backorder_allowed,
+                    stock_updated_at,
                     is_active,
                     created_at,
                     updated_at
@@ -253,6 +262,8 @@ final class ProductRepository
                     :currency_code,
                     :stock_status,
                     :stock_quantity,
+                    :backorder_allowed,
+                    :stock_updated_at,
                     :is_active,
                     NOW(),
                     NOW()
@@ -269,6 +280,8 @@ final class ProductRepository
         $stmt->bindValue('currency_code', $data['currency_code']);
         $stmt->bindValue('stock_status', $data['stock_status']);
         $stmt->bindValue('stock_quantity', $data['stock_quantity'], $data['stock_quantity'] !== null ? PDO::PARAM_INT : PDO::PARAM_NULL);
+        $stmt->bindValue('backorder_allowed', $data['backorder_allowed'], PDO::PARAM_INT);
+        $stmt->bindValue('stock_updated_at', $data['stock_updated_at']);
         $stmt->bindValue('is_active', $data['is_active'], PDO::PARAM_INT);
         $stmt->execute();
 
@@ -288,6 +301,8 @@ final class ProductRepository
                     currency_code = :currency_code,
                     stock_status = :stock_status,
                     stock_quantity = :stock_quantity,
+                    backorder_allowed = :backorder_allowed,
+                    stock_updated_at = :stock_updated_at,
                     is_active = :is_active,
                     updated_at = NOW()
                 WHERE id = :id';
@@ -304,6 +319,8 @@ final class ProductRepository
         $stmt->bindValue('currency_code', $data['currency_code']);
         $stmt->bindValue('stock_status', $data['stock_status']);
         $stmt->bindValue('stock_quantity', $data['stock_quantity'], $data['stock_quantity'] !== null ? PDO::PARAM_INT : PDO::PARAM_NULL);
+        $stmt->bindValue('backorder_allowed', $data['backorder_allowed'], PDO::PARAM_INT);
+        $stmt->bindValue('stock_updated_at', $data['stock_updated_at']);
         $stmt->bindValue('is_active', $data['is_active'], PDO::PARAM_INT);
         $stmt->execute();
     }
@@ -318,7 +335,7 @@ final class ProductRepository
 
     public function updateStockQuantity(int $id, ?int $stockQuantity): void
     {
-        $stmt = $this->pdo->prepare('UPDATE products SET stock_quantity = :stock_quantity, updated_at = NOW() WHERE id = :id');
+        $stmt = $this->pdo->prepare('UPDATE products SET stock_quantity = :stock_quantity, stock_updated_at = NOW(), updated_at = NOW() WHERE id = :id');
         $stmt->bindValue('id', $id, PDO::PARAM_INT);
         $stmt->bindValue('stock_quantity', $stockQuantity, $stockQuantity !== null ? PDO::PARAM_INT : PDO::PARAM_NULL);
         $stmt->execute();
@@ -326,7 +343,7 @@ final class ProductRepository
 
     public function updateStockStatus(int $id, ?string $stockStatus): void
     {
-        $stmt = $this->pdo->prepare('UPDATE products SET stock_status = :stock_status, updated_at = NOW() WHERE id = :id');
+        $stmt = $this->pdo->prepare('UPDATE products SET stock_status = :stock_status, stock_updated_at = NOW(), updated_at = NOW() WHERE id = :id');
         $stmt->bindValue('id', $id, PDO::PARAM_INT);
         $stmt->bindValue('stock_status', $stockStatus);
         $stmt->execute();
@@ -349,7 +366,7 @@ final class ProductRepository
         }
 
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
-        $sql = 'SELECT p.id, p.name, p.slug, p.sku, p.sale_price, p.currency_code, p.stock_status, b.name AS brand_name,
+        $sql = 'SELECT p.id, p.name, p.slug, p.sku, p.sale_price, p.currency_code, p.stock_status, p.stock_quantity, p.backorder_allowed, b.name AS brand_name,
             (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.is_primary DESC, pi.sort_order ASC, pi.id ASC LIMIT 1) AS image_url
 '
              . 'FROM products p

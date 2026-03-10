@@ -42,31 +42,39 @@ final class ProductAdminController
         $productId = (int) $id;
         $action = (string) ($_POST['action'] ?? '');
 
-        if ($action === 'sync_snapshot') {
-            $this->products->syncPrimarySnapshot($productId);
-        }
+        try {
+            if ($action === 'sync_snapshot') {
+                $this->products->syncPrimarySnapshot($productId);
+            }
 
-        if ($action === 'copy_price') {
-            $this->products->copySupplierPriceToPublished($productId);
-        }
+            if ($action === 'copy_price') {
+                $this->products->copySupplierPriceToPublished($productId);
+            }
 
-        if ($action === 'copy_stock') {
-            $this->products->copySupplierStockToPublished($productId);
-        }
+            if ($action === 'copy_stock') {
+                $this->products->copySupplierStockToPublished($productId);
+            }
 
-        if ($action === 'refresh_stock_status') {
-            $this->products->refreshPublishedStockStatusFromQuantity($productId);
-        }
+            if ($action === 'refresh_stock_status') {
+                $this->products->refreshPublishedStockStatusFromQuantity($productId);
+            }
 
-        if ($action === 'set_active') {
-            $this->products->setActiveStatus($productId, true);
-        }
+            if ($action === 'set_active') {
+                $this->products->setActiveStatus($productId, true);
+            }
 
-        if ($action === 'set_inactive') {
-            $this->products->setActiveStatus($productId, false);
-        }
+            if ($action === 'set_inactive') {
+                $this->products->setActiveStatus($productId, false);
+            }
 
-        return $this->redirect('/admin/products?notice=' . urlencode('Produktåtgärd sparad'));
+            if ($action === 'manual_adjust_stock') {
+                $this->products->manualStockAdjustment($productId, $_POST);
+            }
+
+            return $this->redirect('/admin/products?notice=' . urlencode('Produktåtgärd sparad'));
+        } catch (\Throwable $exception) {
+            return $this->redirect('/admin/products?notice=' . urlencode('Lageråtgärd misslyckades: ' . $exception->getMessage()));
+        }
     }
 
     public function runBulkAction(): Response
@@ -114,6 +122,7 @@ final class ProductAdminController
             'selected_supplier_id' => $selectedSupplierId,
             'supplier_item_query' => $supplierItemQuery,
             'supplier_items' => $this->productSupplierLinks->searchSupplierItems($selectedSupplierId, $supplierItemQuery),
+            'stock_movements' => $this->products->stockMovements((int) $id),
         ]));
     }
 
@@ -153,6 +162,7 @@ final class ProductAdminController
             'selected_supplier_id' => $selectedSupplierId,
             'supplier_item_query' => $supplierItemQuery,
             'supplier_items' => $this->productSupplierLinks->searchSupplierItems($selectedSupplierId, $supplierItemQuery),
+            'stock_movements' => $this->products->stockMovements((int) $id),
         ]));
     }
 

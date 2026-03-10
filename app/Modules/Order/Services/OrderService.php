@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Order\Services;
 
+use App\Modules\Order\Repositories\EmailMessageRepository;
 use App\Modules\Order\Repositories\OrderRepository;
 use InvalidArgumentException;
 use RuntimeException;
@@ -32,7 +33,11 @@ final class OrderService
         'cancelled' => [],
     ];
 
-    public function __construct(private readonly OrderRepository $orders)
+    public function __construct(
+        private readonly OrderRepository $orders,
+        private readonly EmailMessageRepository $emailMessages,
+        private readonly OrderEmailService $orderEmails
+    )
     {
     }
 
@@ -54,6 +59,7 @@ final class OrderService
             'order' => $order,
             'items' => $this->orders->orderItems($id),
             'history' => $this->orders->orderHistory($id),
+            'emails' => $this->emailMessages->forRelated('order', $id),
         ];
     }
 
@@ -154,12 +160,14 @@ final class OrderService
             $this->orders->createStatusHistory($orderId, 'fulfillment_status', null, 'unfulfilled', 'Order väntar på plock.');
 
             $this->orders->commit();
-
-            return $orderNumber;
         } catch (\Throwable $e) {
             $this->orders->rollBack();
             throw $e;
         }
+
+        $this->orderEmails->sendOrderConfirmation($orderId);
+
+        return $orderNumber;
     }
 
     public function transitionOrderStatus(int $orderId, string $targetStatus): void
@@ -191,6 +199,10 @@ final class OrderService
         } catch (\Throwable $e) {
             $this->orders->rollBack();
             throw $e;
+        }
+
+        if ($targetStatus === 'cancelled') {
+            $this->orderEmails->sendOrderCancelled($orderId);
         }
     }
 
@@ -234,6 +246,13 @@ final class OrderService
         } catch (\Throwable $e) {
             $this->orders->rollBack();
             throw $e;
+        }
+
+        if ($targetStatus === 'shipped') {
+            $this->orderEmails->sendOrderShipped($orderId);
+        }
+        if ($targetStatus === 'cancelled') {
+            $this->orderEmails->sendOrderCancelled($orderId);
         }
     }
 

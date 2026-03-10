@@ -38,8 +38,11 @@ use App\Modules\Import\Services\ImportProfileService;
 use App\Modules\Import\Services\ImportRunService;
 use App\Modules\Import\Services\SupplierItemReviewService;
 use App\Modules\Order\Controllers\OrderAdminController;
+use App\Modules\Order\Repositories\EmailMessageRepository;
 use App\Modules\Order\Repositories\OrderRepository;
+use App\Modules\Order\Services\OrderEmailService;
 use App\Modules\Order\Services\OrderService;
+use App\Modules\Order\Services\TransactionalEmailSender;
 use App\Modules\Product\Controllers\ProductAdminController;
 use App\Modules\Product\Repositories\ProductAttributeRepository;
 use App\Modules\Product\Repositories\ProductImageRepository;
@@ -94,7 +97,10 @@ $csvImportService = new CsvImportService(
     $importProfileService
 );
 $cartService = new CartService(new CartRepository($app['pdo']), new CartProductRepository($app['pdo']));
-$orderService = new OrderService(new OrderRepository($app['pdo']));
+$orderRepository = new OrderRepository($app['pdo']);
+$emailMessageRepository = new EmailMessageRepository($app['pdo']);
+$orderEmailService = new OrderEmailService($orderRepository, $emailMessageRepository, new TransactionalEmailSender(), $app['view']);
+$orderService = new OrderService($orderRepository, $emailMessageRepository, $orderEmailService);
 $cmsPageService = new CmsPageService(new CmsPageRepository($app['pdo']));
 $cmsHomeService = new CmsHomeService(
     new CmsHomeSectionRepository($app['pdo']),

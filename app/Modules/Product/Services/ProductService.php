@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Product\Services;
 
+use App\Modules\Inventory\Services\InventoryService;
 use App\Modules\Product\Repositories\ProductAttributeRepository;
 use App\Modules\Product\Repositories\ProductImageRepository;
 use App\Modules\Product\Repositories\ProductRepository;
@@ -17,7 +18,8 @@ final class ProductService
         private readonly ProductAttributeRepository $attributes,
         private readonly ProductImageRepository $images,
         private readonly ProductSupplierLinkService $supplierLinks,
-        private readonly ProductSupplierItemLookupRepository $supplierItems
+        private readonly ProductSupplierItemLookupRepository $supplierItems,
+        private readonly InventoryService $inventory
     ) {
     }
 
@@ -64,6 +66,7 @@ final class ProductService
             'sale_price' => '',
             'stock_status' => '',
             'stock_quantity' => '',
+            'backorder_allowed' => 0,
             'currency_code' => 'SEK',
             'is_active' => 0,
             'supplier_item_id' => (int) $item['id'],
@@ -172,7 +175,14 @@ final class ProductService
         }
 
         $stock = $link['supplier_stock_snapshot'];
-        $this->products->updateStockQuantity($productId, $stock !== null ? (int) $stock : null);
+        $current = $this->products->findById($productId);
+        if ($current === null) {
+            return;
+        }
+
+        $newQuantity = $stock !== null ? max(0, (int) $stock) : 0;
+        $this->products->updateStockQuantity($productId, $newQuantity);
+        $this->inventory->logStockSync($productId, (int) ($current['stock_quantity'] ?? 0), $newQuantity, 'Synk från supplier snapshot.');
     }
 
     public function refreshPublishedStockStatusFromQuantity(int $productId): void
@@ -189,6 +199,32 @@ final class ProductService
     public function setActiveStatus(int $productId, bool $active): void
     {
         $this->products->updateActiveStatus($productId, $active ? 1 : 0);
+    }
+
+    /** @return array<int,array<string,mixed>> */
+    public function stockMovements(int $productId): array
+    {
+        return $this->inventory->stockMovementsForProduct($productId);
+    }
+
+    /** @param array<string,string> $input */
+    public function manualStockAdjustment(int $productId, array $input): void
+    {
+        $mode = (string) ($input['stock_adjustment_mode'] ?? 'set');
+        $comment = trim((string) ($input['stock_comment'] ?? ''));
+
+        if ($mode === 'delta') {
+            $delta = (int) ($input['stock_delta'] ?? 0);
+            $this->inventory->manualAdjustStock($productId, $delta, $comment !== '' ? $comment : null);
+
+            return;
+        }
+
+        $quantity = max(0, (int) ($input['stock_quantity'] ?? 0));
+        $status = (string) ($input['stock_status'] ?? 'out_of_stock');
+        $backorderAllowed = isset($input['backorder_allowed']) && (string) $input['backorder_allowed'] === '1';
+
+        $this->inventory->manualSetStock($productId, $quantity, $status, $backorderAllowed, $comment !== '' ? $comment : null);
     }
 
     /** @param array<int, int> $productIds */
@@ -231,7 +267,9 @@ final class ProductService
             'sale_price' => $this->toNullableDecimal($input['sale_price'] ?? null),
             'currency_code' => $this->normalizeCurrencyCode($input['currency_code'] ?? null),
             'stock_status' => $this->normalizeStockStatus($input['stock_status'] ?? null),
-            'stock_quantity' => $this->toNullableInt($input['stock_quantity'] ?? null),
+            'stock_quantity' => max(0, (int) ($this->toNullableInt($input['stock_quantity'] ?? null) ?? 0)),
+            'backorder_allowed' => isset($input['backorder_allowed']) ? 1 : 0,
+            'stock_updated_at' => date('Y-m-d H:i:s'),
             'is_active' => isset($input['is_active']) ? 1 : 0,
         ];
     }
@@ -244,6 +282,7 @@ final class ProductService
         $active = (string) ($filters['active'] ?? '');
         $hasLink = (string) ($filters['has_link'] ?? '');
         $deviation = (string) ($filters['deviation'] ?? '');
+        $lowStock = (string) ($filters['low_stock'] ?? '');
         $stockStatus = mb_strtolower(trim((string) ($filters['stock_status'] ?? '')));
 
         return [
@@ -252,7 +291,8 @@ final class ProductService
             'active' => in_array($active, ['0', '1'], true) ? $active : '',
             'has_link' => in_array($hasLink, ['0', '1'], true) ? $hasLink : '',
             'deviation' => $deviation === '1' ? '1' : '',
-            'stock_status' => in_array($stockStatus, ['i lager', 'låg lagerstatus', 'slut i lager', 'okänd'], true) ? $stockStatus : '',
+            'low_stock' => $lowStock === '1' ? '1' : '',
+            'stock_status' => in_array($stockStatus, ['in_stock', 'out_of_stock', 'backorder'], true) ? $stockStatus : '',
         ];
     }
 
@@ -357,19 +397,15 @@ final class ProductService
     private function deriveStockStatusFromQuantity(mixed $quantity): string
     {
         if ($quantity === null) {
-            return 'okänd';
+            return 'out_of_stock';
         }
 
         $qty = (int) $quantity;
         if ($qty <= 0) {
-            return 'slut i lager';
+            return 'out_of_stock';
         }
 
-        if ($qty <= 3) {
-            return 'låg lagerstatus';
-        }
-
-        return 'i lager';
+        return 'in_stock';
     }
 
     private function toNullableDecimal(mixed $value): ?string
@@ -393,12 +429,12 @@ final class ProductService
         return $normalized !== '' ? substr($normalized, 0, 10) : 'SEK';
     }
 
-    private function normalizeStockStatus(?string $value): ?string
+    private function normalizeStockStatus(?string $value): string
     {
-        $allowed = ['i lager', 'låg lagerstatus', 'slut i lager', 'okänd'];
+        $allowed = ['in_stock', 'out_of_stock', 'backorder'];
         $normalized = mb_strtolower(trim((string) $value));
 
-        return in_array($normalized, $allowed, true) ? $normalized : null;
+        return in_array($normalized, $allowed, true) ? $normalized : 'out_of_stock';
     }
 
     /** @return array<int, array{attribute_key:string, attribute_value:string}> */

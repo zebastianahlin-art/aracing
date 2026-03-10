@@ -37,6 +37,7 @@ final class CheckoutController
     {
         try {
             $checkoutData = $this->checkout->normalize($_POST);
+            $this->carts->ensureCartItemsPurchasable($this->sessionId());
             $cartData = $this->carts->getCartBySession($this->sessionId());
             $orderNumber = $this->orders->createFromCart($checkoutData, $cartData);
             $this->carts->clearBySession($this->sessionId());

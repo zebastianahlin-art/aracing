@@ -24,7 +24,12 @@
       <select id="stock_status" name="stock_status">
         <option value="">Alla</option>
         <?php foreach (($filterOptions['stock_statuses'] ?? []) as $status): ?>
-          <option value="<?= htmlspecialchars((string) $status, ENT_QUOTES, 'UTF-8') ?>" <?= (string) ($filters['stock_status'] ?? '') === (string) $status ? 'selected' : '' ?>><?= htmlspecialchars((string) $status, ENT_QUOTES, 'UTF-8') ?></option>
+          <?php $statusLabel = match ((string) $status) {
+              'in_stock' => 'I lager',
+              'backorder' => 'Beställningsvara',
+              default => 'Tillfälligt slut',
+          }; ?>
+          <option value="<?= htmlspecialchars((string) $status, ENT_QUOTES, 'UTF-8') ?>" <?= (string) ($filters['stock_status'] ?? '') === (string) $status ? 'selected' : '' ?>><?= htmlspecialchars($statusLabel, ENT_QUOTES, 'UTF-8') ?></option>
         <?php endforeach; ?>
       </select>
     </div>

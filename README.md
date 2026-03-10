@@ -408,3 +408,14 @@ Lokal snabbtest:
 3. Markera ordern som `shipped` i admin och verifiera loggrad för `order_shipped`.
 4. Annullera ordern via orderstatus eller fulfillmentstatus och verifiera loggrad för `order_cancelled`.
 5. Öppna `/admin/orders/{id}` och kontrollera sektionen `E-posthistorik` (typ, mottagare, ämne, status, sent_at och feltext).
+
+## Inventory availability + stock model v1
+
+Databas:
+- kör även `database/migrations/014_inventory_availability_v1.sql`
+
+Snabbtest lokalt:
+1. Öppna `/admin/products/{id}/edit` och uppdatera `stock_quantity`, `stock_status`, `backorder_allowed`.
+2. Kör manuell lagerjustering i samma vy (set eller plus/minus) och verifiera att historiken uppdateras.
+3. Öppna produkten i storefront och verifiera tydlig status (`I lager`, `Tillfälligt slut`, `Beställningsvara`) samt köpbarhet.
+4. Försök lägga ej köpbar produkt i kundvagn/checkout och verifiera att server-side validering blockerar flödet.

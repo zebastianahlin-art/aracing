@@ -377,6 +377,7 @@ $app['router']->post('/admin/orders/{id}/payment', [$orderAdmin, 'updatePayment'
 $app['router']->post('/admin/orders/{id}/notes', [$orderAdmin, 'addNote']);
 $app['router']->post('/admin/orders/{id}/order-status', [$orderAdmin, 'transitionOrderStatus']);
 $app['router']->post('/admin/orders/{id}/fulfillment-status', [$orderAdmin, 'transitionFulfillmentStatus']);
+$app['router']->post('/admin/orders/{id}/fulfillment-notes', [$orderAdmin, 'updateFulfillmentNotes']);
 $app['router']->post('/admin/orders/{id}/shipment', [$orderAdmin, 'updateShipment']);
 $app['router']->post('/admin/orders/{id}/internal-reference', [$orderAdmin, 'updateInternalReference']);
 $app['router']->get('/admin/orders/{id}/print', [$orderAdmin, 'printView']);

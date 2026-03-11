@@ -31,12 +31,14 @@ final class OrderAdminController
             'payment_status' => trim((string) ($_GET['payment_status'] ?? '')),
             'payment_method' => trim((string) ($_GET['payment_method'] ?? '')),
             'fulfillment_status' => trim((string) ($_GET['fulfillment_status'] ?? '')),
+            'queue' => trim((string) ($_GET['queue'] ?? '')),
         ];
 
         return new Response($this->views->render('admin.orders.index', [
             'orders' => $this->orders->listOrders($filters),
             'filters' => $filters,
             'statusOptions' => $this->orders->statusOptions(),
+            'queueCounts' => $this->orders->fulfillmentQueueCounts(),
         ]));
     }
 
@@ -121,6 +123,22 @@ final class OrderAdminController
             $this->orders->updateInternalReference((int) $id, (string) ($_POST['internal_reference'] ?? ''));
 
             return $this->redirect('/admin/orders/' . (int) $id . '?message=' . urlencode('Intern referens uppdaterad.'));
+        } catch (InvalidArgumentException $e) {
+            return $this->redirect('/admin/orders/' . (int) $id . '?error=' . urlencode($e->getMessage()));
+        }
+    }
+
+
+    public function updateFulfillmentNotes(string $id): Response
+    {
+        try {
+            $this->orders->updateFulfillmentNotes(
+                (int) $id,
+                (string) ($_POST['internal_pick_note'] ?? ''),
+                (string) ($_POST['internal_pack_note'] ?? '')
+            );
+
+            return $this->redirect('/admin/orders/' . (int) $id . '?message=' . urlencode('Fulfillment-noteringar uppdaterade.'));
         } catch (InvalidArgumentException $e) {
             return $this->redirect('/admin/orders/' . (int) $id . '?error=' . urlencode($e->getMessage()));
         }

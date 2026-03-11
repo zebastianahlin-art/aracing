@@ -121,11 +121,25 @@ final class OrderRepository
             }
         }
 
+        $queue = trim((string) ($filters['queue'] ?? ''));
+        if ($queue !== '') {
+            $queueCondition = $this->queueCondition($queue);
+            if ($queueCondition !== null) {
+                $conditions[] = $queueCondition;
+            }
+        }
+
         $sql = 'SELECT id, order_number, customer_first_name, customer_last_name, customer_email,
                 order_status, payment_status, payment_method, payment_provider, fulfillment_status,
                 shipping_method_name, shipping_cost_inc_vat, discount_code, total_amount, created_at,
-                carrier_name, tracking_number, shipped_at, delivered_at, cancelled_at
-            FROM orders';
+                carrier_name, tracking_number, shipped_at, delivered_at, cancelled_at,
+                item_stats.line_count, item_stats.quantity_total
+            FROM orders
+            LEFT JOIN (
+                SELECT order_id, COUNT(*) AS line_count, SUM(quantity) AS quantity_total
+                FROM order_items
+                GROUP BY order_id
+            ) AS item_stats ON item_stats.order_id = orders.id';
 
         if ($conditions !== []) {
             $sql .= ' WHERE ' . implode(' AND ', $conditions);
@@ -162,7 +176,11 @@ final class OrderRepository
     /** @return array<int, array<string, mixed>> */
     public function orderItems(int $orderId): array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM order_items WHERE order_id = :order_id ORDER BY id ASC');
+        $stmt = $this->pdo->prepare('SELECT oi.*, p.stock_status AS product_stock_status
+            FROM order_items oi
+            LEFT JOIN products p ON p.id = oi.product_id
+            WHERE oi.order_id = :order_id
+            ORDER BY oi.id ASC');
         $stmt->execute(['order_id' => $orderId]);
 
         return $stmt->fetchAll();
@@ -251,6 +269,24 @@ final class OrderRepository
         ]);
     }
 
+    public function updateFulfillmentWorkflowMeta(int $orderId, array $data): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE orders
+            SET picking_started_at = :picking_started_at,
+                packed_at = :packed_at,
+                internal_pick_note = :internal_pick_note,
+                internal_pack_note = :internal_pack_note,
+                updated_at = NOW()
+            WHERE id = :id');
+        $stmt->execute([
+            'id' => $orderId,
+            'picking_started_at' => $data['picking_started_at'] ?? null,
+            'packed_at' => $data['packed_at'] ?? null,
+            'internal_pick_note' => $data['internal_pick_note'] ?? null,
+            'internal_pack_note' => $data['internal_pack_note'] ?? null,
+        ]);
+    }
+
     public function updateShippingData(int $orderId, array $data): void
     {
         $stmt = $this->pdo->prepare('UPDATE orders
@@ -303,5 +339,16 @@ final class OrderRepository
         if ($this->pdo->inTransaction()) {
             $this->pdo->rollBack();
         }
+    }
+
+    private function queueCondition(string $queue): ?string
+    {
+        return match ($queue) {
+            'to_process' => "order_status IN ('placed','confirmed') AND fulfillment_status = 'unfulfilled'",
+            'pick' => "order_status IN ('processing','confirmed') AND fulfillment_status = 'unfulfilled'",
+            'pack' => "order_status IN ('processing','confirmed') AND fulfillment_status = 'picking'",
+            'ready_to_ship' => "order_status IN ('processing','confirmed') AND fulfillment_status = 'packed'",
+            default => null,
+        };
     }
 }

@@ -53,6 +53,17 @@ final class OrderService
         return $this->orders->listOrders($filters);
     }
 
+    /** @return array<string, int> */
+    public function fulfillmentQueueCounts(): array
+    {
+        return [
+            'to_process' => count($this->orders->listOrders(['queue' => 'to_process'])),
+            'pick' => count($this->orders->listOrders(['queue' => 'pick'])),
+            'pack' => count($this->orders->listOrders(['queue' => 'pack'])),
+            'ready_to_ship' => count($this->orders->listOrders(['queue' => 'ready_to_ship'])),
+        ];
+    }
+
     /** @return array<string, mixed>|null */
     public function getOrderDetail(int $id): ?array
     {
@@ -61,11 +72,14 @@ final class OrderService
             return null;
         }
 
+        $items = $this->orders->orderItems($id);
+
         return [
             'order' => $order,
-            'items' => $this->orders->orderItems($id),
+            'items' => $items,
             'history' => $this->orders->orderHistory($id),
             'emails' => $this->emailMessages->forRelated('order', $id),
+            'fulfillment_document' => $this->buildFulfillmentDocument($order, $items),
         ];
     }
 
@@ -302,21 +316,39 @@ final class OrderService
             throw new InvalidArgumentException('Otillåten fulfillment-övergång.');
         }
 
+        $now = date('Y-m-d H:i:s');
         $shippingPatch = [];
+        $workflowMetaPatch = [
+            'picking_started_at' => $order['picking_started_at'] ?? null,
+            'packed_at' => $order['packed_at'] ?? null,
+            'internal_pick_note' => $order['internal_pick_note'] ?? null,
+            'internal_pack_note' => $order['internal_pack_note'] ?? null,
+        ];
+
+        if ($targetStatus === 'picking' && empty($order['picking_started_at'])) {
+            $workflowMetaPatch['picking_started_at'] = $now;
+        }
+        if ($targetStatus === 'packed' && empty($order['packed_at'])) {
+            $workflowMetaPatch['packed_at'] = $now;
+        }
         if ($targetStatus === 'shipped' && empty($order['shipped_at'])) {
-            $shippingPatch['shipped_at'] = date('Y-m-d H:i:s');
+            $shippingPatch['shipped_at'] = $now;
         }
         if ($targetStatus === 'delivered' && empty($order['delivered_at'])) {
-            $shippingPatch['delivered_at'] = date('Y-m-d H:i:s');
+            $shippingPatch['delivered_at'] = $now;
         }
         if ($targetStatus === 'cancelled' && empty($order['cancelled_at'])) {
-            $shippingPatch['cancelled_at'] = date('Y-m-d H:i:s');
+            $shippingPatch['cancelled_at'] = $now;
         }
 
         $this->orders->beginTransaction();
         try {
             $this->orders->updateFulfillmentStatus($orderId, $targetStatus);
             $this->orders->createStatusHistory($orderId, 'fulfillment_status', $fromStatus, $targetStatus, 'Fulfillment-status uppdaterad av admin.');
+            if ($workflowMetaPatch['picking_started_at'] !== ($order['picking_started_at'] ?? null)
+                || $workflowMetaPatch['packed_at'] !== ($order['packed_at'] ?? null)) {
+                $this->orders->updateFulfillmentWorkflowMeta($orderId, $workflowMetaPatch);
+            }
             if ($shippingPatch !== []) {
                 $this->orders->updateShippingData($orderId, $shippingPatch);
             }
@@ -423,6 +455,35 @@ final class OrderService
         $this->orders->createStatusHistory($orderId, 'note', $previous, $next, 'Intern referens uppdaterad.');
     }
 
+
+    public function updateFulfillmentNotes(int $orderId, string $pickNote, string $packNote): void
+    {
+        $order = $this->mustFindOrder($orderId);
+        $nextPick = $this->nullable($pickNote);
+        $nextPack = $this->nullable($packNote);
+        $fromPick = $this->nullable($order['internal_pick_note'] ?? null);
+        $fromPack = $this->nullable($order['internal_pack_note'] ?? null);
+
+        if ($nextPick === $fromPick && $nextPack === $fromPack) {
+            return;
+        }
+
+        $this->orders->updateFulfillmentWorkflowMeta($orderId, [
+            'picking_started_at' => $order['picking_started_at'] ?? null,
+            'packed_at' => $order['packed_at'] ?? null,
+            'internal_pick_note' => $nextPick,
+            'internal_pack_note' => $nextPack,
+        ]);
+
+        if ($nextPick !== $fromPick) {
+            $this->orders->createStatusHistory($orderId, 'fulfillment_note_pick', $fromPick, $nextPick, 'Intern plocknotering uppdaterad.');
+        }
+
+        if ($nextPack !== $fromPack) {
+            $this->orders->createStatusHistory($orderId, 'fulfillment_note_pack', $fromPack, $nextPack, 'Intern packnotering uppdaterad.');
+        }
+    }
+
     public function paymentMethodLabel(?string $paymentMethod): string
     {
         return match ((string) $paymentMethod) {
@@ -453,6 +514,40 @@ final class OrderService
             'payment_status' => self::ALLOWED_PAYMENT_STATUS,
             'payment_method' => self::ALLOWED_PAYMENT_METHODS,
             'fulfillment_status' => self::ALLOWED_FULFILLMENT_STATUS,
+        ];
+    }
+
+
+    /** @param array<string, mixed> $order @param array<int, array<string, mixed>> $items
+     *  @return array<string, mixed>
+     */
+    public function buildFulfillmentDocument(array $order, array $items): array
+    {
+        $lines = [];
+        $totalQuantity = 0;
+
+        foreach ($items as $item) {
+            $quantity = (int) ($item['quantity'] ?? 0);
+            $totalQuantity += $quantity;
+            $lines[] = [
+                'product_name' => (string) ($item['product_name_snapshot'] ?? ''),
+                'sku' => (string) ($item['sku_snapshot'] ?? '-'),
+                'quantity' => $quantity,
+                'stock_status' => (string) ($item['product_stock_status'] ?? 'unknown'),
+                'line_total' => (float) ($item['line_total'] ?? 0),
+            ];
+        }
+
+        return [
+            'order_id' => (int) ($order['id'] ?? 0),
+            'order_number' => (string) ($order['order_number'] ?? ''),
+            'created_at' => (string) ($order['created_at'] ?? ''),
+            'shipping_method' => (string) ($order['shipping_method_name'] ?? '-'),
+            'line_count' => count($lines),
+            'total_quantity' => $totalQuantity,
+            'pick_note' => $order['internal_pick_note'] ?? null,
+            'pack_note' => $order['internal_pack_note'] ?? null,
+            'lines' => $lines,
         ];
     }
 

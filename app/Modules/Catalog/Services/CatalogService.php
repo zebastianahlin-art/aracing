@@ -149,6 +149,8 @@ final class CatalogService
             'min_price' => $minPrice,
             'max_price' => $maxPrice,
             'stock_status' => in_array($stockStatus, self::ALLOWED_STOCK_STATUSES, true) ? $stockStatus : '',
+            'fitment_vehicle_id' => max(0, (int) ($query['fitment_vehicle_id'] ?? 0)),
+            'fitment_only' => ((string) ($query['fitment_only'] ?? '0')) === '1' ? '1' : '0',
             'sort' => in_array($sort, self::ALLOWED_SORTS, true) ? $sort : ($queryText !== '' ? 'relevance' : 'curated'),
         ];
     }
@@ -165,6 +167,8 @@ final class CatalogService
             'min_price' => $filters['min_price'],
             'max_price' => $filters['max_price'],
             'stock_status' => $filters['stock_status'],
+            'fitment_vehicle_id' => $filters['fitment_vehicle_id'],
+            'fitment_only' => $filters['fitment_only'],
         ];
 
         return [
@@ -260,6 +264,14 @@ final class CatalogService
             ];
         }
 
+        if ($filters['fitment_only'] === '1' && (int) $filters['fitment_vehicle_id'] > 0) {
+            $items[] = [
+                'key' => 'fitment_only',
+                'label' => 'YMM: Endast passande produkter',
+                'remove_url' => $this->buildUrl($basePath, $this->withoutParam($baseParams, 'fitment_only')),
+            ];
+        }
+
         if ($filters['min_price'] !== '' || $filters['max_price'] !== '') {
             $priceLabel = 'Pris: ';
             if ($filters['min_price'] !== '' && $filters['max_price'] !== '') {
@@ -294,6 +306,8 @@ final class CatalogService
             'stock_status' => (string) $filters['stock_status'],
             'min_price' => (string) $filters['min_price'],
             'max_price' => (string) $filters['max_price'],
+            'fitment_only' => (string) $filters['fitment_only'],
+            'fitment_vehicle_id' => (int) $filters['fitment_vehicle_id'] > 0 ? (string) $filters['fitment_vehicle_id'] : '',
             'sort' => (string) $filters['sort'],
         ];
 

@@ -55,6 +55,8 @@
     .pill.bad { background:#2b1414; border-color:#703030; color:#ffb3b3; }
     .pill.ok { background:#173021; border-color:#2f7046; color:#9de9bb; }
     .footer-links { display:flex; gap:.8rem; flex-wrap:wrap; margin-top:.4rem; }
+    .ymm-box { margin-top:.8rem; border:1px solid var(--line); border-radius:8px; padding:.7rem; background:#131722; }
+    .ymm-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:.5rem; align-items:end; }
     @media (max-width: 800px) { .grid-2 { grid-template-columns:1fr; } }
   </style>
 </head>
@@ -81,6 +83,44 @@
     <?php endif; ?>
     <a href="/admin">Admin</a>
   </nav>
+
+  <?php $fitment = is_array($fitment ?? null) ? $fitment : []; ?>
+  <?php $selectedVehicle = is_array($fitment['selected_vehicle'] ?? null) ? $fitment['selected_vehicle'] : null; ?>
+  <section class="ymm-box">
+    <form method="post" action="/fitment/select" class="ymm-grid">
+      <input type="hidden" name="return_to" value="<?= htmlspecialchars((string) ($_SERVER['REQUEST_URI'] ?? '/search'), ENT_QUOTES, 'UTF-8') ?>">
+      <div>
+        <label>Make</label>
+        <input name="make" list="ymm-makes" value="<?= htmlspecialchars((string) ($selectedVehicle['make'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="t.ex. BMW" required>
+        <datalist id="ymm-makes"><?php foreach (($fitment['makes'] ?? []) as $value): ?><option value="<?= htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8') ?>"><?php endforeach; ?></datalist>
+      </div>
+      <div>
+        <label>Modell</label>
+        <input name="model" list="ymm-models" value="<?= htmlspecialchars((string) ($selectedVehicle['model'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required>
+        <datalist id="ymm-models"><?php foreach (($fitment['models'] ?? []) as $value): ?><option value="<?= htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8') ?>"><?php endforeach; ?></datalist>
+      </div>
+      <div>
+        <label>Generation</label>
+        <input name="generation" list="ymm-generations" value="<?= htmlspecialchars((string) ($selectedVehicle['generation'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+        <datalist id="ymm-generations"><?php foreach (($fitment['generations'] ?? []) as $value): ?><option value="<?= htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8') ?>"><?php endforeach; ?></datalist>
+      </div>
+      <div>
+        <label>Motor</label>
+        <input name="engine" list="ymm-engines" value="<?= htmlspecialchars((string) ($selectedVehicle['engine'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+        <datalist id="ymm-engines"><?php foreach (($fitment['engines'] ?? []) as $value): ?><option value="<?= htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8') ?>"><?php endforeach; ?></datalist>
+      </div>
+      <button class="btn-primary" type="submit">Välj bil</button>
+    </form>
+    <?php if ($selectedVehicle !== null): ?>
+      <p style="margin:.6rem 0 .3rem;"><strong>Vald bil:</strong> <?= htmlspecialchars((string) ($selectedVehicle['display_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+      <form method="post" action="/fitment/clear" style="display:inline;">
+        <input type="hidden" name="return_to" value="<?= htmlspecialchars((string) ($_SERVER['REQUEST_URI'] ?? '/search'), ENT_QUOTES, 'UTF-8') ?>">
+        <button class="btn-secondary" type="submit">Rensa vald bil</button>
+      </form>
+    <?php endif; ?>
+    <?php if (!empty($fitmentNotice ?? '')): ?><p class="ok-msg" style="margin:.5rem 0 0;"><?= htmlspecialchars((string) $fitmentNotice, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
+  </section>
+
   <?php if ($infoPages !== []): ?>
     <div class="top-links" aria-label="Informationssidor">
       <?php foreach ($infoPages as $pageLink): ?>
@@ -92,6 +132,8 @@
 <main><?= $content ?? '' ?></main>
 <footer>
   <small>Serverrenderad storefront - katalog kopplad till databas</small>
+
+
   <?php if ($infoPages !== []): ?>
     <div class="footer-links">
       <?php foreach ($infoPages as $pageLink): ?>

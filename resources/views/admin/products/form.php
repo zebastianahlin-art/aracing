@@ -271,6 +271,63 @@ ob_start();
 </section>
 <?php endif; ?>
 
+
+<?php if ($isEdit): ?>
+<section id="fitment" class="card" style="margin-top:.8rem;">
+  <h3>Fitment / Fordonskopplingar (YMM v1)</h3>
+
+  <form method="post" action="/admin/products/<?= (int) $product['id'] ?>/fitments" style="display:grid;gap:.5rem;grid-template-columns:2fr 1fr 2fr auto;align-items:end;margin-bottom:.8rem;">
+    <div>
+      <label>Fordon</label>
+      <select name="vehicle_id" required>
+        <option value="">Välj fordon</option>
+        <?php foreach (($fitment_vehicles ?? []) as $vehicle): ?>
+          <option value="<?= (int) $vehicle['id'] ?>"><?= htmlspecialchars((string) $vehicle['make'] . ' ' . $vehicle['model'] . ' ' . ($vehicle['generation'] ?? '') . ' ' . ($vehicle['engine'] ?? ''), ENT_QUOTES, 'UTF-8') ?></option>
+        <?php endforeach; ?>
+      </select>
+    </div>
+    <div>
+      <label>Typ</label>
+      <select name="fitment_type">
+        <?php foreach (($fitment_types ?? []) as $fitmentType): ?>
+          <option value="<?= htmlspecialchars((string) $fitmentType, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $fitmentType, ENT_QUOTES, 'UTF-8') ?></option>
+        <?php endforeach; ?>
+      </select>
+    </div>
+    <div>
+      <label>Notering (valfritt)</label>
+      <input name="note" value="">
+    </div>
+    <button class="btn" type="submit">Lägg till</button>
+  </form>
+
+  <?php if (($product_fitments ?? []) === []): ?>
+    <p class="muted">Inga fordonskopplingar ännu.</p>
+  <?php else: ?>
+    <table class="table compact">
+      <thead><tr><th>Fordon</th><th>Typ</th><th>Notering</th><th></th></tr></thead>
+      <tbody>
+      <?php foreach ($product_fitments as $fitment): ?>
+        <tr>
+          <td>
+            <?= htmlspecialchars((string) $fitment['make'] . ' ' . $fitment['model'] . ' ' . ($fitment['generation'] ?? '') . ' ' . ($fitment['engine'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+            <?php if ((int) ($fitment['vehicle_is_active'] ?? 1) !== 1): ?><span class="muted"> (inaktivt fordon)</span><?php endif; ?>
+          </td>
+          <td><?= htmlspecialchars((string) $fitment['fitment_type'], ENT_QUOTES, 'UTF-8') ?></td>
+          <td><?= htmlspecialchars((string) ($fitment['note'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+          <td>
+            <form method="post" action="/admin/products/<?= (int) $product['id'] ?>/fitments/<?= (int) $fitment['id'] ?>/delete" onsubmit="return confirm('Ta bort fordonskoppling?');">
+              <button class="btn" type="submit">Ta bort</button>
+            </form>
+          </td>
+        </tr>
+      <?php endforeach; ?>
+      </tbody>
+    </table>
+  <?php endif; ?>
+</section>
+<?php endif; ?>
+
 <?php if ($isEdit): ?>
 <section id="media" class="card" style="margin-top:.8rem;">
   <div class="topline"><h3>Produktmedia v1</h3></div>

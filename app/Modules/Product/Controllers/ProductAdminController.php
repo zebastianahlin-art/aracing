@@ -13,6 +13,7 @@ use App\Modules\Product\Services\ProductRelationService;
 use App\Modules\Product\Services\ProductMediaService;
 use App\Modules\Product\Services\ProductSupplierLinkService;
 use App\Modules\Supplier\Services\SupplierService;
+use App\Modules\Fitment\Services\ProductFitmentService;
 
 final class ProductAdminController
 {
@@ -24,7 +25,8 @@ final class ProductAdminController
         private readonly BrandService $brands,
         private readonly CategoryService $categories,
         private readonly SupplierService $suppliers,
-        private readonly ProductSupplierLinkService $productSupplierLinks
+        private readonly ProductSupplierLinkService $productSupplierLinks,
+        private readonly ProductFitmentService $fitments
     ) {
     }
 
@@ -125,6 +127,9 @@ final class ProductAdminController
             'supplier_item_query' => $supplierItemQuery,
             'supplier_items' => $this->productSupplierLinks->searchSupplierItems($selectedSupplierId, $supplierItemQuery),
             'stock_movements' => [],
+            'product_fitments' => [],
+            'fitment_vehicles' => $this->fitments->activeVehicles(),
+            'fitment_types' => $this->fitments->allowedTypes(),
         ]));
     }
 
@@ -171,6 +176,9 @@ final class ProductAdminController
             'relation_candidates' => $productId > 0 ? $this->products->searchForRelationSelection($relationQuery, $productId) : [],
             'product_relations' => $product !== null ? $this->relations->adminRelationsForProduct($productId) : [],
             'relation_types' => $this->relations->allowedTypes(),
+            'product_fitments' => $product !== null ? $this->fitments->listForProduct($productId) : [],
+            'fitment_vehicles' => $this->fitments->activeVehicles(),
+            'fitment_types' => $this->fitments->allowedTypes(),
         ]));
     }
 
@@ -268,6 +276,28 @@ final class ProductAdminController
         $this->relations->deleteForProduct($productId, (int) $relationId);
 
         return $this->redirect('/admin/products/' . $productId . '/edit?notice=' . urlencode('Produktkoppling borttagen') . '#relations');
+    }
+
+
+    public function createFitment(string $id): Response
+    {
+        $productId = (int) $id;
+
+        try {
+            $this->fitments->addToProduct($productId, $_POST);
+
+            return $this->redirect('/admin/products/' . $productId . '/edit?notice=' . urlencode('Fordonskoppling sparad') . '#fitment');
+        } catch (\RuntimeException $exception) {
+            return $this->redirect('/admin/products/' . $productId . '/edit?media_error=' . urlencode($exception->getMessage()) . '#fitment');
+        }
+    }
+
+    public function deleteFitment(string $id, string $fitmentId): Response
+    {
+        $productId = (int) $id;
+        $this->fitments->deleteFromProduct($productId, (int) $fitmentId);
+
+        return $this->redirect('/admin/products/' . $productId . '/edit?notice=' . urlencode('Fordonskoppling borttagen') . '#fitment');
     }
 
     private function redirect(string $location): Response

@@ -80,6 +80,14 @@ $stockLabels = is_array($filterOptions['stock_status_labels'] ?? null) ? $filter
         <label for="max_price">Maxpris</label>
         <input id="max_price" type="number" step="0.01" min="0" name="max_price" value="<?= htmlspecialchars((string) ($filters['max_price'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
       </div>
+      <?php if ((int) ($filters['fitment_vehicle_id'] ?? 0) > 0): ?>
+        <div style="display:flex;align-items:center;gap:.4rem;">
+          <input id="fitment_only" type="checkbox" name="fitment_only" value="1" <?= (string) ($filters['fitment_only'] ?? '0') === '1' ? 'checked' : '' ?>>
+          <label for="fitment_only" style="margin:0;">Visa bara produkter som passar vald bil</label>
+        </div>
+      <?php endif; ?>
+      <input type="hidden" name="fitment_vehicle_id" value="<?= (int) ($filters['fitment_vehicle_id'] ?? 0) ?>">
+
       <div>
         <label for="sort">Sortering</label>
         <select id="sort" name="sort">

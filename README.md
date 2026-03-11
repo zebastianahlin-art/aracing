@@ -971,3 +971,26 @@ Lokal manuell test:
 5. Registrera återstående kvantitet och verifiera:
    - draft får `receiving_status = received`
    - `received_at` sätts.
+
+## Fitment / YMM v1
+
+Databas:
+- kör även `database/migrations/035_fitment_ymm_v1.sql`
+
+Detta ingår i v1:
+- `vehicles` för enkel fordonsmodell (make, model, generation, engine, årsintervall, aktiv/sortering)
+- `product_fitments` för produkt ↔ fordon-koppling med `fitment_type` (`confirmed`, `universal`, `unknown`)
+- sessionbaserad vald bil i storefront (`selected_vehicle_id`)
+- serverrenderad YMM-väljare i storefront-header
+- katalogfilter med toggle: "Visa bara produkter som passar vald bil"
+- fitment-signal på produktsidan (passar / universell / ej bekräftad)
+- admin för fordon på `/admin/vehicles`
+- produktadmin för fordonskopplingar på `/admin/products/{id}/edit#fitment`
+
+Lokal snabbtest:
+1. Kör migration `035_fitment_ymm_v1.sql`.
+2. Skapa ett eller flera fordon i `/admin/vehicles`.
+3. Öppna en produkt i admin och lägg till fitment-rader under sektionen `Fitment / Fordonskopplingar`.
+4. I storefront, välj bil i YMM-sektionen högst upp.
+5. Verifiera i `/search` eller kategori att toggle för passande produkter fungerar.
+6. Öppna en produkt och kontrollera fitment-signalen för vald bil.

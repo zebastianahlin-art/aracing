@@ -1,64 +1,53 @@
 <?php
-$hero = $sections['hero'] ?? null;
-$intro = $sections['intro'] ?? null;
-$info = $sections['info'] ?? null;
-$featuredProductsSection = $sections['featured_products'] ?? null;
-$featuredCategoriesSection = $sections['featured_categories'] ?? null;
-
+$homepageSections = $homepage_sections ?? [];
+$infoPages = $infoPages ?? [];
+$seo = $seo ?? null;
 ob_start();
 ?>
-<?php if ($hero !== null): ?>
-<section class="panel" style="border-color:#4a2020;background:linear-gradient(135deg,#1b1111,#121217);margin-bottom:.8rem;">
-  <h2><?= htmlspecialchars((string) ($hero['title'] ?? 'A-Racing'), ENT_QUOTES, 'UTF-8') ?></h2>
-  <?php if (!empty($hero['subtitle'])): ?><p class="muted"><?= htmlspecialchars((string) $hero['subtitle'], ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
-  <?php if (!empty($hero['body_html'])): ?><div><?= (string) $hero['body_html'] ?></div><?php endif; ?>
-  <?php if (!empty($hero['button_text']) && !empty($hero['button_url'])): ?><p><a class="btn-primary" href="<?= htmlspecialchars((string) $hero['button_url'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $hero['button_text'], ENT_QUOTES, 'UTF-8') ?></a></p><?php endif; ?>
-</section>
-<?php endif; ?>
-
-<?php if ($intro !== null): ?>
 <section class="panel" style="margin-bottom:.8rem;">
-  <h3><?= htmlspecialchars((string) ($intro['title'] ?? 'Intro'), ENT_QUOTES, 'UTF-8') ?></h3>
-  <?php if (!empty($intro['body_html'])): ?><div><?= (string) $intro['body_html'] ?></div><?php endif; ?>
+  <h1>A-Racing</h1>
+  <p class="muted">Prestandadelar för racing och gatbil – utvalda produkter och kategorier uppdateras löpande.</p>
 </section>
-<?php endif; ?>
 
-<?php if ($featuredProductsSection !== null): ?>
-<section class="panel" style="margin-bottom:.8rem;">
-  <h3><?= htmlspecialchars((string) ($featuredProductsSection['title'] ?? 'Utvalda produkter'), ENT_QUOTES, 'UTF-8') ?></h3>
-  <?php if (!empty($featuredProductsSection['subtitle'])): ?><p class="muted"><?= htmlspecialchars((string) $featuredProductsSection['subtitle'], ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
-  <div class="product-grid">
-    <?php foreach ($featured_products as $product): ?>
-      <article class="product-card">
-        <?php if (!empty($product['image_url'])): ?>
-          <img class="product-thumb" src="<?= htmlspecialchars((string) $product['image_url'], ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars((string) $product['name'], ENT_QUOTES, 'UTF-8') ?>">
-        <?php else: ?>
-          <div class="image-placeholder">Ingen bild</div>
+<?php foreach ($homepageSections as $section): ?>
+  <section class="panel" style="margin-bottom:.8rem;">
+    <h3><?= htmlspecialchars((string) ($section['title'] ?? 'Utvalt'), ENT_QUOTES, 'UTF-8') ?></h3>
+    <?php if (!empty($section['subtitle'])): ?>
+      <p class="muted"><?= htmlspecialchars((string) $section['subtitle'], ENT_QUOTES, 'UTF-8') ?></p>
+    <?php endif; ?>
+
+    <div class="product-grid">
+      <?php foreach (($section['items'] ?? []) as $entry): ?>
+        <?php if (($entry['item_type'] ?? '') === 'product'): ?>
+          <?php $product = $entry['item']; ?>
+          <article class="product-card">
+            <?php if (!empty($product['image_url'])): ?>
+              <img class="product-thumb" src="<?= htmlspecialchars((string) $product['image_url'], ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars((string) $product['name'], ENT_QUOTES, 'UTF-8') ?>">
+            <?php else: ?>
+              <div class="image-placeholder">Ingen bild</div>
+            <?php endif; ?>
+            <h4><a href="/product/<?= htmlspecialchars((string) $product['slug'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $product['name'], ENT_QUOTES, 'UTF-8') ?></a></h4>
+            <p class="muted">Brand: <?= htmlspecialchars((string) ($product['brand_name'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
+            <?php if ($product['sale_price'] !== null): ?><p><strong><?= htmlspecialchars((string) $product['sale_price'], ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars((string) ($product['currency_code'] ?? 'SEK'), ENT_QUOTES, 'UTF-8') ?></strong></p><?php endif; ?>
+          </article>
         <?php endif; ?>
-        <h4><a href="/product/<?= htmlspecialchars((string) $product['slug'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $product['name'], ENT_QUOTES, 'UTF-8') ?></a></h4>
-        <p class="muted">Brand: <?= htmlspecialchars((string) ($product['brand_name'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
-        <?php if ($product['sale_price'] !== null): ?><p><strong><?= htmlspecialchars((string) $product['sale_price'], ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars((string) ($product['currency_code'] ?? 'SEK'), ENT_QUOTES, 'UTF-8') ?></strong></p><?php endif; ?>
-      </article>
-    <?php endforeach; ?>
-    <?php if ($featured_products === []): ?><p class="muted">Inga utvalda produkter valda ännu.</p><?php endif; ?>
-  </div>
-</section>
-<?php endif; ?>
 
-<?php if ($featuredCategoriesSection !== null): ?>
-<section class="panel" style="margin-bottom:.8rem;">
-  <h3><?= htmlspecialchars((string) ($featuredCategoriesSection['title'] ?? 'Utvalda kategorier'), ENT_QUOTES, 'UTF-8') ?></h3>
-  <div class="product-grid">
-    <?php foreach ($featured_categories as $category): ?>
-      <article class="product-card">
-        <h4><a href="/category/<?= htmlspecialchars((string) $category['slug'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $category['name'], ENT_QUOTES, 'UTF-8') ?></a></h4>
-      </article>
-    <?php endforeach; ?>
-    <?php if ($featured_categories === []): ?><p class="muted">Inga utvalda kategorier valda ännu.</p><?php endif; ?>
-  </div>
-</section>
-<?php endif; ?>
+        <?php if (($entry['item_type'] ?? '') === 'category'): ?>
+          <?php $category = $entry['item']; ?>
+          <article class="product-card">
+            <h4><a href="/category/<?= htmlspecialchars((string) $category['slug'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $category['name'], ENT_QUOTES, 'UTF-8') ?></a></h4>
+            <p class="muted">Handplockad kategori</p>
+          </article>
+        <?php endif; ?>
+      <?php endforeach; ?>
+      <?php if (($section['items'] ?? []) === []): ?><p class="muted">Inga giltiga objekt är kopplade till sektionen ännu.</p><?php endif; ?>
+    </div>
 
+    <?php if (!empty($section['cta_label']) && !empty($section['cta_url'])): ?>
+      <p style="margin-top:.6rem;"><a class="btn" href="<?= htmlspecialchars((string) $section['cta_url'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $section['cta_label'], ENT_QUOTES, 'UTF-8') ?></a></p>
+    <?php endif; ?>
+  </section>
+<?php endforeach; ?>
 
 <section class="trust-grid" aria-label="Trygghetsinformation">
   <article class="trust-item"><strong>Snabb leverans</strong><p class="muted">Vi skickar lagervaror snabbt och kommunicerar status tydligt.</p></article>
@@ -66,14 +55,6 @@ ob_start();
   <article class="trust-item"><strong>Motorsportprofil</strong><p class="muted">Specialiserat sortiment för racing och prestanda.</p></article>
   <article class="trust-item"><strong>Behöver du hjälp?</strong><p class="muted">Se <a href="/pages/kontakt">kontakt</a> för snabb support.</p></article>
 </section>
-
-<?php if ($info !== null): ?>
-<section class="panel">
-  <h3><?= htmlspecialchars((string) ($info['title'] ?? 'Info'), ENT_QUOTES, 'UTF-8') ?></h3>
-  <?php if (!empty($info['body_html'])): ?><div><?= (string) $info['body_html'] ?></div><?php endif; ?>
-</section>
-<?php endif; ?>
-
 <?php
 $content = (string) ob_get_clean();
 $title = 'A-Racing | Start';

@@ -21,12 +21,9 @@ use App\Modules\Discount\Controllers\DiscountCodeAdminController;
 use App\Modules\Discount\Repositories\DiscountCodeRepository;
 use App\Modules\Discount\Services\DiscountService;
 use App\Modules\Checkout\Controllers\CheckoutController;
-use App\Modules\Cms\Controllers\CmsHomeAdminController;
 use App\Modules\Cms\Controllers\CmsPageAdminController;
 use App\Modules\Cms\Controllers\CmsStorefrontController;
-use App\Modules\Cms\Repositories\CmsHomeSectionRepository;
 use App\Modules\Cms\Repositories\CmsPageRepository;
-use App\Modules\Cms\Services\CmsHomeService;
 use App\Modules\Cms\Services\CmsPageService;
 use App\Modules\Compare\Controllers\CompareController;
 use App\Modules\Compare\Services\CompareService;
@@ -85,6 +82,10 @@ use App\Modules\StockAlert\Repositories\StockAlertRepository;
 use App\Modules\StockAlert\Services\StockAlertNotificationService;
 use App\Modules\StockAlert\Services\StockAlertService;
 use App\Modules\Storefront\Controllers\SitemapController;
+use App\Modules\Storefront\Controllers\HomepageAdminController;
+use App\Modules\Storefront\Repositories\HomepageSectionItemRepository;
+use App\Modules\Storefront\Repositories\HomepageSectionRepository;
+use App\Modules\Storefront\Services\HomepageService;
 use App\Modules\Storefront\Services\RobotsService;
 use App\Modules\Storefront\Services\SitemapService;
 use App\Modules\Storefront\Services\SeoService;
@@ -193,8 +194,9 @@ $stripeClient = new StripeCheckoutClient(
 $paymentService = new PaymentService($orderRepository, $paymentEventRepository, $stripeClient, $app['config']);
 $paymentController = new PaymentController($paymentService);
 $cmsPageService = new CmsPageService(new CmsPageRepository($app['pdo']), $redirectService);
-$cmsHomeService = new CmsHomeService(
-    new CmsHomeSectionRepository($app['pdo']),
+$homepageService = new HomepageService(
+    new HomepageSectionRepository($app['pdo']),
+    new HomepageSectionItemRepository($app['pdo']),
     new ProductRepository($app['pdo']),
     new CategoryRepository($app['pdo'])
 );
@@ -234,7 +236,7 @@ $sitemapController = new SitemapController($sitemapService, $robotsService);
 $recentViewedService = new RecentViewedService($catalogRepository, $inventoryService);
 $compareService = new CompareService($catalogRepository, $inventoryService);
 $storefront = new StorefrontController($app['view'], $catalogService, $cmsPageService, $authService, $productReviewService, $seoService, $wishlistService, $stockAlertService, $recentViewedService, $compareService);
-$cmsStorefront = new CmsStorefrontController($app['view'], $cmsHomeService, $cmsPageService, $seoService);
+$cmsStorefront = new CmsStorefrontController($app['view'], $homepageService, $cmsPageService, $seoService);
 $cartController = new CartController($app['view'], $cartService, $cmsPageService);
 $checkoutController = new CheckoutController($app['view'], $cartService, new CheckoutService(), $orderService, $shippingService, $checkoutTotalsService, $cmsPageService, $paymentService, $authService);
 $admin = new AdminController($app['view']);
@@ -262,7 +264,7 @@ $supportCaseAdmin = new SupportCaseAdminController($app['view'], $supportCaseSer
 $orderAdmin = new OrderAdminController($app['view'], $orderService, $paymentEventRepository, $returnRequestService, $supportCaseService);
 $purchasingAdmin = new PurchasingAdminController($app['view'], $purchasingService);
 $cmsPageAdmin = new CmsPageAdminController($app['view'], $cmsPageService);
-$cmsHomeAdmin = new CmsHomeAdminController($app['view'], $cmsHomeService);
+$homepageAdmin = new HomepageAdminController($app['view'], $homepageService);
 $shippingMethodAdmin = new ShippingMethodAdminController($app['view'], $shippingService);
 $discountCodeAdmin = new DiscountCodeAdminController($app['view'], $discountService);
 $authController = new AuthController($app['view'], $authService, $cmsPageService);
@@ -439,8 +441,8 @@ $app['router']->get('/admin/cms/pages/create', [$cmsPageAdmin, 'createForm']);
 $app['router']->post('/admin/cms/pages', [$cmsPageAdmin, 'store']);
 $app['router']->get('/admin/cms/pages/{id}/edit', [$cmsPageAdmin, 'editForm']);
 $app['router']->post('/admin/cms/pages/{id}', [$cmsPageAdmin, 'update']);
-$app['router']->get('/admin/cms/home', [$cmsHomeAdmin, 'edit']);
-$app['router']->post('/admin/cms/home', [$cmsHomeAdmin, 'update']);
+$app['router']->get('/admin/homepage-sections', [$homepageAdmin, 'index']);
+$app['router']->post('/admin/homepage-sections', [$homepageAdmin, 'handle']);
 
 $app['router']->get('/admin/supplier-item-review', [$supplierItemReviewAdmin, 'index']);
 $app['router']->post('/admin/supplier-item-review/{id}/match', [$supplierItemReviewAdmin, 'match']);

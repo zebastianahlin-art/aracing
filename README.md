@@ -335,18 +335,38 @@ Admin:
 - `/admin/cms/pages` listar CMS-sidor
 - `/admin/cms/pages/create` skapar ny sida (page/legal/info)
 - `/admin/cms/pages/{id}/edit` redigerar titel, slug, meta och HTML-innehåll
-- `/admin/cms/home` styr startsidans sektioner (hero, intro, featured products, featured categories, info)
 
 Storefront:
-- `/` renderar startsidessektioner från CMS-data
 - `/pages/{slug}` renderar aktiva informationssidor
 
 Lokal manuell test:
 1. Skapa en sida i `/admin/cms/pages` (t.ex. slug `kopvillkor`) och sätt den aktiv.
 2. Öppna `/pages/kopvillkor` och verifiera innehåll.
-3. Öppna `/admin/cms/home` och aktivera `hero` + `intro` + `featured_products`.
-4. Ange produkt-ID:n i `featured_products` som kommaseparerad lista och spara.
-5. Öppna `/` och verifiera att sektionerna visas enligt admininställning.
+
+## Homepage merchandising / featured collections v1
+
+Databas:
+- kör även `database/migrations/030_homepage_merchandising_v1.sql`
+
+Admin:
+- `/admin/homepage-sections` hanterar startsidessektioner och items
+- stöd för sektionstyper: `featured_products`, `featured_category`, `mixed_manual`
+- varje sektion har `key`, titel, underrubrik, sortering, max_items, aktiv/inaktiv och valfri CTA (`label` + `url`)
+- varje sektion kan manuellt få rader av typen `product` eller `category` med egen sortering och aktiv-flagga
+
+Storefront:
+- `/` hämtar aktiva startsidessektioner i `sort_order`
+- sektionerna renderar manuellt kopplade produkter/kategorier och respekterar `max_items`
+- produkter filtreras med samma publika regel som övrig storefront (`is_active=1`, inte sökdold)
+- kategorier utan giltig slug filtreras bort defensivt
+- startsidan tål saknade/dolda kopplingar och visar färre kort utan att krascha
+
+Lokal testning:
+1. Kör migrationen ovan.
+2. Öppna `/admin/homepage-sections` och skapa en sektion.
+3. Lägg till några item-rader med produkt-ID och/eller kategori-ID.
+4. Öppna `/` och verifiera ordning, max_items, CTA och att endast publika/synliga objekt renderas.
+5. Inaktivera en produkt eller item-rad och verifiera att den försvinner från startsidan utan fel.
 
 ## Storefront sök + filtrering v1
 

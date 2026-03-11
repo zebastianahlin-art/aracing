@@ -6,7 +6,7 @@ namespace App\Modules\Cms\Controllers;
 
 use App\Core\Http\Response;
 use App\Core\View\ViewFactory;
-use App\Modules\Cms\Services\CmsHomeService;
+use App\Modules\Storefront\Services\HomepageService;
 use App\Modules\Cms\Services\CmsPageService;
 use App\Modules\Storefront\Services\SeoService;
 
@@ -14,7 +14,7 @@ final class CmsStorefrontController
 {
     public function __construct(
         private readonly ViewFactory $views,
-        private readonly CmsHomeService $home,
+        private readonly HomepageService $home,
         private readonly CmsPageService $pages,
         private readonly SeoService $seo
     ) {

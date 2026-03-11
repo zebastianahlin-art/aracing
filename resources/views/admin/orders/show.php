@@ -109,7 +109,10 @@ $canCancelFulfillment = in_array((string) ($order['fulfillment_status'] ?? ''), 
         <p><?= htmlspecialchars((string) $order['customer_first_name'] . ' ' . (string) $order['customer_last_name'], ENT_QUOTES, 'UTF-8') ?><br>
           <?= htmlspecialchars((string) $order['customer_email'], ENT_QUOTES, 'UTF-8') ?><br>
           <?= htmlspecialchars((string) ($order['customer_phone'] ?? '-'), ENT_QUOTES, 'UTF-8') ?><br>
-          Konto: <?= (int) ($order['user_id'] ?? 0) > 0 ? 'Kopplad (user_id ' . (int) $order['user_id'] . ')' : 'Gästorder' ?></p>
+          Konto: <?= (int) ($order['user_id'] ?? 0) > 0 ? 'Kopplad (user_id ' . (int) $order['user_id'] . ')' : 'Gästorder' ?><br>
+          Företagsnamn: <?= htmlspecialchars((string) ($order['company_name'] ?? '-'), ENT_QUOTES, 'UTF-8') ?><br>
+          Organisationsnummer: <?= htmlspecialchars((string) ($order['company_registration_number'] ?? '-'), ENT_QUOTES, 'UTF-8') ?><br>
+          VAT / Org.nr: <?= htmlspecialchars((string) ($order['vat_number'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
 
         <h3>Leveransadress</h3>
         <p><?= htmlspecialchars((string) $order['shipping_first_name'] . ' ' . (string) $order['shipping_last_name'], ENT_QUOTES, 'UTF-8') ?><br>

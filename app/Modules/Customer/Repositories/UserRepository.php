@@ -55,6 +55,9 @@ final class UserRepository
             SET first_name = :first_name,
                 last_name = :last_name,
                 phone = :phone,
+                company_name = :company_name,
+                company_registration_number = :company_registration_number,
+                vat_number = :vat_number,
                 updated_at = NOW()
             WHERE id = :id');
 
@@ -63,6 +66,9 @@ final class UserRepository
             'first_name' => $this->nullable($data['first_name'] ?? null),
             'last_name' => $this->nullable($data['last_name'] ?? null),
             'phone' => $this->nullable($data['phone'] ?? null),
+            'company_name' => $this->nullable($data['company_name'] ?? null),
+            'company_registration_number' => $this->nullable($data['company_registration_number'] ?? null),
+            'vat_number' => $this->nullable($data['vat_number'] ?? null),
         ]);
     }
 

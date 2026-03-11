@@ -27,6 +27,12 @@ $statusLabels = [
     <p><strong>Total: <?= number_format((float) $order['total_amount'], 2, ',', ' ') ?> <?= htmlspecialchars((string) ($order['currency_code'] ?? 'SEK'), ENT_QUOTES, 'UTF-8') ?></strong></p>
     <p>Tracking: <?= htmlspecialchars((string) ($order['tracking_number'] ?? 'Saknas ännu'), ENT_QUOTES, 'UTF-8') ?></p>
 
+    <?php if (trim((string) ($order['company_name'] ?? '')) !== '' || trim((string) ($order['company_registration_number'] ?? '')) !== '' || trim((string) ($order['vat_number'] ?? '')) !== ''): ?>
+      <p>Företagsnamn: <?= htmlspecialchars((string) ($order['company_name'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
+      <p>Organisationsnummer: <?= htmlspecialchars((string) ($order['company_registration_number'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
+      <p>VAT / Org.nr: <?= htmlspecialchars((string) ($order['vat_number'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
+    <?php endif; ?>
+
     <table class="table">
       <thead><tr><th>Produkt</th><th>SKU</th><th>Antal</th><th>Pris</th><th>Radtotal</th></tr></thead>
       <tbody>

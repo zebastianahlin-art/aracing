@@ -15,7 +15,7 @@ final class OrderRepository
     public function createOrder(array $data): int
     {
         $sql = 'INSERT INTO orders (
-            order_number, status, order_status, currency_code,
+            order_number, status, order_status, currency_code, user_id,
             customer_email, customer_first_name, customer_last_name, customer_phone,
             billing_address_line_1, billing_address_line_2, billing_postal_code, billing_city, billing_country,
             shipping_first_name, shipping_last_name, shipping_phone,
@@ -30,7 +30,7 @@ final class OrderRepository
             internal_reference,
             created_at, updated_at
         ) VALUES (
-            :order_number, :status, :order_status, :currency_code,
+            :order_number, :status, :order_status, :currency_code, :user_id,
             :customer_email, :customer_first_name, :customer_last_name, :customer_phone,
             :billing_address_line_1, :billing_address_line_2, :billing_postal_code, :billing_city, :billing_country,
             :shipping_first_name, :shipping_last_name, :shipping_phone,

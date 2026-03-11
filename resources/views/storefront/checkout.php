@@ -10,6 +10,7 @@ $totalsPreview = $totalsPreview ?? [
   'discount_amount' => (float) ($cartData['discount_amount_inc_vat'] ?? 0),
   'grand_total' => (float) ($cartData['total_amount'] ?? 0),
 ];
+$customer = $customer ?? null;
 ?>
 <section class="panel">
   <h2>Checkout</h2>
@@ -26,10 +27,10 @@ $totalsPreview = $totalsPreview ?? [
         <form method="post" action="/checkout/place-order">
           <section class="panel" style="margin-bottom:.8rem;">
             <h3>Kunduppgifter</h3>
-            <label>Förnamn *</label><input name="customer_first_name" required>
-            <label>Efternamn *</label><input name="customer_last_name" required>
-            <label>E-post *</label><input name="customer_email" type="email" required>
-            <label>Telefon</label><input name="customer_phone" placeholder="För leveransfrågor">
+            <label>Förnamn *</label><input name="customer_first_name" required value="<?= htmlspecialchars((string) ($customer['first_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+            <label>Efternamn *</label><input name="customer_last_name" required value="<?= htmlspecialchars((string) ($customer['last_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+            <label>E-post *</label><input name="customer_email" type="email" required value="<?= htmlspecialchars((string) ($customer['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+            <label>Telefon</label><input name="customer_phone" placeholder="För leveransfrågor" value="<?= htmlspecialchars((string) ($customer['phone'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
           </section>
 
           <section class="panel" style="margin-bottom:.8rem;">
@@ -43,9 +44,9 @@ $totalsPreview = $totalsPreview ?? [
 
           <section class="panel" style="margin-bottom:.8rem;">
             <h3>Leveransadress</h3>
-            <label>Förnamn *</label><input name="shipping_first_name" required>
-            <label>Efternamn *</label><input name="shipping_last_name" required>
-            <label>Telefon</label><input name="shipping_phone">
+            <label>Förnamn *</label><input name="shipping_first_name" required value="<?= htmlspecialchars((string) ($customer['first_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+            <label>Efternamn *</label><input name="shipping_last_name" required value="<?= htmlspecialchars((string) ($customer['last_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+            <label>Telefon</label><input name="shipping_phone" value="<?= htmlspecialchars((string) ($customer['phone'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
             <label>Adressrad 1 *</label><input name="shipping_address_line_1" required>
             <label>Adressrad 2</label><input name="shipping_address_line_2">
             <label>Postnummer *</label><input name="shipping_postal_code" required>

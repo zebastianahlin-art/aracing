@@ -156,6 +156,7 @@ final class OrderService
                 'status' => 'placed',
                 'order_status' => 'placed',
                 'currency_code' => $cartData['cart']['currency_code'] ?? 'SEK',
+                'user_id' => $checkoutData['customer_user_id'] ?? null,
                 'customer_email' => $checkoutData['customer_email'],
                 'customer_first_name' => $checkoutData['customer_first_name'],
                 'customer_last_name' => $checkoutData['customer_last_name'],

@@ -476,3 +476,21 @@ Lokal verifiering (test/sandbox):
 2. Lägg order med Stripe-metoden via `/checkout`.
 3. Verifiera redirect till Stripe och återkomst till `/order-status`.
 4. Skicka webhook (Stripe CLI eller dashboard) till `/webhooks/stripe` och verifiera att `payment_status` samt `payment_events` uppdateras.
+
+## Customer accounts v1
+
+Databas:
+- kör även `database/migrations/018_customer_accounts_v1.sql`
+
+Storefront:
+- registrering: `/register`
+- login: `/login`
+- Mina sidor: `/account`
+- orderhistorik: `/account/orders`
+- profil: `/account/profile`
+
+Snabbtest lokalt:
+1. Registrera nytt konto via `/register`.
+2. Lägg en order via checkout i inloggat läge.
+3. Verifiera att ordern syns under `/account/orders` och att orderdetalj fungerar.
+4. Uppdatera profil under `/account/profile`.

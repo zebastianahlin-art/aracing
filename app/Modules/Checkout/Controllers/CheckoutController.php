@@ -8,6 +8,7 @@ use App\Core\Http\Response;
 use App\Core\View\ViewFactory;
 use App\Modules\Cart\Services\CartService;
 use App\Modules\Checkout\Services\CheckoutService;
+use App\Modules\Customer\Services\AuthService;
 use App\Modules\Cms\Services\CmsPageService;
 use App\Modules\Order\Services\OrderService;
 use App\Modules\Payment\Services\PaymentService;
@@ -25,7 +26,8 @@ final class CheckoutController
         private readonly ShippingService $shipping,
         private readonly CheckoutTotalsService $totals,
         private readonly CmsPageService $pages,
-        private readonly PaymentService $payments
+        private readonly PaymentService $payments,
+        private readonly AuthService $auth
     ) {
     }
 
@@ -61,6 +63,7 @@ final class CheckoutController
             'shippingMethods' => $shippingMethods,
             'selectedShippingMethodCode' => $selectedCode,
             'totalsPreview' => $totalsPreview,
+            'customer' => $this->auth->currentCustomer(),
         ]));
     }
 
@@ -68,6 +71,7 @@ final class CheckoutController
     {
         try {
             $checkoutData = $this->checkout->normalize($_POST);
+            $checkoutData['customer_user_id'] = $this->auth->currentUserId();
             $this->carts->ensureCartItemsPurchasable($this->sessionId());
             $cartData = $this->carts->getCartBySession($this->sessionId());
             $orderNumber = $this->orders->createFromCart($checkoutData, $cartData);

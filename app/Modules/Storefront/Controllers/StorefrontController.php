@@ -11,6 +11,7 @@ use App\Modules\Cms\Services\CmsPageService;
 use App\Modules\Customer\Services\AuthService;
 use App\Modules\Review\Services\ProductReviewService;
 use App\Modules\Storefront\Services\SeoService;
+use App\Modules\Wishlist\Services\WishlistService;
 
 final class StorefrontController
 {
@@ -20,7 +21,8 @@ final class StorefrontController
         private readonly CmsPageService $pages,
         private readonly AuthService $auth,
         private readonly ProductReviewService $reviews,
-        private readonly SeoService $seo
+        private readonly SeoService $seo,
+        private readonly WishlistService $wishlists
     ) {
     }
 
@@ -64,11 +66,20 @@ final class StorefrontController
             $publicReviews = $this->reviews->publicReviewsForProduct((int) $product['id']);
         }
 
+        $customer = $this->auth->currentCustomer();
+        $isWishlisted = false;
+        if ($customer !== null && $product !== null) {
+            $isWishlisted = $this->wishlists->isSaved((int) $customer['id'], (int) $product['id']);
+        }
+
         return new Response($this->views->render('storefront.product', [
             'product' => $product,
             'reviewSummary' => $summary,
             'publicReviews' => $publicReviews,
-            'customer' => $this->auth->currentCustomer(),
+            'customer' => $customer,
+            'isWishlisted' => $isWishlisted,
+            'wishlistMessage' => trim((string) ($_GET['message'] ?? '')),
+            'wishlistError' => trim((string) ($_GET['error'] ?? '')),
             'reviewMessage' => trim((string) ($_GET['review_message'] ?? '')),
             'reviewError' => trim((string) ($_GET['review_error'] ?? '')),
             'infoPages' => $this->pages->storefrontInfoPages(),

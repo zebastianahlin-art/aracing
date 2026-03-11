@@ -8,7 +8,7 @@ $supplierOptions = $supplierOptions ?? [];
 <section class="card">
   <div class="topline">
     <h3>Restock v1 · Påfyllnadsbehov</h3>
-    <a class="btn" href="/admin/purchase-lists">Se inköpsunderlag</a>
+    <a class="btn" href="/admin/purchase-order-drafts">Se inköpsutkast</a>
   </div>
 
   <?php if (($error ?? '') !== ''): ?>
@@ -62,20 +62,9 @@ $supplierOptions = $supplierOptions ?? [];
     </div>
   </form>
 
-  <form method="post" action="/admin/purchasing/purchase-lists">
-    <div class="grid" style="grid-template-columns:1.4fr 1fr; margin-bottom:.7rem;">
-      <div>
-        <label for="name">Namn på inköpsunderlag</label>
-        <input id="name" name="name" required placeholder="Vecka 12 påfyllning">
-      </div>
-      <div>
-        <label for="notes">Anteckning (valfritt)</label>
-        <input id="notes" name="notes" placeholder="Manuellt underlag för restockgranskning">
-      </div>
-    </div>
-
+  <form method="post" action="/admin/purchasing/purchase-order-drafts">
     <div class="actions-inline">
-      <button class="btn" type="submit">Skapa inköpsunderlag från markerade</button>
+      <button class="btn" type="submit">Skapa inköpsutkast per leverantör</button>
     </div>
 
     <table class="table compact">

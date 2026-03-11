@@ -6,13 +6,17 @@ namespace App\Modules\Purchasing\Controllers;
 
 use App\Core\Http\Response;
 use App\Core\View\ViewFactory;
+use App\Modules\Purchasing\Services\PurchaseOrderDraftService;
 use App\Modules\Purchasing\Services\PurchasingService;
 use InvalidArgumentException;
 
 final class PurchasingAdminController
 {
-    public function __construct(private readonly ViewFactory $views, private readonly PurchasingService $purchasing)
-    {
+    public function __construct(
+        private readonly ViewFactory $views,
+        private readonly PurchasingService $purchasing,
+        private readonly PurchaseOrderDraftService $drafts,
+    ) {
     }
 
     public function refillNeeds(): Response
@@ -46,61 +50,116 @@ final class PurchasingAdminController
         }
     }
 
-    public function createPurchaseList(): Response
+    public function createPurchaseOrderDrafts(): Response
     {
         try {
-            $purchaseListId = $this->purchasing->createManualPurchaseList(
-                (string) ($_POST['name'] ?? ''),
-                (string) ($_POST['notes'] ?? ''),
+            $result = $this->drafts->createFromRestockSelection(
                 (array) ($_POST['selected_product_ids'] ?? []),
                 (array) ($_POST['selected_quantity'] ?? [])
             );
 
-            return $this->redirect('/admin/purchase-lists/' . $purchaseListId . '?message=' . urlencode('Inköpsunderlag skapat.'));
+            $createdCount = count($result['created_draft_ids']);
+            $message = 'Skapade ' . $createdCount . ' inköpsutkast.';
+            if ((int) $result['skipped_without_supplier'] > 0) {
+                $message .= ' ' . (int) $result['skipped_without_supplier'] . ' produkt(er) saknade leverantörskoppling och hoppades över.';
+            }
+
+            if ($createdCount === 1) {
+                return $this->redirect('/admin/purchase-order-drafts/' . (int) $result['created_draft_ids'][0] . '?message=' . urlencode($message));
+            }
+
+            return $this->redirect('/admin/purchase-order-drafts?message=' . urlencode($message));
         } catch (InvalidArgumentException $e) {
             return $this->redirect('/admin/purchasing?error=' . urlencode($e->getMessage()));
         }
     }
 
-    public function purchaseLists(): Response
+    public function draftIndex(): Response
     {
-        return new Response($this->views->render('admin.purchase_lists.index', [
-            'lists' => $this->purchasing->listPurchaseLists(),
-            'message' => trim((string) ($_GET['message'] ?? '')),
-        ]));
-    }
+        $status = trim((string) ($_GET['status'] ?? ''));
 
-    public function purchaseListDetail(string $id): Response
-    {
-        $detail = $this->purchasing->getPurchaseListDetail((int) $id);
-
-        return new Response($this->views->render('admin.purchase_lists.show', [
-            'detail' => $detail,
-            'statusOptions' => $this->purchasing->statusOptions(),
+        return new Response($this->views->render('admin.purchase_order_drafts.index', [
+            'drafts' => $this->drafts->listDrafts($status),
+            'statuses' => $this->drafts->statuses(),
+            'filters' => ['status' => $status],
             'error' => trim((string) ($_GET['error'] ?? '')),
             'message' => trim((string) ($_GET['message'] ?? '')),
         ]));
     }
 
-    public function updatePurchaseList(string $id): Response
+    public function draftDetail(string $id): Response
+    {
+        return new Response($this->views->render('admin.purchase_order_drafts.show', [
+            'detail' => $this->drafts->getDraftDetail((int) $id),
+            'error' => trim((string) ($_GET['error'] ?? '')),
+            'message' => trim((string) ($_GET['message'] ?? '')),
+        ]));
+    }
+
+    public function draftPrint(string $id): Response
+    {
+        return new Response($this->views->render('admin.purchase_order_drafts.print', [
+            'detail' => $this->drafts->getDraftDetail((int) $id),
+        ]));
+    }
+
+    public function updateDraftNote(string $id): Response
     {
         try {
-            $this->purchasing->updatePurchaseListMeta((int) $id, (string) ($_POST['status'] ?? ''), (string) ($_POST['notes'] ?? ''));
+            $draftId = (int) $id;
+            $this->drafts->updateInternalNote($draftId, (string) ($_POST['internal_note'] ?? ''));
 
-            return $this->redirect('/admin/purchase-lists/' . (int) $id . '?message=' . urlencode('Inköpsunderlag uppdaterat.'));
+            return $this->redirect('/admin/purchase-order-drafts/' . $draftId . '?message=' . urlencode('Intern notering uppdaterad.'));
         } catch (InvalidArgumentException $e) {
-            return $this->redirect('/admin/purchase-lists/' . (int) $id . '?error=' . urlencode($e->getMessage()));
+            return $this->redirect('/admin/purchase-order-drafts/' . (int) $id . '?error=' . urlencode($e->getMessage()));
         }
     }
 
-    public function updatePurchaseListItem(string $id, string $itemId): Response
+    public function updateDraftItemQuantity(string $id, string $itemId): Response
     {
         try {
-            $this->purchasing->updateSelectedQuantity((int) $itemId, $_POST['selected_quantity'] ?? null);
+            $draftId = (int) $id;
+            $this->drafts->updateItemQuantity($draftId, (int) $itemId, $_POST['quantity'] ?? null);
 
-            return $this->redirect('/admin/purchase-lists/' . (int) $id . '?message=' . urlencode('Rad uppdaterad.'));
+            return $this->redirect('/admin/purchase-order-drafts/' . $draftId . '?message=' . urlencode('Kvantitet uppdaterad.'));
         } catch (InvalidArgumentException $e) {
-            return $this->redirect('/admin/purchase-lists/' . (int) $id . '?error=' . urlencode($e->getMessage()));
+            return $this->redirect('/admin/purchase-order-drafts/' . (int) $id . '?error=' . urlencode($e->getMessage()));
+        }
+    }
+
+    public function removeDraftItem(string $id, string $itemId): Response
+    {
+        try {
+            $draftId = (int) $id;
+            $this->drafts->removeItem($draftId, (int) $itemId);
+
+            return $this->redirect('/admin/purchase-order-drafts/' . $draftId . '?message=' . urlencode('Rad borttagen.'));
+        } catch (InvalidArgumentException $e) {
+            return $this->redirect('/admin/purchase-order-drafts/' . (int) $id . '?error=' . urlencode($e->getMessage()));
+        }
+    }
+
+    public function markDraftExported(string $id): Response
+    {
+        try {
+            $draftId = (int) $id;
+            $this->drafts->markExported($draftId);
+
+            return $this->redirect('/admin/purchase-order-drafts/' . $draftId . '?message=' . urlencode('Utkast markerat som exporterat.'));
+        } catch (InvalidArgumentException $e) {
+            return $this->redirect('/admin/purchase-order-drafts/' . (int) $id . '?error=' . urlencode($e->getMessage()));
+        }
+    }
+
+    public function cancelDraft(string $id): Response
+    {
+        try {
+            $draftId = (int) $id;
+            $this->drafts->markCancelled($draftId);
+
+            return $this->redirect('/admin/purchase-order-drafts/' . $draftId . '?message=' . urlencode('Utkast avbrutet.'));
+        } catch (InvalidArgumentException $e) {
+            return $this->redirect('/admin/purchase-order-drafts/' . (int) $id . '?error=' . urlencode($e->getMessage()));
         }
     }
 

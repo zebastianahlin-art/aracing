@@ -315,16 +315,19 @@ Admin:
 - produkter utan supplier-koppling kan fortfarande visas när lagersituationen kräver restockgranskning
 - manuell hantering finns direkt i listan: intern notering + status (`Ny`, `Granskad`, `Hanteras`)
 - snabbfilter finns för signal, leverantör och manuell status
-- `/admin/purchase-lists` listar manuella inköpsunderlag
-- `/admin/purchase-lists/{id}` visar detalj med rader, status, anteckning och vald kvantitet
+- `/admin/purchase-order-drafts` listar inköpsutkast med filter på status (`draft`, `exported`, `cancelled`)
+- `/admin/purchase-order-drafts/{id}` visar detalj med snapshot-rader, intern notering och kvantitetsjustering per rad
+- `/admin/purchase-order-drafts/{id}/print` ger enkel utskrifts-/exportvänlig supplier order-vy
+- restock-vyn kan skapa flera inköpsutkast i ett steg, grupperat per leverantör
+- produkter utan leverantörskoppling exkluderas från skapandet i v1 och rapporteras i återkopplingen
 
 Lokal manuell test:
-1. Säkerställ att det finns aktiva produkter i olika lagerlägen (slut/låg nivå/backorder, samt gärna någon utan supplier-länk).
-2. Öppna `/admin/purchasing` och verifiera att restockorsak visas per rad.
-3. Filtrera på `Slut i lager`, `Låg nivå`, `Backorder aktiv` och `Utan leverantörskoppling`.
-4. Spara en manuell status + intern notering och verifiera att raden kan filtreras på vald manuell status.
-5. Markera flera rader och skapa inköpsunderlag; öppna via `/admin/purchase-lists` och justera `selected_quantity` per rad.
-6. Uppdatera inköpsunderlagets status (`draft/reviewed/exported`) samt anteckning i detaljvyn.
+1. Säkerställ att det finns aktiva produkter i olika lagerlägen (slut/låg nivå/backorder), gärna hos minst två leverantörer.
+2. Öppna `/admin/purchasing`, markera flera restock-rader och klicka `Skapa inköpsutkast per leverantör`.
+3. Verifiera att ett eller flera utkast skapades och att varje utkast innehåller rader för en leverantör.
+4. Öppna `/admin/purchase-order-drafts/{id}` och justera `quantity`, ta bort en rad och uppdatera intern notering.
+5. Öppna `/admin/purchase-order-drafts/{id}/print` och verifiera att supplier order-underlag är tydligt och utskriftsvänligt.
+6. Markera utkast som `exported` eller `cancelled` och verifiera att fortsatt redigering blockeras.
 
 
 ## Leverantörsflöde v2: importgranskning + manuell matchningskö

@@ -74,8 +74,11 @@ use App\Modules\Product\Services\ProductSupplierLinkService;
 use App\Modules\Purchasing\Controllers\PurchasingAdminController;
 use App\Modules\Purchasing\Repositories\PurchaseListItemRepository;
 use App\Modules\Purchasing\Repositories\PurchaseListRepository;
+use App\Modules\Purchasing\Repositories\PurchaseOrderDraftItemRepository;
+use App\Modules\Purchasing\Repositories\PurchaseOrderDraftRepository;
 use App\Modules\Purchasing\Repositories\RefillNeedRepository;
 use App\Modules\Purchasing\Repositories\RestockFlagRepository;
+use App\Modules\Purchasing\Services\PurchaseOrderDraftService;
 use App\Modules\Purchasing\Services\PurchasingService;
 use App\Modules\Storefront\Controllers\StorefrontController;
 use App\Modules\StockAlert\Controllers\StockAlertController;
@@ -226,6 +229,12 @@ $purchasingService = new PurchasingService(
     new PurchaseListItemRepository($app['pdo']),
     new RestockFlagRepository($app['pdo'])
 );
+$purchaseOrderDraftService = new PurchaseOrderDraftService(
+    $app['pdo'],
+    new RefillNeedRepository($app['pdo']),
+    new PurchaseOrderDraftRepository($app['pdo']),
+    new PurchaseOrderDraftItemRepository($app['pdo'])
+);
 
 $seoService = new SeoService();
 $sitemapService = new SitemapService(
@@ -264,7 +273,7 @@ $supportCaseService = new SupportCaseService(
 $supportCaseStorefront = new SupportCaseStorefrontController($app['view'], $supportCaseService, $authService, $cmsPageService);
 $supportCaseAdmin = new SupportCaseAdminController($app['view'], $supportCaseService);
 $orderAdmin = new OrderAdminController($app['view'], $orderService, $paymentEventRepository, $returnRequestService, $supportCaseService);
-$purchasingAdmin = new PurchasingAdminController($app['view'], $purchasingService);
+$purchasingAdmin = new PurchasingAdminController($app['view'], $purchasingService, $purchaseOrderDraftService);
 $cmsPageAdmin = new CmsPageAdminController($app['view'], $cmsPageService);
 $homepageAdmin = new HomepageAdminController($app['view'], $homepageService);
 $shippingMethodAdmin = new ShippingMethodAdminController($app['view'], $shippingService);
@@ -408,12 +417,16 @@ $app['router']->get('/admin/shipping-methods/{id}/edit', [$shippingMethodAdmin, 
 $app['router']->post('/admin/shipping-methods/{id}', [$shippingMethodAdmin, 'update']);
 
 $app['router']->get('/admin/purchasing', [$purchasingAdmin, 'refillNeeds']);
-$app['router']->post('/admin/purchasing/purchase-lists', [$purchasingAdmin, 'createPurchaseList']);
+$app['router']->post('/admin/purchasing/purchase-order-drafts', [$purchasingAdmin, 'createPurchaseOrderDrafts']);
 $app['router']->post('/admin/purchasing/{productId}/flag', [$purchasingAdmin, 'updateRestockFlag']);
-$app['router']->get('/admin/purchase-lists', [$purchasingAdmin, 'purchaseLists']);
-$app['router']->get('/admin/purchase-lists/{id}', [$purchasingAdmin, 'purchaseListDetail']);
-$app['router']->post('/admin/purchase-lists/{id}/update', [$purchasingAdmin, 'updatePurchaseList']);
-$app['router']->post('/admin/purchase-lists/{id}/items/{itemId}/quantity', [$purchasingAdmin, 'updatePurchaseListItem']);
+$app['router']->get('/admin/purchase-order-drafts', [$purchasingAdmin, 'draftIndex']);
+$app['router']->get('/admin/purchase-order-drafts/{id}', [$purchasingAdmin, 'draftDetail']);
+$app['router']->get('/admin/purchase-order-drafts/{id}/print', [$purchasingAdmin, 'draftPrint']);
+$app['router']->post('/admin/purchase-order-drafts/{id}/update', [$purchasingAdmin, 'updateDraftNote']);
+$app['router']->post('/admin/purchase-order-drafts/{id}/items/{itemId}/quantity', [$purchasingAdmin, 'updateDraftItemQuantity']);
+$app['router']->post('/admin/purchase-order-drafts/{id}/items/{itemId}/delete', [$purchasingAdmin, 'removeDraftItem']);
+$app['router']->post('/admin/purchase-order-drafts/{id}/export', [$purchasingAdmin, 'markDraftExported']);
+$app['router']->post('/admin/purchase-order-drafts/{id}/cancel', [$purchasingAdmin, 'cancelDraft']);
 
 
 $app['router']->get('/admin/redirects', [$redirectAdmin, 'index']);

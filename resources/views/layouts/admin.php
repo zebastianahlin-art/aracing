@@ -52,7 +52,7 @@
     <a href="/admin/discount-codes">Kampanjkoder</a>
     <a href="/admin/shipping-methods">Fraktmetoder</a>
     <a href="/admin/purchasing">Inköpsöversikt</a>
-    <a href="/admin/purchase-lists">Inköpsunderlag</a>
+    <a href="/admin/purchase-order-drafts">Inköpsutkast</a>
     <a href="/admin/suppliers">Leverantörer</a>
     <a href="/admin/import-profiles">Importprofiler</a>
     <a href="/admin/import-runs">Importkörningar</a>

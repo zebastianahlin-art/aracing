@@ -10,7 +10,10 @@ $totalsPreview = $totalsPreview ?? [
   'discount_amount' => (float) ($cartData['discount_amount_inc_vat'] ?? 0),
   'grand_total' => (float) ($cartData['total_amount'] ?? 0),
 ];
-$customer = $customer ?? null;
+$checkoutDefaults = $checkoutDefaults ?? [];
+$inputValue = static function (string $key) use ($checkoutDefaults): string {
+  return (string) ($checkoutDefaults[$key] ?? '');
+};
 ?>
 <section class="panel">
   <h2>Checkout</h2>
@@ -27,31 +30,31 @@ $customer = $customer ?? null;
         <form method="post" action="/checkout/place-order">
           <section class="panel" style="margin-bottom:.8rem;">
             <h3>Kunduppgifter</h3>
-            <label>Förnamn *</label><input name="customer_first_name" required value="<?= htmlspecialchars((string) ($customer['first_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
-            <label>Efternamn *</label><input name="customer_last_name" required value="<?= htmlspecialchars((string) ($customer['last_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
-            <label>E-post *</label><input name="customer_email" type="email" required value="<?= htmlspecialchars((string) ($customer['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
-            <label>Telefon</label><input name="customer_phone" placeholder="För leveransfrågor" value="<?= htmlspecialchars((string) ($customer['phone'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+            <label>Förnamn *</label><input name="customer_first_name" required value="<?= htmlspecialchars($inputValue('customer_first_name'), ENT_QUOTES, 'UTF-8') ?>">
+            <label>Efternamn *</label><input name="customer_last_name" required value="<?= htmlspecialchars($inputValue('customer_last_name'), ENT_QUOTES, 'UTF-8') ?>">
+            <label>E-post *</label><input name="customer_email" type="email" required value="<?= htmlspecialchars($inputValue('customer_email'), ENT_QUOTES, 'UTF-8') ?>">
+            <label>Telefon</label><input name="customer_phone" placeholder="För leveransfrågor" value="<?= htmlspecialchars($inputValue('customer_phone'), ENT_QUOTES, 'UTF-8') ?>">
           </section>
 
           <section class="panel" style="margin-bottom:.8rem;">
             <h3>Fakturaadress</h3>
-            <label>Adressrad 1 *</label><input name="billing_address_line_1" required>
-            <label>Adressrad 2</label><input name="billing_address_line_2">
-            <label>Postnummer *</label><input name="billing_postal_code" required>
-            <label>Stad *</label><input name="billing_city" required>
-            <label>Land (ISO2) *</label><input name="billing_country" value="SE" required>
+            <label>Adressrad 1 *</label><input name="billing_address_line_1" required value="<?= htmlspecialchars($inputValue('billing_address_line_1'), ENT_QUOTES, 'UTF-8') ?>">
+            <label>Adressrad 2</label><input name="billing_address_line_2" value="<?= htmlspecialchars($inputValue('billing_address_line_2'), ENT_QUOTES, 'UTF-8') ?>">
+            <label>Postnummer *</label><input name="billing_postal_code" required value="<?= htmlspecialchars($inputValue('billing_postal_code'), ENT_QUOTES, 'UTF-8') ?>">
+            <label>Stad *</label><input name="billing_city" required value="<?= htmlspecialchars($inputValue('billing_city'), ENT_QUOTES, 'UTF-8') ?>">
+            <label>Land (ISO2) *</label><input name="billing_country" value="<?= htmlspecialchars($inputValue('billing_country'), ENT_QUOTES, 'UTF-8') ?>" required>
           </section>
 
           <section class="panel" style="margin-bottom:.8rem;">
             <h3>Leveransadress</h3>
-            <label>Förnamn *</label><input name="shipping_first_name" required value="<?= htmlspecialchars((string) ($customer['first_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
-            <label>Efternamn *</label><input name="shipping_last_name" required value="<?= htmlspecialchars((string) ($customer['last_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
-            <label>Telefon</label><input name="shipping_phone" value="<?= htmlspecialchars((string) ($customer['phone'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
-            <label>Adressrad 1 *</label><input name="shipping_address_line_1" required>
-            <label>Adressrad 2</label><input name="shipping_address_line_2">
-            <label>Postnummer *</label><input name="shipping_postal_code" required>
-            <label>Stad *</label><input name="shipping_city" required>
-            <label>Land (ISO2) *</label><input name="shipping_country" value="SE" required>
+            <label>Förnamn *</label><input name="shipping_first_name" required value="<?= htmlspecialchars($inputValue('shipping_first_name'), ENT_QUOTES, 'UTF-8') ?>">
+            <label>Efternamn *</label><input name="shipping_last_name" required value="<?= htmlspecialchars($inputValue('shipping_last_name'), ENT_QUOTES, 'UTF-8') ?>">
+            <label>Telefon</label><input name="shipping_phone" value="<?= htmlspecialchars($inputValue('shipping_phone'), ENT_QUOTES, 'UTF-8') ?>">
+            <label>Adressrad 1 *</label><input name="shipping_address_line_1" required value="<?= htmlspecialchars($inputValue('shipping_address_line_1'), ENT_QUOTES, 'UTF-8') ?>">
+            <label>Adressrad 2</label><input name="shipping_address_line_2" value="<?= htmlspecialchars($inputValue('shipping_address_line_2'), ENT_QUOTES, 'UTF-8') ?>">
+            <label>Postnummer *</label><input name="shipping_postal_code" required value="<?= htmlspecialchars($inputValue('shipping_postal_code'), ENT_QUOTES, 'UTF-8') ?>">
+            <label>Stad *</label><input name="shipping_city" required value="<?= htmlspecialchars($inputValue('shipping_city'), ENT_QUOTES, 'UTF-8') ?>">
+            <label>Land (ISO2) *</label><input name="shipping_country" value="<?= htmlspecialchars($inputValue('shipping_country'), ENT_QUOTES, 'UTF-8') ?>" required>
             <label>Ordernotering</label><textarea name="order_notes" rows="4" placeholder="T.ex. företagsnamn, referens eller önskemål"></textarea>
           </section>
 

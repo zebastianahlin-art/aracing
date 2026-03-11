@@ -19,7 +19,7 @@ ob_start();
     <label>E-post</label>
     <input type="email" disabled value="<?= htmlspecialchars((string) ($customer['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
 
-    <p style="margin-top:.9rem;"><button class="btn-primary" type="submit">Spara profil</button></p>
+    <p style="margin-top:.9rem;"><button class="btn-primary" type="submit">Spara profil</button> <a class="btn-secondary" href="/account/address">Hantera adress</a></p>
   </form>
 </section>
 <?php

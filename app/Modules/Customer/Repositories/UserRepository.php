@@ -66,6 +66,27 @@ final class UserRepository
         ]);
     }
 
+    public function updateAddress(int $userId, array $data): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE users
+            SET address_line_1 = :address_line_1,
+                address_line_2 = :address_line_2,
+                postal_code = :postal_code,
+                city = :city,
+                country_code = :country_code,
+                updated_at = NOW()
+            WHERE id = :id');
+
+        $stmt->execute([
+            'id' => $userId,
+            'address_line_1' => $this->nullable($data['address_line_1'] ?? null),
+            'address_line_2' => $this->nullable($data['address_line_2'] ?? null),
+            'postal_code' => $this->nullable($data['postal_code'] ?? null),
+            'city' => $this->nullable($data['city'] ?? null),
+            'country_code' => $this->nullable($data['country_code'] ?? null),
+        ]);
+    }
+
     private function nullable(mixed $value): ?string
     {
         $normalized = trim((string) $value);

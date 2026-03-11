@@ -56,6 +56,42 @@ final class CheckoutService
         ];
     }
 
+    /** @param array<string, mixed>|null $customer
+     *  @return array<string, string>
+     */
+    public function buildDefaultsForCustomer(?array $customer): array
+    {
+        if ($customer === null) {
+            return $this->emptyDefaults();
+        }
+
+        $addressLine1 = trim((string) ($customer['address_line_1'] ?? ''));
+        $addressLine2 = trim((string) ($customer['address_line_2'] ?? ''));
+        $postalCode = trim((string) ($customer['postal_code'] ?? ''));
+        $city = trim((string) ($customer['city'] ?? ''));
+        $countryCode = strtoupper(trim((string) ($customer['country_code'] ?? '')));
+
+        return [
+            'customer_first_name' => trim((string) ($customer['first_name'] ?? '')),
+            'customer_last_name' => trim((string) ($customer['last_name'] ?? '')),
+            'customer_email' => trim((string) ($customer['email'] ?? '')),
+            'customer_phone' => trim((string) ($customer['phone'] ?? '')),
+            'billing_address_line_1' => $addressLine1,
+            'billing_address_line_2' => $addressLine2,
+            'billing_postal_code' => $postalCode,
+            'billing_city' => $city,
+            'billing_country' => $countryCode !== '' ? $countryCode : 'SE',
+            'shipping_first_name' => trim((string) ($customer['first_name'] ?? '')),
+            'shipping_last_name' => trim((string) ($customer['last_name'] ?? '')),
+            'shipping_phone' => trim((string) ($customer['phone'] ?? '')),
+            'shipping_address_line_1' => $addressLine1,
+            'shipping_address_line_2' => $addressLine2,
+            'shipping_postal_code' => $postalCode,
+            'shipping_city' => $city,
+            'shipping_country' => $countryCode !== '' ? $countryCode : 'SE',
+        ];
+    }
+
     /** @return array<int, array<string, string>> */
     public function paymentMethodOptions(): array
     {
@@ -80,6 +116,30 @@ final class CheckoutService
                 'label' => 'Banköverföring',
                 'help_text' => 'Betalningsinstruktion skickas manuellt efter ordergranskning.',
             ],
+        ];
+    }
+
+    /** @return array<string, string> */
+    private function emptyDefaults(): array
+    {
+        return [
+            'customer_first_name' => '',
+            'customer_last_name' => '',
+            'customer_email' => '',
+            'customer_phone' => '',
+            'billing_address_line_1' => '',
+            'billing_address_line_2' => '',
+            'billing_postal_code' => '',
+            'billing_city' => '',
+            'billing_country' => 'SE',
+            'shipping_first_name' => '',
+            'shipping_last_name' => '',
+            'shipping_phone' => '',
+            'shipping_address_line_1' => '',
+            'shipping_address_line_2' => '',
+            'shipping_postal_code' => '',
+            'shipping_city' => '',
+            'shipping_country' => 'SE',
         ];
     }
 

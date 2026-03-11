@@ -212,6 +212,8 @@ $app['router']->get('/account/orders', [$customerAccountController, 'orders']);
 $app['router']->get('/account/orders/{id}', [$customerAccountController, 'showOrder']);
 $app['router']->get('/account/profile', [$customerAccountController, 'profileForm']);
 $app['router']->post('/account/profile', [$customerAccountController, 'updateProfile']);
+$app['router']->get('/account/address', [$customerAccountController, 'addressForm']);
+$app['router']->post('/account/address', [$customerAccountController, 'updateAddress']);
 
 $app['router']->get('/admin', [$admin, 'dashboard']);
 $app['router']->get('/admin/brands', [$brandAdmin, 'index']);

@@ -55,6 +55,8 @@ final class CheckoutController
             (float) ($cartData['discount_amount_inc_vat'] ?? 0)
         );
 
+        $customer = $this->auth->currentCustomer();
+
         return new Response($this->views->render('storefront.checkout', [
             'cartData' => $cartData,
             'error' => trim((string) ($_GET['error'] ?? '')),
@@ -63,7 +65,8 @@ final class CheckoutController
             'shippingMethods' => $shippingMethods,
             'selectedShippingMethodCode' => $selectedCode,
             'totalsPreview' => $totalsPreview,
-            'customer' => $this->auth->currentCustomer(),
+            'customer' => $customer,
+            'checkoutDefaults' => $this->checkout->buildDefaultsForCustomer($customer),
         ]));
     }
 

@@ -75,6 +75,9 @@ use App\Modules\Purchasing\Repositories\PurchaseListRepository;
 use App\Modules\Purchasing\Repositories\RefillNeedRepository;
 use App\Modules\Purchasing\Services\PurchasingService;
 use App\Modules\Storefront\Controllers\StorefrontController;
+use App\Modules\Storefront\Controllers\SitemapController;
+use App\Modules\Storefront\Services\RobotsService;
+use App\Modules\Storefront\Services\SitemapService;
 use App\Modules\Storefront\Services\SeoService;
 use App\Modules\Supplier\Controllers\SupplierAdminController;
 use App\Modules\Supplier\Repositories\SupplierRepository;
@@ -181,6 +184,13 @@ $purchasingService = new PurchasingService(
 );
 
 $seoService = new SeoService();
+$sitemapService = new SitemapService(
+    new ProductRepository($app['pdo']),
+    new CategoryRepository($app['pdo']),
+    new CmsPageRepository($app['pdo'])
+);
+$robotsService = new RobotsService();
+$sitemapController = new SitemapController($sitemapService, $robotsService);
 $storefront = new StorefrontController($app['view'], $catalogService, $cmsPageService, $seoService);
 $cmsStorefront = new CmsStorefrontController($app['view'], $cmsHomeService, $cmsPageService, $seoService);
 $cartController = new CartController($app['view'], $cartService, $cmsPageService);
@@ -222,6 +232,11 @@ $app['router']->get('/', [$cmsStorefront, 'home']);
 $app['router']->get('/category/{slug}', [$storefront, 'category']);
 $app['router']->get('/product/{slug}', [$storefront, 'product']);
 $app['router']->get('/search', [$storefront, 'search']);
+$app['router']->get('/robots.txt', [$sitemapController, 'robots']);
+$app['router']->get('/sitemap.xml', [$sitemapController, 'index']);
+$app['router']->get('/sitemaps/products.xml', [$sitemapController, 'products']);
+$app['router']->get('/sitemaps/categories.xml', [$sitemapController, 'categories']);
+$app['router']->get('/sitemaps/pages.xml', [$sitemapController, 'pages']);
 $app['router']->get('/contact', [$supportCaseStorefront, 'contactForm']);
 $app['router']->post('/contact', [$supportCaseStorefront, 'createFromContactForm']);
 

@@ -641,3 +641,49 @@ Lokal snabbtest:
 3. Öppna gamla URL:en och verifiera 301 till målsidan.
 4. Verifiera att `hit_count` och `last_hit_at` uppdateras i adminlistan.
 5. Ändra slug på produkt/kategori/CMS-sida och verifiera att gamla slug-URL:en redirectar till nya URL:en.
+
+## Sitemap / crawl control v1
+
+Storefront exponerar nu tekniska SEO-endpoints:
+
+- `/robots.txt`
+- `/sitemap.xml` (sitemap-index)
+- `/sitemaps/products.xml`
+- `/sitemaps/categories.xml`
+- `/sitemaps/pages.xml`
+
+Inkluderas i sitemap:
+- publika, indexerbara produkter (`is_active = 1`, `is_search_hidden = 0`, `is_indexable = 1`, ej `noindex`)
+- indexerbara kategorier (`is_indexable = 1`, ej `noindex`)
+- aktiva och indexerbara CMS-sidor (`is_active = 1`, `is_indexable = 1`, ej `noindex`)
+- startsidan inkluderas i `pages.xml`
+
+Exkluderas i sitemap:
+- sidor markerade som `noindex` eller `is_indexable = 0`
+- sökresultat och filtrerade/parameteriserade vyer
+- redirect-källor (endast kanoniska publika routes listas)
+
+`robots.txt` hålls enkel i v1 och:
+- pekar ut `Sitemap: <base>/sitemap.xml`
+- blockerar tydligt sekundära flöden (`/admin`, `/search`, `/cart`, `/checkout`, `/account`)
+
+### Lokal testning
+
+1. Starta appen:
+   ```bash
+   composer serve
+   ```
+2. Verifiera robots:
+   ```bash
+   curl -i http://127.0.0.1:8000/robots.txt
+   ```
+3. Verifiera sitemap-index:
+   ```bash
+   curl -i http://127.0.0.1:8000/sitemap.xml
+   ```
+4. Verifiera del-sitemaps:
+   ```bash
+   curl -i http://127.0.0.1:8000/sitemaps/products.xml
+   curl -i http://127.0.0.1:8000/sitemaps/categories.xml
+   curl -i http://127.0.0.1:8000/sitemaps/pages.xml
+   ```

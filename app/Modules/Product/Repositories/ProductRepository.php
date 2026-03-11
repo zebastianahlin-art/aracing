@@ -462,4 +462,19 @@ final class ProductRepository
         return $ordered;
     }
 
+    /** @return array<int, array{slug:string, updated_at:?string}> */
+    public function sitemapIndexableProducts(): array
+    {
+        $sql = 'SELECT p.slug, p.updated_at
+                FROM products p
+                WHERE p.is_active = 1
+                  AND p.is_search_hidden = 0
+                  AND p.is_indexable = 1
+                  AND TRIM(COALESCE(p.slug, "")) <> ""
+                  AND (p.meta_robots IS NULL OR LOWER(p.meta_robots) NOT LIKE "%noindex%")
+                ORDER BY p.updated_at DESC, p.id DESC';
+
+        return $this->pdo->query($sql)->fetchAll();
+    }
+
 }

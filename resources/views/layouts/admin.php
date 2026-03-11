@@ -48,6 +48,7 @@
     <a href="/admin/orders">Orders</a>
     <a href="/admin/returns">Returer</a>
     <a href="/admin/support-cases">Supportärenden</a>
+    <a href="/admin/reviews">Recensioner</a>
     <a href="/admin/discount-codes">Kampanjkoder</a>
     <a href="/admin/shipping-methods">Fraktmetoder</a>
     <a href="/admin/purchasing">Inköpsöversikt</a>

@@ -15,7 +15,7 @@ final class CatalogRepository
     /** @return array<int, array<string, mixed>> */
     public function latestActiveProducts(int $limit = 12): array
     {
-        $stmt = $this->pdo->prepare('SELECT p.id, p.name, p.slug, p.sku, p.description, p.sale_price, p.currency_code, p.stock_status, p.stock_quantity, p.backorder_allowed, p.is_featured, p.search_boost, p.sort_priority, b.name AS brand_name,
+        $stmt = $this->pdo->prepare('SELECT p.id, p.name, p.slug, p.sku, p.description, p.seo_title, p.seo_description, p.canonical_url, p.meta_robots, p.is_indexable, p.sale_price, p.currency_code, p.stock_status, p.stock_quantity, p.backorder_allowed, p.is_featured, p.search_boost, p.sort_priority, b.name AS brand_name,
             (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.is_primary DESC, pi.sort_order ASC, pi.id ASC LIMIT 1) AS image_url
             FROM products p
             LEFT JOIN brands b ON b.id = p.brand_id
@@ -31,7 +31,7 @@ final class CatalogRepository
     /** @return array<string, mixed>|null */
     public function categoryBySlug(string $slug): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT id, name, slug FROM categories WHERE slug = :slug');
+        $stmt = $this->pdo->prepare('SELECT id, name, slug, seo_title, seo_description, canonical_url, meta_robots, is_indexable FROM categories WHERE slug = :slug');
         $stmt->execute(['slug' => $slug]);
         $row = $stmt->fetch();
 
@@ -122,7 +122,7 @@ final class CatalogRepository
     /** @return array<string, mixed>|null */
     public function activeProductBySlug(string $slug): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT p.id, p.name, p.slug, p.sku, p.description, p.sale_price, p.currency_code, p.stock_status, p.stock_quantity, p.backorder_allowed, p.is_featured, p.search_boost, p.sort_priority, b.name AS brand_name,
+        $stmt = $this->pdo->prepare('SELECT p.id, p.name, p.slug, p.sku, p.description, p.seo_title, p.seo_description, p.canonical_url, p.meta_robots, p.is_indexable, p.sale_price, p.currency_code, p.stock_status, p.stock_quantity, p.backorder_allowed, p.is_featured, p.search_boost, p.sort_priority, b.name AS brand_name,
             (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.is_primary DESC, pi.sort_order ASC, pi.id ASC LIMIT 1) AS image_url
             FROM products p
             LEFT JOIN brands b ON b.id = p.brand_id

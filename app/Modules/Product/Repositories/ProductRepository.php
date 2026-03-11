@@ -245,7 +245,7 @@ final class ProductRepository
     /** @return array<string, mixed>|null */
     public function findById(int $id): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT id, brand_id, category_id, name, slug, sku, description, sale_price, currency_code, stock_status, stock_quantity, backorder_allowed, stock_updated_at, is_active, is_search_hidden, is_featured, search_boost, sort_priority FROM products WHERE id = :id');
+        $stmt = $this->pdo->prepare('SELECT id, brand_id, category_id, name, slug, sku, description, seo_title, seo_description, canonical_url, meta_robots, is_indexable, sale_price, currency_code, stock_status, stock_quantity, backorder_allowed, stock_updated_at, is_active, is_search_hidden, is_featured, search_boost, sort_priority FROM products WHERE id = :id');
         $stmt->execute(['id' => $id]);
         $row = $stmt->fetch();
 
@@ -261,6 +261,11 @@ final class ProductRepository
                     slug,
                     sku,
                     description,
+                    seo_title,
+                    seo_description,
+                    canonical_url,
+                    meta_robots,
+                    is_indexable,
                     sale_price,
                     currency_code,
                     stock_status,
@@ -282,6 +287,11 @@ final class ProductRepository
                     :slug,
                     :sku,
                     :description,
+                    :seo_title,
+                    :seo_description,
+                    :canonical_url,
+                    :meta_robots,
+                    :is_indexable,
                     :sale_price,
                     :currency_code,
                     :stock_status,
@@ -304,6 +314,11 @@ final class ProductRepository
         $stmt->bindValue('slug', $data['slug']);
         $stmt->bindValue('sku', $data['sku']);
         $stmt->bindValue('description', $data['description']);
+        $stmt->bindValue('seo_title', $data['seo_title']);
+        $stmt->bindValue('seo_description', $data['seo_description']);
+        $stmt->bindValue('canonical_url', $data['canonical_url']);
+        $stmt->bindValue('meta_robots', $data['meta_robots']);
+        $stmt->bindValue('is_indexable', $data['is_indexable'], PDO::PARAM_INT);
         $stmt->bindValue('sale_price', $data['sale_price']);
         $stmt->bindValue('currency_code', $data['currency_code']);
         $stmt->bindValue('stock_status', $data['stock_status']);
@@ -329,6 +344,11 @@ final class ProductRepository
                     slug = :slug,
                     sku = :sku,
                     description = :description,
+                    seo_title = :seo_title,
+                    seo_description = :seo_description,
+                    canonical_url = :canonical_url,
+                    meta_robots = :meta_robots,
+                    is_indexable = :is_indexable,
                     sale_price = :sale_price,
                     currency_code = :currency_code,
                     stock_status = :stock_status,
@@ -351,6 +371,11 @@ final class ProductRepository
         $stmt->bindValue('slug', $data['slug']);
         $stmt->bindValue('sku', $data['sku']);
         $stmt->bindValue('description', $data['description']);
+        $stmt->bindValue('seo_title', $data['seo_title']);
+        $stmt->bindValue('seo_description', $data['seo_description']);
+        $stmt->bindValue('canonical_url', $data['canonical_url']);
+        $stmt->bindValue('meta_robots', $data['meta_robots']);
+        $stmt->bindValue('is_indexable', $data['is_indexable'], PDO::PARAM_INT);
         $stmt->bindValue('sale_price', $data['sale_price']);
         $stmt->bindValue('currency_code', $data['currency_code']);
         $stmt->bindValue('stock_status', $data['stock_status']);

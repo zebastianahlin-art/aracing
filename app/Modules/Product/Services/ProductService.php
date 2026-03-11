@@ -13,6 +13,10 @@ use App\Shared\Support\Slugger;
 
 final class ProductService
 {
+    private const ALLOWED_META_ROBOTS = [
+        'index,follow',
+        'noindex,follow',
+    ];
     public function __construct(
         private readonly ProductRepository $products,
         private readonly ProductAttributeRepository $attributes,
@@ -268,6 +272,11 @@ final class ProductService
             'slug' => Slugger::slugify($input['slug'] ?? $name),
             'sku' => trim($input['sku'] ?? ''),
             'description' => trim($input['description'] ?? ''),
+            'seo_title' => $this->nullableString($input['seo_title'] ?? null, 255),
+            'seo_description' => $this->nullableString($input['seo_description'] ?? null),
+            'canonical_url' => $this->normalizeCanonicalUrl($input['canonical_url'] ?? null),
+            'meta_robots' => $this->normalizeMetaRobots($input['meta_robots'] ?? null),
+            'is_indexable' => isset($input['is_indexable']) ? 1 : 0,
             'sale_price' => $this->toNullableDecimal($input['sale_price'] ?? null),
             'currency_code' => $this->normalizeCurrencyCode($input['currency_code'] ?? null),
             'stock_status' => $this->normalizeStockStatus($input['stock_status'] ?? null),

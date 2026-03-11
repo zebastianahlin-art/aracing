@@ -55,6 +55,15 @@
     <a href="/cart">Kundvagn</a>
     <a href="/checkout">Checkout</a>
     <a href="/order-status">Orderstatus</a>
+    <?php if (!empty($_SESSION['customer_user_id'])): ?>
+      <a href="/account">Mina sidor</a>
+      <form method="post" action="/logout" style="display:inline;">
+        <button type="submit" class="btn-secondary" style="padding:.2rem .45rem;">Logga ut</button>
+      </form>
+    <?php else: ?>
+      <a href="/login">Logga in</a>
+      <a href="/register">Registrera</a>
+    <?php endif; ?>
     <a href="/admin">Admin</a>
   </nav>
   <?php if ($infoPages !== []): ?>

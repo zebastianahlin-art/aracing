@@ -28,6 +28,12 @@ use App\Modules\Cms\Repositories\CmsPageRepository;
 use App\Modules\Cms\Services\CmsHomeService;
 use App\Modules\Cms\Services\CmsPageService;
 use App\Modules\Checkout\Services\CheckoutService;
+use App\Modules\Customer\Controllers\AuthController;
+use App\Modules\Customer\Controllers\CustomerAccountController;
+use App\Modules\Customer\Repositories\CustomerOrderRepository;
+use App\Modules\Customer\Repositories\UserRepository;
+use App\Modules\Customer\Services\AuthService;
+use App\Modules\Customer\Services\CustomerAccountService;
 use App\Modules\Import\Controllers\ImportProfileAdminController;
 use App\Modules\Import\Controllers\ImportRunAdminController;
 use App\Modules\Import\Controllers\SupplierItemReviewAdminController;
@@ -138,6 +144,10 @@ $cmsHomeService = new CmsHomeService(
     new CategoryRepository($app['pdo'])
 );
 
+$userRepository = new UserRepository($app['pdo']);
+$authService = new AuthService($userRepository);
+$customerAccountService = new CustomerAccountService($userRepository, new CustomerOrderRepository($app['pdo']));
+
 $purchasingService = new PurchasingService(
     new RefillNeedRepository($app['pdo']),
     new PurchaseListRepository($app['pdo']),
@@ -147,7 +157,7 @@ $purchasingService = new PurchasingService(
 $storefront = new StorefrontController($app['view'], $catalogService, $cmsPageService);
 $cmsStorefront = new CmsStorefrontController($app['view'], $cmsHomeService, $cmsPageService);
 $cartController = new CartController($app['view'], $cartService, $cmsPageService);
-$checkoutController = new CheckoutController($app['view'], $cartService, new CheckoutService(), $orderService, $shippingService, $checkoutTotalsService, $cmsPageService, $paymentService);
+$checkoutController = new CheckoutController($app['view'], $cartService, new CheckoutService(), $orderService, $shippingService, $checkoutTotalsService, $cmsPageService, $paymentService, $authService);
 $admin = new AdminController($app['view']);
 $brandAdmin = new BrandAdminController($app['view'], $brandService);
 $categoryAdmin = new CategoryAdminController($app['view'], $categoryService);
@@ -168,6 +178,8 @@ $cmsPageAdmin = new CmsPageAdminController($app['view'], $cmsPageService);
 $cmsHomeAdmin = new CmsHomeAdminController($app['view'], $cmsHomeService);
 $shippingMethodAdmin = new ShippingMethodAdminController($app['view'], $shippingService);
 $discountCodeAdmin = new DiscountCodeAdminController($app['view'], $discountService);
+$authController = new AuthController($app['view'], $authService, $cmsPageService);
+$customerAccountController = new CustomerAccountController($app['view'], $authService, $customerAccountService, $cmsPageService);
 
 $app['router']->get('/', [$cmsStorefront, 'home']);
 $app['router']->get('/category/{slug}', [$storefront, 'category']);
@@ -188,6 +200,18 @@ $app['router']->get('/checkout/confirmation', [$checkoutController, 'confirmatio
 $app['router']->get('/checkout/payment/return', [$paymentController, 'stripeReturn']);
 $app['router']->post('/webhooks/stripe', [$paymentController, 'stripeWebhook']);
 $app['router']->get('/order-status', [$checkoutController, 'orderStatus']);
+
+$app['router']->get('/register', [$authController, 'registerForm']);
+$app['router']->post('/register', [$authController, 'register']);
+$app['router']->get('/login', [$authController, 'loginForm']);
+$app['router']->post('/login', [$authController, 'login']);
+$app['router']->post('/logout', [$authController, 'logout']);
+
+$app['router']->get('/account', [$customerAccountController, 'dashboard']);
+$app['router']->get('/account/orders', [$customerAccountController, 'orders']);
+$app['router']->get('/account/orders/{id}', [$customerAccountController, 'showOrder']);
+$app['router']->get('/account/profile', [$customerAccountController, 'profileForm']);
+$app['router']->post('/account/profile', [$customerAccountController, 'updateProfile']);
 
 $app['router']->get('/admin', [$admin, 'dashboard']);
 $app['router']->get('/admin/brands', [$brandAdmin, 'index']);

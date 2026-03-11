@@ -4,6 +4,16 @@ $order = $detail['order'] ?? null;
 $items = $detail['items'] ?? [];
 $history = $detail['history'] ?? [];
 $emails = $detail['emails'] ?? [];
+$returnRequests = $returnRequests ?? [];
+$statusLabels = [
+  'requested' => 'Begärd',
+  'under_review' => 'Under granskning',
+  'approved' => 'Godkänd',
+  'rejected' => 'Avslagen',
+  'received' => 'Mottagen',
+  'completed' => 'Slutförd',
+  'cancelled' => 'Annullerad',
+];
 
 $canConfirm = ($order['order_status'] ?? '') === 'placed';
 $canProcessing = ($order['order_status'] ?? '') === 'confirmed';
@@ -50,6 +60,26 @@ $canCancelFulfillment = in_array((string) ($order['fulfillment_status'] ?? ''), 
       <?php endforeach; ?>
       </tbody>
     </table>
+
+
+    <h3>Returärenden</h3>
+    <?php if ($returnRequests === []): ?>
+      <p class="muted">Inga returärenden kopplade till denna order.</p>
+    <?php else: ?>
+      <table class="table compact">
+        <thead><tr><th>RMA</th><th>Status</th><th>Requested</th><th></th></tr></thead>
+        <tbody>
+        <?php foreach ($returnRequests as $returnRequest): ?>
+          <tr>
+            <td><?= htmlspecialchars((string) $returnRequest['return_number'], ENT_QUOTES, 'UTF-8') ?></td>
+            <td><?= htmlspecialchars((string) $returnRequest['status'], ENT_QUOTES, 'UTF-8') ?></td>
+            <td><?= htmlspecialchars((string) $returnRequest['requested_at'], ENT_QUOTES, 'UTF-8') ?></td>
+            <td><a href="/admin/returns/<?= (int) $returnRequest['id'] ?>">Öppna</a></td>
+          </tr>
+        <?php endforeach; ?>
+        </tbody>
+      </table>
+    <?php endif; ?>
 
     <div class="grid">
       <div>
@@ -139,7 +169,7 @@ $canCancelFulfillment = in_array((string) ($order['fulfillment_status'] ?? ''), 
         <label>Betalstatus</label>
         <select name="payment_status">
           <?php foreach (($statusOptions['payment_status'] ?? []) as $status): ?>
-            <option value="<?= htmlspecialchars((string) $status, ENT_QUOTES, 'UTF-8') ?>" <?= $order['payment_status'] === $status ? 'selected' : '' ?>><?= htmlspecialchars((string) $status, ENT_QUOTES, 'UTF-8') ?></option>
+            <option value="<?= htmlspecialchars((string) ($statusLabels[$status] ?? $status), ENT_QUOTES, 'UTF-8') ?>" <?= $order['payment_status'] === $status ? 'selected' : '' ?>><?= htmlspecialchars((string) ($statusLabels[$status] ?? $status), ENT_QUOTES, 'UTF-8') ?></option>
           <?php endforeach; ?>
         </select>
       </div>

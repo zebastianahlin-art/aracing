@@ -503,3 +503,22 @@ Snabbtest lokalt:
 4. Ändra adress i checkout och lägg order.
 5. Verifiera att ordern syns under `/account/orders` och att orderdetalj fungerar.
 6. Uppdatera profil under `/account/profile`.
+
+## Returns / RMA v1
+
+Databas:
+- kör även `database/migrations/020_returns_rma_v1.sql`
+
+Storefront (inloggad kund):
+- `/account/returns` listar kundens returärenden
+- från `/account/orders/{id}` kan kund skapa retur via `/account/orders/{id}/returns/create`
+
+Admin:
+- `/admin/returns` listar returärenden med statusfilter
+- `/admin/returns/{id}` visar detalj, historik, statusactions och adminnotering
+
+Snabbtest lokalt:
+1. Logga in som kund med en order.
+2. Öppna orderdetalj och skapa retur med minst en orderrad.
+3. Verifiera att retur syns i `/account/returns` och i `/admin/returns`.
+4. Uppdatera status i admin och verifiera historikrader.

@@ -31,6 +31,9 @@ final class CustomerAccountService
             'first_name' => $firstName,
             'last_name' => $lastName,
             'phone' => trim((string) ($input['phone'] ?? '')),
+            'company_name' => $this->limitNullable(trim((string) ($input['company_name'] ?? '')), 190, 'Företagsnamn är för långt.'),
+            'company_registration_number' => $this->limitNullable(trim((string) ($input['company_registration_number'] ?? '')), 120, 'Organisationsnummer är för långt.'),
+            'vat_number' => $this->limitNullable(trim((string) ($input['vat_number'] ?? '')), 120, 'VAT-nummer är för långt.'),
         ]);
     }
 

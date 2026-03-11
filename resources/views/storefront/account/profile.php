@@ -16,6 +16,15 @@ ob_start();
     <label>Telefon</label>
     <input type="text" name="phone" value="<?= htmlspecialchars((string) ($customer['phone'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
 
+    <label>Företagsnamn</label>
+    <input type="text" name="company_name" value="<?= htmlspecialchars((string) ($customer['company_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+
+    <label>Organisationsnummer</label>
+    <input type="text" name="company_registration_number" value="<?= htmlspecialchars((string) ($customer['company_registration_number'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+
+    <label>VAT-nummer</label>
+    <input type="text" name="vat_number" value="<?= htmlspecialchars((string) ($customer['vat_number'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+
     <label>E-post</label>
     <input type="email" disabled value="<?= htmlspecialchars((string) ($customer['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
 

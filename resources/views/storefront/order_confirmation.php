@@ -13,6 +13,12 @@ ob_start();
       <p>Betalstatus: <strong><?= htmlspecialchars((string) ($publicOrder['payment_status'] ?? 'unpaid'), ENT_QUOTES, 'UTF-8') ?></strong></p>
       <p>Betalmetod: <strong><?= htmlspecialchars((string) ($paymentMethodLabel ?? 'Ej vald'), ENT_QUOTES, 'UTF-8') ?></strong></p>
       <p>Fraktmetod: <strong><?= htmlspecialchars((string) ($publicOrder['shipping_method_name'] ?? 'Ej vald'), ENT_QUOTES, 'UTF-8') ?></strong></p>
+
+      <?php if (trim((string) ($publicOrder['company_name'] ?? '')) !== '' || trim((string) ($publicOrder['company_registration_number'] ?? '')) !== '' || trim((string) ($publicOrder['vat_number'] ?? '')) !== ''): ?>
+        <p><strong>Företagsnamn:</strong> <?= htmlspecialchars((string) ($publicOrder['company_name'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
+        <p><strong>Organisationsnummer:</strong> <?= htmlspecialchars((string) ($publicOrder['company_registration_number'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
+        <p><strong>VAT / Org.nr:</strong> <?= htmlspecialchars((string) ($publicOrder['vat_number'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
+      <?php endif; ?>
       <p>Produktsubtotal: <?= number_format((float) ($publicOrder['product_subtotal'] ?? 0), 2, ',', ' ') ?> <?= htmlspecialchars((string) ($publicOrder['currency_code'] ?? 'SEK'), ENT_QUOTES, 'UTF-8') ?></p>
       <p>Fraktkostnad: <?= number_format((float) ($publicOrder['shipping_cost_inc_vat'] ?? 0), 2, ',', ' ') ?> <?= htmlspecialchars((string) ($publicOrder['currency_code'] ?? 'SEK'), ENT_QUOTES, 'UTF-8') ?></p>
       <?php if ((float) ($publicOrder['discount_amount_inc_vat'] ?? 0) > 0): ?>

@@ -546,3 +546,16 @@ Snabbtest lokalt:
 4. Verifiera att kunden ser egna ärenden under `/account/support-cases`.
 5. Öppna `/admin/support-cases`, filtrera på status, uppdatera status/prioritet och spara adminnotering.
 6. Verifiera historikrader på admin-detaljen samt att adminnotering inte visas på kundens case-detalj.
+
+## B2B light / company fields v1
+
+Databas:
+- kör även `database/migrations/022_b2b_light_company_fields_v1.sql`
+
+Lokal manuell test:
+1. Logga in som kund och öppna `/account/profile`.
+2. Spara `Företagsnamn`, `Organisationsnummer` och `VAT-nummer`.
+3. Gå till `/checkout` och verifiera att företagsfälten är förifyllda för inloggad kund men valfria.
+4. Lägg order och verifiera i `/checkout/confirmation` eller `/order-status` att företagsuppgifter visas när de finns.
+5. Öppna `/admin/orders/{id}` och verifiera att företagsuppgifter visas i kundsektionen.
+6. Uppdatera kundprofilens företagsuppgifter och verifiera att redan lagd order behåller tidigare snapshot-värden.

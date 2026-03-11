@@ -23,6 +23,12 @@ ob_start();
     <p>Betalprovider: <strong><?= htmlspecialchars((string) ($orderSummary['payment_provider'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></strong></p>
     <p>Leveransstatus: <strong><?= htmlspecialchars((string) $orderSummary['fulfillment_status'], ENT_QUOTES, 'UTF-8') ?></strong></p>
     <p>Fraktmetod: <strong><?= htmlspecialchars((string) ($orderSummary['shipping_method_name'] ?? 'Ej vald'), ENT_QUOTES, 'UTF-8') ?></strong></p>
+
+    <?php if (trim((string) ($orderSummary['company_name'] ?? '')) !== '' || trim((string) ($orderSummary['company_registration_number'] ?? '')) !== '' || trim((string) ($orderSummary['vat_number'] ?? '')) !== ''): ?>
+      <p><strong>Företagsnamn:</strong> <?= htmlspecialchars((string) ($orderSummary['company_name'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
+      <p><strong>Organisationsnummer:</strong> <?= htmlspecialchars((string) ($orderSummary['company_registration_number'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
+      <p><strong>VAT / Org.nr:</strong> <?= htmlspecialchars((string) ($orderSummary['vat_number'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
+    <?php endif; ?>
     <p>Fraktkostnad: <?= number_format((float) ($orderSummary['shipping_cost_inc_vat'] ?? 0), 2, ',', ' ') ?> <?= htmlspecialchars((string) ($orderSummary['currency_code'] ?? 'SEK'), ENT_QUOTES, 'UTF-8') ?></p>
     <?php if ((float) ($orderSummary['discount_amount_inc_vat'] ?? 0) > 0): ?>
       <p>Rabatt<?= (($orderSummary['discount_code'] ?? '') !== '') ? ' (' . htmlspecialchars((string) $orderSummary['discount_code'], ENT_QUOTES, 'UTF-8') . ')' : '' ?>: -<?= number_format((float) ($orderSummary['discount_amount_inc_vat'] ?? 0), 2, ',', ' ') ?> <?= htmlspecialchars((string) ($orderSummary['currency_code'] ?? 'SEK'), ENT_QUOTES, 'UTF-8') ?></p>

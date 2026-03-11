@@ -36,6 +36,15 @@ $inputValue = static function (string $key) use ($checkoutDefaults): string {
             <label>Telefon</label><input name="customer_phone" placeholder="För leveransfrågor" value="<?= htmlspecialchars($inputValue('customer_phone'), ENT_QUOTES, 'UTF-8') ?>">
           </section>
 
+
+          <section class="panel" style="margin-bottom:.8rem;">
+            <h3>Företagsuppgifter (valfritt)</h3>
+            <label>Företagsnamn</label><input name="company_name" value="<?= htmlspecialchars($inputValue('company_name'), ENT_QUOTES, 'UTF-8') ?>">
+            <label>Organisationsnummer</label><input name="company_registration_number" value="<?= htmlspecialchars($inputValue('company_registration_number'), ENT_QUOTES, 'UTF-8') ?>">
+            <label>VAT / Org.nr</label><input name="vat_number" value="<?= htmlspecialchars($inputValue('vat_number'), ENT_QUOTES, 'UTF-8') ?>">
+          </section>
+
+
           <section class="panel" style="margin-bottom:.8rem;">
             <h3>Fakturaadress</h3>
             <label>Adressrad 1 *</label><input name="billing_address_line_1" required value="<?= htmlspecialchars($inputValue('billing_address_line_1'), ENT_QUOTES, 'UTF-8') ?>">

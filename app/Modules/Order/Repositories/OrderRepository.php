@@ -17,6 +17,7 @@ final class OrderRepository
         $sql = 'INSERT INTO orders (
             order_number, status, order_status, currency_code, user_id,
             customer_email, customer_first_name, customer_last_name, customer_phone,
+            company_name, company_registration_number, vat_number,
             billing_address_line_1, billing_address_line_2, billing_postal_code, billing_city, billing_country,
             shipping_first_name, shipping_last_name, shipping_phone,
             shipping_address_line_1, shipping_address_line_2, shipping_postal_code, shipping_city, shipping_country,
@@ -32,6 +33,7 @@ final class OrderRepository
         ) VALUES (
             :order_number, :status, :order_status, :currency_code, :user_id,
             :customer_email, :customer_first_name, :customer_last_name, :customer_phone,
+            :company_name, :company_registration_number, :vat_number,
             :billing_address_line_1, :billing_address_line_2, :billing_postal_code, :billing_city, :billing_country,
             :shipping_first_name, :shipping_last_name, :shipping_phone,
             :shipping_address_line_1, :shipping_address_line_2, :shipping_postal_code, :shipping_city, :shipping_country,

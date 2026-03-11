@@ -86,6 +86,9 @@ use App\Modules\Returns\Repositories\ReturnRequestHistoryRepository;
 use App\Modules\Returns\Repositories\ReturnRequestItemRepository;
 use App\Modules\Returns\Repositories\ReturnRequestRepository;
 use App\Modules\Returns\Services\ReturnRequestService;
+use App\Modules\Redirect\Controllers\RedirectAdminController;
+use App\Modules\Redirect\Repositories\RedirectRepository;
+use App\Modules\Redirect\Services\RedirectService;
 use App\Modules\Shipping\Controllers\ShippingMethodAdminController;
 use App\Modules\Shipping\Repositories\ShippingMethodRepository;
 use App\Modules\Shipping\Services\CheckoutTotalsService;
@@ -99,7 +102,8 @@ use App\Modules\Support\Services\SupportCaseService;
 
 /** @var array{router: Router, view: \App\Core\View\ViewFactory, pdo: \PDO} $app */
 $brandService = new BrandService(new BrandRepository($app['pdo']));
-$categoryService = new CategoryService(new CategoryRepository($app['pdo']));
+$redirectService = new RedirectService(new RedirectRepository($app['pdo']));
+$categoryService = new CategoryService(new CategoryRepository($app['pdo']), $redirectService);
 $supplierItemRepository = new SupplierItemRepository($app['pdo']);
 $inventoryService = new InventoryService(
     new InventoryRepository($app['pdo']),
@@ -117,7 +121,8 @@ $productService = new ProductService(
     new ProductImageRepository($app['pdo']),
     $productSupplierLinkService,
     new ProductSupplierItemLookupRepository($app['pdo']),
-    $inventoryService
+    $inventoryService,
+    $redirectService
 );
 $productMediaService = new ProductMediaService(
     new ProductRepository($app['pdo']),
@@ -151,7 +156,7 @@ $stripeClient = new StripeCheckoutClient(
 );
 $paymentService = new PaymentService($orderRepository, $paymentEventRepository, $stripeClient, $app['config']);
 $paymentController = new PaymentController($paymentService);
-$cmsPageService = new CmsPageService(new CmsPageRepository($app['pdo']));
+$cmsPageService = new CmsPageService(new CmsPageRepository($app['pdo']), $redirectService);
 $cmsHomeService = new CmsHomeService(
     new CmsHomeSectionRepository($app['pdo']),
     new ProductRepository($app['pdo']),
@@ -183,6 +188,7 @@ $checkoutController = new CheckoutController($app['view'], $cartService, new Che
 $admin = new AdminController($app['view']);
 $brandAdmin = new BrandAdminController($app['view'], $brandService);
 $categoryAdmin = new CategoryAdminController($app['view'], $categoryService);
+$redirectAdmin = new RedirectAdminController($app['view'], $redirectService);
 $productAdmin = new ProductAdminController($app['view'], $productService, $productMediaService, $brandService, $categoryService, $supplierService, $productSupplierLinkService);
 $supplierAdmin = new SupplierAdminController($app['view'], $supplierService);
 $importProfileAdmin = new ImportProfileAdminController($app['view'], $importProfileService, $supplierService);
@@ -323,6 +329,13 @@ $app['router']->get('/admin/purchase-lists', [$purchasingAdmin, 'purchaseLists']
 $app['router']->get('/admin/purchase-lists/{id}', [$purchasingAdmin, 'purchaseListDetail']);
 $app['router']->post('/admin/purchase-lists/{id}/update', [$purchasingAdmin, 'updatePurchaseList']);
 $app['router']->post('/admin/purchase-lists/{id}/items/{itemId}/quantity', [$purchasingAdmin, 'updatePurchaseListItem']);
+
+
+$app['router']->get('/admin/redirects', [$redirectAdmin, 'index']);
+$app['router']->get('/admin/redirects/create', [$redirectAdmin, 'createForm']);
+$app['router']->post('/admin/redirects', [$redirectAdmin, 'store']);
+$app['router']->get('/admin/redirects/{id}/edit', [$redirectAdmin, 'editForm']);
+$app['router']->post('/admin/redirects/{id}', [$redirectAdmin, 'update']);
 
 $app['router']->get('/admin/suppliers', [$supplierAdmin, 'index']);
 $app['router']->get('/admin/suppliers/create', [$supplierAdmin, 'createForm']);

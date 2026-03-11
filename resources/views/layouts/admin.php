@@ -58,6 +58,7 @@
     <a href="/admin/supplier-item-review">Importgranskning</a>
     <a href="/admin/cms/pages">CMS-sidor</a>
     <a href="/admin/cms/home">CMS startsida</a>
+    <a href="/admin/redirects">Redirects</a>
     <a href="/">Till storefront</a>
   </aside>
   <main><?= $content ?? '' ?></main>

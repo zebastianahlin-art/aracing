@@ -615,3 +615,29 @@ Lokal snabbtest:
 1. Öppna admin för produkt, kategori och CMS-sida och fyll i SEO-fält.
 2. Öppna respektive storefront-sida och verifiera `<title>`, `meta description`, `canonical` och `meta robots` i sidkällan.
 3. Testa en söksida (`/search?q=test`) och en filtrerad kategori, verifiera `noindex,follow`.
+
+## Redirects / URL hygiene v1
+
+Databas:
+- kör även `database/migrations/025_redirects_url_hygiene_v1.sql`
+
+Storefront:
+- publika requests (GET/HEAD) passerar ett centralt redirect-lager tidigt i `public/index.php`.
+- redirects matchas på exakt normaliserad intern path (`/foo/bar`), med 301 som standard.
+- vid träff uppdateras `hit_count` och `last_hit_at`.
+- om ingen aktiv redirect finns fortsätter normal routing/404.
+
+Admin:
+- `/admin/redirects` listar redirects och stöder enkel aktiv/inaktiv-filtrering.
+- `/admin/redirects/create` och `/admin/redirects/{id}/edit` hanterar manuell redirectskapning/redigering.
+
+Slug-ändringar:
+- när slug ändras i produkt, kategori eller CMS-sida skapas en automatisk 301 från gammal till ny path.
+- auto-redirect använder samma tabell och validering som manuella redirects.
+
+Lokal snabbtest:
+1. Kör migration `025_redirects_url_hygiene_v1.sql`.
+2. Skapa en redirect i `/admin/redirects` (t.ex. `/gammal-sida` -> `/pages/om-oss`).
+3. Öppna gamla URL:en och verifiera 301 till målsidan.
+4. Verifiera att `hit_count` och `last_hit_at` uppdateras i adminlistan.
+5. Ändra slug på produkt/kategori/CMS-sida och verifiera att gamla slug-URL:en redirectar till nya URL:en.

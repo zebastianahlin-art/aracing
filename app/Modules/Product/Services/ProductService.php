@@ -9,6 +9,7 @@ use App\Modules\Product\Repositories\ProductAttributeRepository;
 use App\Modules\Product\Repositories\ProductImageRepository;
 use App\Modules\Product\Repositories\ProductRepository;
 use App\Modules\Product\Repositories\ProductSupplierItemLookupRepository;
+use App\Modules\Redirect\Services\RedirectService;
 use App\Shared\Support\Slugger;
 
 final class ProductService
@@ -23,7 +24,8 @@ final class ProductService
         private readonly ProductImageRepository $images,
         private readonly ProductSupplierLinkService $supplierLinks,
         private readonly ProductSupplierItemLookupRepository $supplierItems,
-        private readonly InventoryService $inventory
+        private readonly InventoryService $inventory,
+        private readonly RedirectService $redirects
     ) {
     }
 
@@ -151,6 +153,7 @@ final class ProductService
     /** @param array<string, string> $input */
     public function update(int $id, array $input): void
     {
+        $existing = $this->products->findById($id);
         $data = $this->normalizeData($input);
         $this->products->update($id, $data);
         $this->attributes->replaceForProduct($id, $this->parseAttributes($input['attributes'] ?? ''));
@@ -158,6 +161,14 @@ final class ProductService
             $this->images->replaceForProduct($id, $this->parseImages($input['images'] ?? ''));
         }
         $this->supplierLinks->syncPrimaryFromInput($id, $input);
+
+        if ($existing !== null && (string) ($existing['slug'] ?? '') !== (string) $data['slug']) {
+            $this->redirects->createSlugChangeRedirect(
+                '/product/' . (string) $existing['slug'],
+                '/product/' . (string) $data['slug'],
+                'Auto: produktslug uppdaterad.'
+            );
+        }
     }
 
     public function syncPrimarySnapshot(int $productId): void

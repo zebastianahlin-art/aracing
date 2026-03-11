@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Cms\Services;
 
 use App\Modules\Cms\Repositories\CmsPageRepository;
+use App\Modules\Redirect\Services\RedirectService;
 use App\Shared\Support\Slugger;
 
 final class CmsPageService
@@ -22,7 +23,7 @@ final class CmsPageService
         'noindex,follow',
     ];
 
-    public function __construct(private readonly CmsPageRepository $pages)
+    public function __construct(private readonly CmsPageRepository $pages, private readonly RedirectService $redirects)
     {
     }
 
@@ -78,7 +79,17 @@ final class CmsPageService
     /** @param array<string, mixed> $input */
     public function update(int $id, array $input): void
     {
-        $this->pages->update($id, $this->normalize($input));
+        $existing = $this->pages->findById($id);
+        $data = $this->normalize($input);
+        $this->pages->update($id, $data);
+
+        if ($existing !== null && (string) ($existing['slug'] ?? '') !== (string) $data['slug']) {
+            $this->redirects->createSlugChangeRedirect(
+                '/pages/' . (string) $existing['slug'],
+                '/pages/' . (string) $data['slug'],
+                'Auto: CMS-slug uppdaterad.'
+            );
+        }
     }
 
     /** @param array<string, mixed> $input

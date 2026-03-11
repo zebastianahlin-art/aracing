@@ -522,3 +522,27 @@ Snabbtest lokalt:
 2. Öppna orderdetalj och skapa retur med minst en orderrad.
 3. Verifiera att retur syns i `/account/returns` och i `/admin/returns`.
 4. Uppdatera status i admin och verifiera historikrader.
+
+## Support / contact cases v1
+
+Databas:
+- kör även `database/migrations/021_support_contact_cases_v1.sql`
+
+Storefront:
+- kontaktformulär: `/contact`
+- mina supportärenden: `/account/support-cases`
+- skapa ärende via konto: `/account/support-cases/create`
+- skapa orderkopplat ärende från orderdetalj: `/account/orders/{id}/support/create`
+
+Admin:
+- `/admin/support-cases` listar ärenden med filter på status/källa
+- `/admin/support-cases/{id}` visar detalj, historik, status-actions, prioritet och intern adminnotering
+- `/admin/orders/{id}` visar kopplade supportärenden för ordern
+
+Snabbtest lokalt:
+1. Öppna `/contact` och skapa ett gästärende.
+2. Logga in som kund och skapa ärende via `/account/support-cases/create`.
+3. Skapa ett orderkopplat ärende från `/account/orders/{id}`.
+4. Verifiera att kunden ser egna ärenden under `/account/support-cases`.
+5. Öppna `/admin/support-cases`, filtrera på status, uppdatera status/prioritet och spara adminnotering.
+6. Verifiera historikrader på admin-detaljen samt att adminnotering inte visas på kundens case-detalj.

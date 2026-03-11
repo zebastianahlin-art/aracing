@@ -54,6 +54,7 @@
     <a href="/search">Sök</a>
     <a href="/cart">Kundvagn</a>
     <a href="/checkout">Checkout</a>
+    <a href="/contact">Kontakt</a>
     <a href="/order-status">Orderstatus</a>
     <?php if (!empty($_SESSION['customer_user_id'])): ?>
       <a href="/account">Mina sidor</a>

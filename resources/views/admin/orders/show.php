@@ -5,6 +5,7 @@ $items = $detail['items'] ?? [];
 $history = $detail['history'] ?? [];
 $emails = $detail['emails'] ?? [];
 $returnRequests = $returnRequests ?? [];
+$supportCases = $supportCases ?? [];
 $statusLabels = [
   'requested' => 'Begärd',
   'under_review' => 'Under granskning',
@@ -75,6 +76,27 @@ $canCancelFulfillment = in_array((string) ($order['fulfillment_status'] ?? ''), 
             <td><?= htmlspecialchars((string) $returnRequest['status'], ENT_QUOTES, 'UTF-8') ?></td>
             <td><?= htmlspecialchars((string) $returnRequest['requested_at'], ENT_QUOTES, 'UTF-8') ?></td>
             <td><a href="/admin/returns/<?= (int) $returnRequest['id'] ?>">Öppna</a></td>
+          </tr>
+        <?php endforeach; ?>
+        </tbody>
+      </table>
+    <?php endif; ?>
+
+    <h3>Supportärenden</h3>
+    <?php if ($supportCases === []): ?>
+      <p class="muted">Inga supportärenden kopplade till denna order.</p>
+    <?php else: ?>
+      <table class="table compact">
+        <thead><tr><th>Case</th><th>Ämne</th><th>Status</th><th>Källa</th><th>Skapad</th><th></th></tr></thead>
+        <tbody>
+        <?php foreach ($supportCases as $supportCase): ?>
+          <tr>
+            <td><?= htmlspecialchars((string) $supportCase['case_number'], ENT_QUOTES, 'UTF-8') ?></td>
+            <td><?= htmlspecialchars((string) $supportCase['subject'], ENT_QUOTES, 'UTF-8') ?></td>
+            <td><?= htmlspecialchars((string) $supportCase['status'], ENT_QUOTES, 'UTF-8') ?></td>
+            <td><?= htmlspecialchars((string) $supportCase['source'], ENT_QUOTES, 'UTF-8') ?></td>
+            <td><?= htmlspecialchars((string) $supportCase['created_at'], ENT_QUOTES, 'UTF-8') ?></td>
+            <td><a href="/admin/support-cases/<?= (int) $supportCase['id'] ?>">Öppna</a></td>
           </tr>
         <?php endforeach; ?>
         </tbody>

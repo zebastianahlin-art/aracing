@@ -81,6 +81,16 @@ ob_start();
       <div><label><input type="checkbox" name="backorder_allowed" value="1" <?= (int) ($product['backorder_allowed'] ?? 0) === 1 ? 'checked' : '' ?>> Tillåt backorder</label></div>
     </div>
 
+
+
+    <h4>Synlighet & merchandising</h4>
+    <div class="grid">
+      <div><label><input type="checkbox" name="is_search_hidden" value="1" <?= (int) ($product['is_search_hidden'] ?? 0) === 1 ? 'checked' : '' ?>> Dölj i publik sök och listning</label></div>
+      <div><label><input type="checkbox" name="is_featured" value="1" <?= (int) ($product['is_featured'] ?? 0) === 1 ? 'checked' : '' ?>> Prioritera som featured</label></div>
+      <div><label>Manuell sökboost</label><input type="number" name="search_boost" min="-1000" max="1000" value="<?= (int) ($product['search_boost'] ?? 0) ?>"></div>
+      <div><label>Manuell sorteringsprioritet</label><input type="number" name="sort_priority" min="-1000" max="1000" value="<?= (int) ($product['sort_priority'] ?? 0) ?>"></div>
+    </div>
+
     <h4>Leverantörskoppling (v1)</h4>
     <div class="grid">
       <div>

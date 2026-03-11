@@ -50,6 +50,28 @@ ob_start();
       <p class="muted">Produkten kan inte köpas just nu (saknar pris eller är slut i lager).</p>
     <?php endif; ?>
 
+    <?php if (($wishlistMessage ?? '') !== ''): ?><p class="ok-msg"><?= htmlspecialchars((string) $wishlistMessage, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
+    <?php if (($wishlistError ?? '') !== ''): ?><p class="err-msg"><?= htmlspecialchars((string) $wishlistError, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
+    <?php if ($customer !== null): ?>
+      <?php if (($isWishlisted ?? false) === true): ?>
+        <form method="post" action="/wishlist/items/remove" class="inline-form">
+          <input type="hidden" name="product_id" value="<?= (int) $product['id'] ?>">
+          <input type="hidden" name="back_to" value="/product/<?= rawurlencode((string) $product['slug']) ?>">
+          <button type="submit" class="btn-secondary">Ta bort från sparade</button>
+          <a class="btn-secondary" href="/account/wishlist">Mina sparade produkter</a>
+        </form>
+      <?php else: ?>
+        <form method="post" action="/wishlist/items" class="inline-form">
+          <input type="hidden" name="product_id" value="<?= (int) $product['id'] ?>">
+          <input type="hidden" name="back_to" value="/product/<?= rawurlencode((string) $product['slug']) ?>">
+          <button type="submit" class="btn-secondary">Spara produkt</button>
+          <a class="btn-secondary" href="/account/wishlist">Mina sparade produkter</a>
+        </form>
+      <?php endif; ?>
+    <?php else: ?>
+      <p class="muted">Vill du spara produkten? <a href="/login?return_to=<?= rawurlencode('/product/' . (string) $product['slug']) ?>">Logga in</a>.</p>
+    <?php endif; ?>
+
     <section class="trust-grid" aria-label="Trygghetsinformation produkt">
       <article class="trust-item"><strong>Snabb kontakt</strong><p class="muted">Fråga om produkten via <a href="/pages/kontakt">kontakt</a>.</p></article>
       <article class="trust-item"><strong>Frakt & retur</strong><p class="muted">Läs <a href="/pages/fraktinfo">fraktinfo</a> och <a href="/pages/retur-reklamation">retur/reklamation</a>.</p></article>

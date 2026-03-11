@@ -751,3 +751,32 @@ Lokal testning:
 3. Verifiera på produktsidan att sektionerna visas och att produkter är klickbara.
 4. Inaktivera eller ta bort manuella kopplingar och verifiera att fallback visas.
 5. Markera en relaterad produkt som inaktiv eller sökdold och verifiera att den inte visas i storefront.
+
+## Wishlist / saved products v1
+
+Databas:
+- kör även `database/migrations/028_wishlist_saved_products_v1.sql`
+
+Storefront:
+- endast inloggad kund kan spara produkter i wishlist
+- produktsidan visar nu tydlig action för `Spara produkt` / `Ta bort från sparade`
+- om kunden inte är inloggad visas länk till login med retur till aktuell produktsida
+- wishlist hanteras serverrenderat via POST-actions (`/wishlist/items` och `/wishlist/items/remove`)
+
+Mina sidor:
+- ny sida: `/account/wishlist` (Mina sparade produkter)
+- dashboard i Mina sidor har nu en tydlig länk till sparade produkter
+- wishlist-vyn visar endast publika/synliga produkter (`is_active = 1` och `is_search_hidden = 0`)
+- dolda/inaktiva produkter ligger kvar i databasen men exponeras inte i kundvyn i v1
+
+Dubbletter:
+- tabellen har unik constraint på `(user_id, product_id)`
+- add-flödet använder central wishlist-service/repository och skapar inte dubbletter
+
+Lokal testning:
+1. Kör migration `028_wishlist_saved_products_v1.sql`.
+2. Logga in som kund och öppna en produktsida.
+3. Klicka `Spara produkt` och verifiera att status ändras till `Ta bort från sparade`.
+4. Öppna `/account/wishlist` och verifiera att produkten visas.
+5. Klicka `Ta bort från sparade` i produktsida eller wishlist-sida och verifiera att produkten försvinner.
+6. Markera en sparad produkt som inaktiv eller sökdold i admin och verifiera att den inte längre visas i `/account/wishlist`.

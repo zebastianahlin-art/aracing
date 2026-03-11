@@ -9,6 +9,7 @@ ob_start();
   <?php endif; ?>
 
   <form method="post" action="/login">
+    <input type="hidden" name="return_to" value="<?= htmlspecialchars((string) ($returnTo ?? '/account'), ENT_QUOTES, 'UTF-8') ?>">
     <label>E-post</label>
     <input type="email" name="email" required>
 

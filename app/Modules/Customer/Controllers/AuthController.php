@@ -23,6 +23,7 @@ final class AuthController
     {
         return new Response($this->views->render('storefront.auth.register', [
             'error' => trim((string) ($_GET['error'] ?? '')),
+            'returnTo' => $this->sanitizeReturnTo((string) ($_GET['return_to'] ?? '/account')),
             'infoPages' => $this->pages->storefrontInfoPages(),
         ]));
     }
@@ -42,18 +43,21 @@ final class AuthController
     {
         return new Response($this->views->render('storefront.auth.login', [
             'error' => trim((string) ($_GET['error'] ?? '')),
+            'returnTo' => $this->sanitizeReturnTo((string) ($_GET['return_to'] ?? '/account')),
             'infoPages' => $this->pages->storefrontInfoPages(),
         ]));
     }
 
     public function login(): Response
     {
+        $returnTo = $this->sanitizeReturnTo((string) ($_POST['return_to'] ?? '/account'));
+
         try {
             $this->auth->attemptLogin((string) ($_POST['email'] ?? ''), (string) ($_POST['password'] ?? ''));
 
-            return $this->redirect('/account');
+            return $this->redirect($returnTo);
         } catch (InvalidArgumentException $e) {
-            return $this->redirect('/login?error=' . urlencode($e->getMessage()));
+            return $this->redirect('/login?error=' . urlencode($e->getMessage()) . '&return_to=' . rawurlencode($returnTo));
         }
     }
 
@@ -64,8 +68,23 @@ final class AuthController
         return $this->redirect('/');
     }
 
+    private function sanitizeReturnTo(string $returnTo): string
+    {
+        $path = trim($returnTo);
+        if ($path === '' || !str_starts_with($path, '/')) {
+            return '/account';
+        }
+
+        if (str_starts_with($path, '//')) {
+            return '/account';
+        }
+
+        return $path;
+    }
+
     private function redirect(string $location): Response
     {
         return new Response('', 302, ['Location' => $location, 'Content-Type' => 'text/html; charset=UTF-8']);
     }
 }
+

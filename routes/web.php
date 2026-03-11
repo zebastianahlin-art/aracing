@@ -109,6 +109,9 @@ use App\Modules\Support\Repositories\SupportCaseHistoryRepository;
 use App\Modules\Support\Repositories\SupportCaseRepository;
 use App\Modules\Support\Repositories\SupportOrderRepository;
 use App\Modules\Support\Services\SupportCaseService;
+use App\Modules\Wishlist\Controllers\WishlistController;
+use App\Modules\Wishlist\Repositories\WishlistRepository;
+use App\Modules\Wishlist\Services\WishlistService;
 
 /** @var array{router: Router, view: \App\Core\View\ViewFactory, pdo: \PDO} $app */
 $brandService = new BrandService(new BrandRepository($app['pdo']));
@@ -194,6 +197,8 @@ $returnRequestService = new ReturnRequestService(
 
 $customerAccountService = new CustomerAccountService($userRepository, new CustomerOrderRepository($app['pdo']), $returnRequestService);
 
+$wishlistService = new WishlistService(new WishlistRepository($app['pdo']), new ProductRepository($app['pdo']));
+
 $productReviewService = new ProductReviewService(
     new ProductReviewRepository($app['pdo']),
     new ProductRepository($app['pdo'])
@@ -213,7 +218,7 @@ $sitemapService = new SitemapService(
 );
 $robotsService = new RobotsService();
 $sitemapController = new SitemapController($sitemapService, $robotsService);
-$storefront = new StorefrontController($app['view'], $catalogService, $cmsPageService, $authService, $productReviewService, $seoService);
+$storefront = new StorefrontController($app['view'], $catalogService, $cmsPageService, $authService, $productReviewService, $seoService, $wishlistService);
 $cmsStorefront = new CmsStorefrontController($app['view'], $cmsHomeService, $cmsPageService, $seoService);
 $cartController = new CartController($app['view'], $cartService, $cmsPageService);
 $checkoutController = new CheckoutController($app['view'], $cartService, new CheckoutService(), $orderService, $shippingService, $checkoutTotalsService, $cmsPageService, $paymentService, $authService);
@@ -247,6 +252,7 @@ $shippingMethodAdmin = new ShippingMethodAdminController($app['view'], $shipping
 $discountCodeAdmin = new DiscountCodeAdminController($app['view'], $discountService);
 $authController = new AuthController($app['view'], $authService, $cmsPageService);
 $customerAccountController = new CustomerAccountController($app['view'], $authService, $customerAccountService, $cmsPageService);
+$wishlistController = new WishlistController($app['view'], $authService, $cmsPageService, $wishlistService);
 $returnRequestCustomerController = new ReturnRequestCustomerController($app['view'], $authService, $cmsPageService, $returnRequestService);
 $returnRequestAdmin = new ReturnRequestAdminController($app['view'], $returnRequestService);
 $productReviewStorefront = new ProductReviewStorefrontController($authService, $catalogService, $productReviewService);
@@ -287,6 +293,9 @@ $app['router']->post('/login', [$authController, 'login']);
 $app['router']->post('/logout', [$authController, 'logout']);
 
 $app['router']->get('/account', [$customerAccountController, 'dashboard']);
+$app['router']->get('/account/wishlist', [$wishlistController, 'index']);
+$app['router']->post('/wishlist/items', [$wishlistController, 'add']);
+$app['router']->post('/wishlist/items/remove', [$wishlistController, 'remove']);
 $app['router']->get('/account/orders', [$customerAccountController, 'orders']);
 $app['router']->get('/account/orders/{id}', [$customerAccountController, 'showOrder']);
 $app['router']->get('/account/profile', [$customerAccountController, 'profileForm']);

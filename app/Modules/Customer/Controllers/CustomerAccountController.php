@@ -83,6 +83,38 @@ final class CustomerAccountController
         ]));
     }
 
+
+    public function addressForm(): Response
+    {
+        $customer = $this->requireCustomer();
+        if ($customer instanceof Response) {
+            return $customer;
+        }
+
+        return new Response($this->views->render('storefront.account.address', [
+            'customer' => $customer,
+            'error' => trim((string) ($_GET['error'] ?? '')),
+            'message' => trim((string) ($_GET['message'] ?? '')),
+            'infoPages' => $this->pages->storefrontInfoPages(),
+        ]));
+    }
+
+    public function updateAddress(): Response
+    {
+        $customer = $this->requireCustomer();
+        if ($customer instanceof Response) {
+            return $customer;
+        }
+
+        try {
+            $this->accounts->updateAddress((int) $customer['id'], $_POST);
+
+            return $this->redirect('/account/address?message=' . urlencode('Adress uppdaterad.'));
+        } catch (InvalidArgumentException $e) {
+            return $this->redirect('/account/address?error=' . urlencode($e->getMessage()));
+        }
+    }
+
     public function updateProfile(): Response
     {
         $customer = $this->requireCustomer();

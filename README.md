@@ -488,9 +488,18 @@ Storefront:
 - Mina sidor: `/account`
 - orderhistorik: `/account/orders`
 - profil: `/account/profile`
+- adress: `/account/address`
+
+Adresslager v1:
+- användare kan spara en enkel standardadress direkt på `users` (ingen separat address-book i v1)
+- checkout (`/checkout`) förifyller faktura- och leveransadress från inloggad kundprofil
+- checkout är fortsatt redigerbar och ordern sparar alltid adresssnapshot i orderfält
+- gästcheckout fungerar oförändrat och kräver inget kundkonto
 
 Snabbtest lokalt:
 1. Registrera nytt konto via `/register`.
-2. Lägg en order via checkout i inloggat läge.
-3. Verifiera att ordern syns under `/account/orders` och att orderdetalj fungerar.
-4. Uppdatera profil under `/account/profile`.
+2. Spara adress via `/account/address`.
+3. Gå till `/checkout` i inloggat läge och verifiera att adressfälten är förifyllda.
+4. Ändra adress i checkout och lägg order.
+5. Verifiera att ordern syns under `/account/orders` och att orderdetalj fungerar.
+6. Uppdatera profil under `/account/profile`.

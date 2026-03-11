@@ -62,6 +62,7 @@
   <nav>
     <a href="/">Start</a>
     <a href="/search">Sök</a>
+    <a href="/compare">Jämför</a>
     <a href="/cart">Kundvagn</a>
     <a href="/checkout">Checkout</a>
     <a href="/contact">Kontakt</a>

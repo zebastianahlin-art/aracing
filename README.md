@@ -831,3 +831,38 @@ Lokal testning:
 3. Gå tillbaka till en produktsida och verifiera att sektionen "Nyligen visade produkter" visas.
 4. Verifiera att aktuell produkt inte visas i sin egen lista.
 5. Verifiera att inaktiva/sökdolda produkter inte visas i listan även om de tidigare besökts.
+
+## Compare products v1
+
+Storefront:
+- jämförelse är nu sessionbaserad för både gäster och inloggade kunder (ingen kontosynk i v1)
+- central logik finns i `CompareService` med:
+  - add/remove/contains/list
+  - deduplicering
+  - stabil ordning enligt inläggningsordning
+  - maxgräns `4` produkter
+  - filtrering till publika/synliga produkter vid rendering
+- produktsidan visar `Jämför produkt` eller `Ta bort från jämförelse` beroende på compare-state
+- compare-sidan finns på `/compare` och visar produkter sida vid sida
+- compare-vyn visar grundfält från befintlig produktmodell:
+  - namn
+  - bild
+  - pris
+  - varumärke
+  - lager/köpbarhet
+  - betyg + antal recensioner
+  - kort beskrivning
+
+Rensning/filtrering:
+- produkter som inte längre är publika/synliga filtreras bort automatiskt från compare-vyn
+- compare-vyn kraschar inte om en produkt i sessionen inte längre kan visas
+
+Lokal testning:
+1. Starta applikationen (`composer serve`).
+2. Öppna en produktsida och klicka `Jämför produkt`.
+3. Verifiera att knappen byts till `Ta bort från jämförelse` och att länken till `/compare` visar uppdaterat antal.
+4. Öppna `/compare` och verifiera sida-vid-sida-tabellen.
+5. Lägg till upp till fyra produkter och verifiera att ordningen följer inläggningsordning.
+6. Försök lägga till en femte produkt och verifiera tydligt felmeddelande.
+7. Ta bort en produkt från `/compare` och verifiera att tabellen uppdateras.
+8. Markera en jämförd produkt som inaktiv eller sökdold i admin och verifiera att den inte längre visas i `/compare`.

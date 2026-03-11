@@ -14,6 +14,7 @@ use App\Modules\Storefront\Services\RecentViewedService;
 use App\Modules\Storefront\Services\SeoService;
 use App\Modules\StockAlert\Services\StockAlertService;
 use App\Modules\Wishlist\Services\WishlistService;
+use App\Modules\Compare\Services\CompareService;
 
 final class StorefrontController
 {
@@ -26,7 +27,8 @@ final class StorefrontController
         private readonly SeoService $seo,
         private readonly WishlistService $wishlists,
         private readonly StockAlertService $stockAlerts,
-        private readonly RecentViewedService $recentViewed
+        private readonly RecentViewedService $recentViewed,
+        private readonly CompareService $compare
     ) {
     }
 
@@ -92,6 +94,11 @@ final class StorefrontController
         return new Response($this->views->render('storefront.product', [
             'product' => $product,
             'recentlyViewedProducts' => $recentlyViewedProducts,
+            'compareCount' => $this->compare->count(),
+            'maxCompareItems' => $this->compare->maxItems(),
+            'isCompared' => $product !== null ? $this->compare->contains((int) $product['id']) : false,
+            'compareMessage' => trim((string) ($_GET['compare_message'] ?? '')),
+            'compareError' => trim((string) ($_GET['compare_error'] ?? '')),
             'reviewSummary' => $summary,
             'publicReviews' => $publicReviews,
             'customer' => $customer,

@@ -86,6 +86,7 @@ use App\Modules\Storefront\Controllers\SitemapController;
 use App\Modules\Storefront\Services\RobotsService;
 use App\Modules\Storefront\Services\SitemapService;
 use App\Modules\Storefront\Services\SeoService;
+use App\Modules\Storefront\Services\RecentViewedService;
 use App\Modules\Supplier\Controllers\SupplierAdminController;
 use App\Modules\Supplier\Repositories\SupplierRepository;
 use App\Modules\Supplier\Services\SupplierService;
@@ -228,7 +229,8 @@ $sitemapService = new SitemapService(
 );
 $robotsService = new RobotsService();
 $sitemapController = new SitemapController($sitemapService, $robotsService);
-$storefront = new StorefrontController($app['view'], $catalogService, $cmsPageService, $authService, $productReviewService, $seoService, $wishlistService, $stockAlertService);
+$recentViewedService = new RecentViewedService($catalogRepository, $inventoryService);
+$storefront = new StorefrontController($app['view'], $catalogService, $cmsPageService, $authService, $productReviewService, $seoService, $wishlistService, $stockAlertService, $recentViewedService);
 $cmsStorefront = new CmsStorefrontController($app['view'], $cmsHomeService, $cmsPageService, $seoService);
 $cartController = new CartController($app['view'], $cartService, $cmsPageService);
 $checkoutController = new CheckoutController($app['view'], $cartService, new CheckoutService(), $orderService, $shippingService, $checkoutTotalsService, $cmsPageService, $paymentService, $authService);

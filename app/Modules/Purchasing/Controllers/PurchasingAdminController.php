@@ -7,6 +7,7 @@ namespace App\Modules\Purchasing\Controllers;
 use App\Core\Http\Response;
 use App\Core\View\ViewFactory;
 use App\Modules\Purchasing\Services\PurchaseOrderDraftService;
+use App\Modules\Purchasing\Services\PurchaseReceivingService;
 use App\Modules\Purchasing\Services\PurchasingService;
 use InvalidArgumentException;
 
@@ -16,6 +17,7 @@ final class PurchasingAdminController
         private readonly ViewFactory $views,
         private readonly PurchasingService $purchasing,
         private readonly PurchaseOrderDraftService $drafts,
+        private readonly PurchaseReceivingService $receiving,
     ) {
     }
 
@@ -77,11 +79,13 @@ final class PurchasingAdminController
     public function draftIndex(): Response
     {
         $status = trim((string) ($_GET['status'] ?? ''));
+        $receivingStatus = trim((string) ($_GET['receiving_status'] ?? ''));
 
         return new Response($this->views->render('admin.purchase_order_drafts.index', [
-            'drafts' => $this->drafts->listDrafts($status),
+            'drafts' => $this->drafts->listDrafts($status, $receivingStatus),
             'statuses' => $this->drafts->statuses(),
-            'filters' => ['status' => $status],
+            'receivingStatuses' => $this->drafts->receivingStatuses(),
+            'filters' => ['status' => $status, 'receiving_status' => $receivingStatus],
             'error' => trim((string) ($_GET['error'] ?? '')),
             'message' => trim((string) ($_GET['message'] ?? '')),
         ]));
@@ -146,6 +150,24 @@ final class PurchasingAdminController
             $this->drafts->markExported($draftId);
 
             return $this->redirect('/admin/purchase-order-drafts/' . $draftId . '?message=' . urlencode('Utkast markerat som exporterat.'));
+        } catch (InvalidArgumentException $e) {
+            return $this->redirect('/admin/purchase-order-drafts/' . (int) $id . '?error=' . urlencode($e->getMessage()));
+        }
+    }
+
+
+    public function receiveDraft(string $id): Response
+    {
+        try {
+            $draftId = (int) $id;
+            $this->receiving->receiveAgainstDraft(
+                $draftId,
+                (array) ($_POST['received_quantity'] ?? []),
+                (string) ($_POST['receiving_note'] ?? ''),
+                (string) ($_POST['submission_token'] ?? '')
+            );
+
+            return $this->redirect('/admin/purchase-order-drafts/' . $draftId . '?message=' . urlencode('Inleverans registrerad och lager uppdaterat.'));
         } catch (InvalidArgumentException $e) {
             return $this->redirect('/admin/purchase-order-drafts/' . (int) $id . '?error=' . urlencode($e->getMessage()));
         }

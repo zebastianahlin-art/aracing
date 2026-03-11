@@ -26,7 +26,9 @@ $items = $detail['items'] ?? [];
       <p><strong>Ordernummer:</strong> <?= htmlspecialchars((string) $draft['order_number'], ENT_QUOTES, 'UTF-8') ?></p>
       <p><strong>Leverantör:</strong> <?= htmlspecialchars((string) ($draft['supplier_name_snapshot'] ?? 'Saknas'), ENT_QUOTES, 'UTF-8') ?></p>
       <p><strong>Status:</strong> <?= htmlspecialchars((string) $draft['status'], ENT_QUOTES, 'UTF-8') ?></p>
+      <p><strong>Mottagningsstatus:</strong> <?= htmlspecialchars((string) ($draft['receiving_status'] ?? 'not_received'), ENT_QUOTES, 'UTF-8') ?></p>
       <p><strong>Skapad:</strong> <?= htmlspecialchars((string) $draft['created_at'], ENT_QUOTES, 'UTF-8') ?></p>
+      <p><strong>Färdigmottagen:</strong> <?= htmlspecialchars((string) ($draft['received_at'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
       <?php if (!empty($draft['internal_note'])): ?>
         <p><strong>Intern notering:</strong> <?= nl2br(htmlspecialchars((string) $draft['internal_note'], ENT_QUOTES, 'UTF-8')) ?></p>
       <?php endif; ?>
@@ -34,7 +36,7 @@ $items = $detail['items'] ?? [];
 
     <table>
       <thead>
-        <tr><th>Produkt</th><th>Intern SKU</th><th>Lev. SKU</th><th>Kvantitet</th><th>Kostnad snapshot</th></tr>
+        <tr><th>Produkt</th><th>Intern SKU</th><th>Lev. SKU</th><th>Beställt</th><th>Mottaget</th><th>Kvar</th><th>Kostnad snapshot</th></tr>
       </thead>
       <tbody>
       <?php foreach ($items as $item): ?>
@@ -43,6 +45,8 @@ $items = $detail['items'] ?? [];
           <td><?= htmlspecialchars((string) ($item['sku'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></td>
           <td><?= htmlspecialchars((string) ($item['supplier_sku'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></td>
           <td><?= (int) $item['quantity'] ?></td>
+          <td><?= (int) ($item['received_quantity'] ?? 0) ?></td>
+          <td><?= max(0, (int) $item['quantity'] - (int) ($item['received_quantity'] ?? 0)) ?></td>
           <td><?= htmlspecialchars((string) ($item['unit_cost_snapshot'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></td>
         </tr>
       <?php endforeach; ?>

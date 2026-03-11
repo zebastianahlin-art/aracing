@@ -25,7 +25,9 @@ final class PurchaseOrderDraftRepository
                 created_by_user_id,
                 created_at,
                 updated_at,
-                exported_at
+                exported_at,
+                receiving_status,
+                received_at
             ) VALUES (
                 :supplier_id,
                 :status,
@@ -36,6 +38,8 @@ final class PurchaseOrderDraftRepository
                 :created_by_user_id,
                 NOW(),
                 NOW(),
+                NULL,
+                :receiving_status,
                 NULL
             )');
 
@@ -46,22 +50,34 @@ final class PurchaseOrderDraftRepository
         $stmt->bindValue('supplier_reference', $data['supplier_reference'], $data['supplier_reference'] !== null ? PDO::PARAM_STR : PDO::PARAM_NULL);
         $stmt->bindValue('internal_note', $data['internal_note'], $data['internal_note'] !== null ? PDO::PARAM_STR : PDO::PARAM_NULL);
         $stmt->bindValue('created_by_user_id', $data['created_by_user_id'], $data['created_by_user_id'] !== null ? PDO::PARAM_INT : PDO::PARAM_NULL);
+        $stmt->bindValue('receiving_status', $data['receiving_status'] ?? 'not_received', PDO::PARAM_STR);
         $stmt->execute();
 
         return (int) $this->pdo->lastInsertId();
     }
 
     /** @return array<int,array<string,mixed>> */
-    public function listAll(?string $status = null): array
+    public function listAll(?string $status = null, ?string $receivingStatus = null): array
     {
         $sql = 'SELECT pod.*, COUNT(podi.id) AS item_count
                 FROM purchase_order_drafts pod
                 LEFT JOIN purchase_order_draft_items podi ON podi.purchase_order_draft_id = pod.id';
 
         $params = [];
+        $conditions = [];
+
         if ($status !== null) {
-            $sql .= ' WHERE pod.status = :status';
+            $conditions[] = 'pod.status = :status';
             $params['status'] = $status;
+        }
+
+        if ($receivingStatus !== null) {
+            $conditions[] = 'pod.receiving_status = :receiving_status';
+            $params['receiving_status'] = $receivingStatus;
+        }
+
+        if ($conditions !== []) {
+            $sql .= ' WHERE ' . implode(' AND ', $conditions);
         }
 
         $sql .= ' GROUP BY pod.id ORDER BY pod.created_at DESC, pod.id DESC';
@@ -107,9 +123,23 @@ final class PurchaseOrderDraftRepository
     {
         $stmt = $this->pdo->prepare('UPDATE purchase_order_drafts
                 SET status = :status,
+                    receiving_status = :receiving_status,
                     updated_at = NOW()
                 WHERE id = :id');
-        $stmt->execute(['id' => $id, 'status' => 'cancelled']);
+        $stmt->execute(['id' => $id, 'status' => 'cancelled', 'receiving_status' => 'cancelled']);
+    }
+
+    public function updateReceivingState(int $id, string $receivingStatus, ?string $receivedAt): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE purchase_order_drafts
+                SET receiving_status = :receiving_status,
+                    received_at = :received_at,
+                    updated_at = NOW()
+                WHERE id = :id');
+        $stmt->bindValue('id', $id, PDO::PARAM_INT);
+        $stmt->bindValue('receiving_status', $receivingStatus, PDO::PARAM_STR);
+        $stmt->bindValue('received_at', $receivedAt, $receivedAt !== null ? PDO::PARAM_STR : PDO::PARAM_NULL);
+        $stmt->execute();
     }
 
     public function countCreatedOnDate(string $date): int

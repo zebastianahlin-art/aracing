@@ -22,6 +22,20 @@ final class InventoryRepository
         return $row !== false ? $row : null;
     }
 
+    /** @return array<string,mixed>|null */
+    public function findProductInventoryForUpdate(int $productId): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT id, name, stock_quantity, stock_status, backorder_allowed, stock_updated_at
+            FROM products
+            WHERE id = :id
+            LIMIT 1
+            FOR UPDATE');
+        $stmt->execute(['id' => $productId]);
+        $row = $stmt->fetch();
+
+        return $row !== false ? $row : null;
+    }
+
     public function beginTransaction(): void
     {
         if (!$this->pdo->inTransaction()) {

@@ -368,16 +368,23 @@ Lokal testning:
 4. Öppna `/` och verifiera ordning, max_items, CTA och att endast publika/synliga objekt renderas.
 5. Inaktivera en produkt eller item-rad och verifiera att den försvinner från startsidan utan fel.
 
-## Storefront sök + filtrering v1
+## Storefront sök + filtrering v2 (filter UX polish)
 
 Ny route:
 - `/search`
 
-Stöd i v1:
-- sök på produktnamn, SKU och varumärke
+Stöd i v2:
+- sök på produktnamn, SKU, varumärke och kategori
 - filter på kategori, varumärke, min/max-pris och lagerstatus
-- sortering: senaste, namn A-Ö/Ö-A, pris stigande/fallande
-- kategori-sidor använder samma listningslogik med filter/sortering
+- tydlig aktiv filter-sammanfattning med möjlighet att ta bort enstaka filter
+- `Rensa alla`-länk som behåller relevant basstate (t.ex. sortering)
+- sortering och filter samexisterar i stabil URL-state (query params)
+- defensiv normalisering av query-params i `CatalogService`:
+  - ogiltig sortering fallbackar till `curated` eller `relevance` (vid sökfras)
+  - ogiltig lagerstatus ignoreras
+  - prisvalidering accepterar numeriska värden, sanerar negativa värden och byter plats på min/max vid omvänt intervall
+- facet-värden för varumärke/kategori/lagerstatus visas kontextuellt med träffantal (utan extern sökplattform)
+- kategori- och söksidor använder samma centrala listningslogik i service/repository
 
 Konsekvent regel för prislösa produkter i listning:
 - produkter utan `sale_price` visas i listning med texten `Pris visas vid förfrågan`
@@ -385,9 +392,11 @@ Konsekvent regel för prislösa produkter i listning:
 
 Lokal manuell test:
 1. Starta servern med `composer serve`.
-2. Öppna `/search` och sök på namn, SKU och varumärke.
-3. Testa filterkombinationer (kategori, brand, pris, lagerstatus) samt sortering.
-4. Öppna en `/category/{slug}` och verifiera träffräknare, filter/sortering och tomt-resultat-läge.
+2. Öppna `/search` och verifiera att träffantal, aktiva filter och filterpanelen renderas.
+3. Testa filterkombinationer (kategori, brand, pris, lagerstatus) och verifiera att URL uppdateras konsekvent.
+4. Byt sortering och verifiera att filterstate inte tappas bort.
+5. Klicka bort enstaka filter-chip samt `Rensa alla` och verifiera att listan återställs korrekt.
+6. Öppna `/category/{slug}` och verifiera motsvarande beteende inom låst kategorikontext.
 
 ## Kundförtroende-sidor + storefront polish v1
 

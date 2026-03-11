@@ -3,7 +3,6 @@ ob_start();
 ?>
 <section class="panel">
   <h2>Produktsök</h2>
-  <p class="muted"><?= (int) ($total ?? 0) ?> träffar</p>
 </section>
 
 <?php

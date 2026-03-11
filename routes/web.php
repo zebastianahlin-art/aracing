@@ -89,6 +89,12 @@ use App\Modules\Shipping\Controllers\ShippingMethodAdminController;
 use App\Modules\Shipping\Repositories\ShippingMethodRepository;
 use App\Modules\Shipping\Services\CheckoutTotalsService;
 use App\Modules\Shipping\Services\ShippingService;
+use App\Modules\Support\Controllers\SupportCaseAdminController;
+use App\Modules\Support\Controllers\SupportCaseStorefrontController;
+use App\Modules\Support\Repositories\SupportCaseHistoryRepository;
+use App\Modules\Support\Repositories\SupportCaseRepository;
+use App\Modules\Support\Repositories\SupportOrderRepository;
+use App\Modules\Support\Services\SupportCaseService;
 
 /** @var array{router: Router, view: \App\Core\View\ViewFactory, pdo: \PDO} $app */
 $brandService = new BrandService(new BrandRepository($app['pdo']));
@@ -186,7 +192,14 @@ $supplierItemReviewService = new SupplierItemReviewService(
     new ProductSupplierItemLookupRepository($app['pdo'])
 );
 $supplierItemReviewAdmin = new SupplierItemReviewAdminController($app['view'], $supplierItemReviewService, $supplierService, $importRunService, $productService);
-$orderAdmin = new OrderAdminController($app['view'], $orderService, $paymentEventRepository, $returnRequestService);
+$supportCaseService = new SupportCaseService(
+    new SupportCaseRepository($app['pdo']),
+    new SupportCaseHistoryRepository($app['pdo']),
+    new SupportOrderRepository($app['pdo'])
+);
+$supportCaseStorefront = new SupportCaseStorefrontController($app['view'], $supportCaseService, $authService, $cmsPageService);
+$supportCaseAdmin = new SupportCaseAdminController($app['view'], $supportCaseService);
+$orderAdmin = new OrderAdminController($app['view'], $orderService, $paymentEventRepository, $returnRequestService, $supportCaseService);
 $purchasingAdmin = new PurchasingAdminController($app['view'], $purchasingService);
 $cmsPageAdmin = new CmsPageAdminController($app['view'], $cmsPageService);
 $cmsHomeAdmin = new CmsHomeAdminController($app['view'], $cmsHomeService);
@@ -201,6 +214,8 @@ $app['router']->get('/', [$cmsStorefront, 'home']);
 $app['router']->get('/category/{slug}', [$storefront, 'category']);
 $app['router']->get('/product/{slug}', [$storefront, 'product']);
 $app['router']->get('/search', [$storefront, 'search']);
+$app['router']->get('/contact', [$supportCaseStorefront, 'contactForm']);
+$app['router']->post('/contact', [$supportCaseStorefront, 'createFromContactForm']);
 
 $app['router']->get('/pages/{slug}', [$cmsStorefront, 'page']);
 $app['router']->get('/cart', [$cartController, 'show']);
@@ -234,6 +249,12 @@ $app['router']->get('/account/returns', [$returnRequestCustomerController, 'inde
 $app['router']->get('/account/orders/{orderId}/returns/create', [$returnRequestCustomerController, 'createForm']);
 $app['router']->post('/account/orders/{orderId}/returns', [$returnRequestCustomerController, 'store']);
 $app['router']->get('/account/returns/{returnId}', [$returnRequestCustomerController, 'show']);
+$app['router']->get('/account/support-cases', [$supportCaseStorefront, 'accountIndex']);
+$app['router']->get('/account/support-cases/create', [$supportCaseStorefront, 'accountCreate']);
+$app['router']->post('/account/support-cases', [$supportCaseStorefront, 'accountStore']);
+$app['router']->get('/account/support-cases/{id}', [$supportCaseStorefront, 'accountShow']);
+$app['router']->get('/account/orders/{orderId}/support/create', [$supportCaseStorefront, 'orderCreateForm']);
+$app['router']->post('/account/orders/{orderId}/support', [$supportCaseStorefront, 'orderStore']);
 
 $app['router']->get('/admin', [$admin, 'dashboard']);
 $app['router']->get('/admin/brands', [$brandAdmin, 'index']);
@@ -275,6 +296,12 @@ $app['router']->get('/admin/returns', [$returnRequestAdmin, 'index']);
 $app['router']->get('/admin/returns/{id}', [$returnRequestAdmin, 'show']);
 $app['router']->post('/admin/returns/{id}/status', [$returnRequestAdmin, 'updateStatus']);
 $app['router']->post('/admin/returns/{id}/notes', [$returnRequestAdmin, 'addNote']);
+
+$app['router']->get('/admin/support-cases', [$supportCaseAdmin, 'index']);
+$app['router']->get('/admin/support-cases/{id}', [$supportCaseAdmin, 'show']);
+$app['router']->post('/admin/support-cases/{id}/status', [$supportCaseAdmin, 'updateStatus']);
+$app['router']->post('/admin/support-cases/{id}/priority', [$supportCaseAdmin, 'updatePriority']);
+$app['router']->post('/admin/support-cases/{id}/admin-note', [$supportCaseAdmin, 'addAdminNote']);
 
 
 $app['router']->get('/admin/shipping-methods', [$shippingMethodAdmin, 'index']);

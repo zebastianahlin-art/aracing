@@ -6,7 +6,7 @@ $recentOrders = $recentOrders ?? [];
   <h2>Mina sidor</h2>
   <p>Välkommen, <strong><?= htmlspecialchars((string) (($customer['first_name'] ?? '') . ' ' . ($customer['last_name'] ?? '')), ENT_QUOTES, 'UTF-8') ?></strong>.</p>
   <p class="muted">E-post: <?= htmlspecialchars((string) ($customer['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
-  <p><a class="btn-secondary" href="/account/profile">Redigera profil</a> <a class="btn-secondary" href="/account/address">Min adress</a> <a class="btn-secondary" href="/account/orders">Se alla ordrar</a> <a class="btn-secondary" href="/account/returns">Mina returer</a></p>
+  <p><a class="btn-secondary" href="/account/profile">Redigera profil</a> <a class="btn-secondary" href="/account/address">Min adress</a> <a class="btn-secondary" href="/account/orders">Se alla ordrar</a> <a class="btn-secondary" href="/account/returns">Mina returer</a> <a class="btn-secondary" href="/account/support-cases">Mina supportärenden</a></p>
 </section>
 
 <section class="panel" style="margin-top:.8rem;">

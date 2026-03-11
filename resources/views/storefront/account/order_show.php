@@ -43,7 +43,7 @@ $statusLabels = [
     </table>
 
     <h3>Returer</h3>
-    <p><a class="btn-secondary" href="/account/orders/<?= (int) $order['id'] ?>/returns/create">Skapa returförfrågan</a> <a class="btn-secondary" href="/account/returns">Visa alla returer</a></p>
+    <p><a class="btn-secondary" href="/account/orders/<?= (int) $order['id'] ?>/returns/create">Skapa returförfrågan</a> <a class="btn-secondary" href="/account/returns">Visa alla returer</a> <a class="btn-secondary" href="/account/orders/<?= (int) $order['id'] ?>/support/create">Kontakta support om denna order</a></p>
     <?php if ($returns !== []): ?>
       <table class="table">
         <thead><tr><th>RMA</th><th>Status</th><th>Skapad</th><th></th></tr></thead>

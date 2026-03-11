@@ -6,6 +6,7 @@ namespace App\Modules\Purchasing\Services;
 
 use App\Modules\Purchasing\Repositories\PurchaseOrderDraftItemRepository;
 use App\Modules\Purchasing\Repositories\PurchaseOrderDraftRepository;
+use App\Modules\Purchasing\Repositories\PurchaseOrderReceiptRepository;
 use App\Modules\Purchasing\Repositories\RefillNeedRepository;
 use InvalidArgumentException;
 use PDO;
@@ -13,12 +14,14 @@ use PDO;
 final class PurchaseOrderDraftService
 {
     private const ALLOWED_STATUSES = ['draft', 'exported', 'cancelled'];
+    private const ALLOWED_RECEIVING_STATUSES = ['not_received', 'partially_received', 'received', 'cancelled'];
 
     public function __construct(
         private readonly PDO $pdo,
         private readonly RefillNeedRepository $refillNeeds,
         private readonly PurchaseOrderDraftRepository $drafts,
         private readonly PurchaseOrderDraftItemRepository $items,
+        private readonly ?PurchaseOrderReceiptRepository $receipts = null,
     ) {
     }
 
@@ -90,6 +93,7 @@ final class PurchaseOrderDraftService
                     'supplier_reference' => null,
                     'internal_note' => null,
                     'created_by_user_id' => $createdByUserId,
+                    'receiving_status' => 'not_received',
                 ]);
 
                 foreach ($supplierRows as $itemData) {
@@ -109,10 +113,11 @@ final class PurchaseOrderDraftService
     }
 
     /** @return array<int,array<string,mixed>> */
-    public function listDrafts(?string $status): array
+    public function listDrafts(?string $status, ?string $receivingStatus = null): array
     {
         $normalizedStatus = $this->normalizeStatusFilter($status);
-        return $this->drafts->listAll($normalizedStatus);
+        $normalizedReceivingStatus = $this->normalizeReceivingStatusFilter($receivingStatus);
+        return $this->drafts->listAll($normalizedStatus, $normalizedReceivingStatus);
     }
 
     /** @return array<string,mixed>|null */
@@ -123,7 +128,22 @@ final class PurchaseOrderDraftService
             return null;
         }
 
-        return ['draft' => $draft, 'items' => $this->items->listByDraftId($draftId)];
+        $items = $this->items->listByDraftId($draftId);
+        $receipts = $this->receipts?->listByDraftId($draftId) ?? [];
+
+        foreach ($items as &$item) {
+            $ordered = max(0, (int) $item['quantity']);
+            $received = max(0, (int) ($item['received_quantity'] ?? 0));
+            $remaining = max(0, $ordered - $received);
+
+            $item['remaining_quantity'] = $remaining;
+            $item['receiving_line_status'] = $received <= 0
+                ? 'not_received'
+                : ($remaining === 0 ? 'received' : 'partially_received');
+        }
+        unset($item);
+
+        return ['draft' => $draft, 'items' => $items, 'receipts' => $receipts];
     }
 
     public function updateItemQuantity(int $draftId, int $itemId, mixed $quantity): void
@@ -131,7 +151,12 @@ final class PurchaseOrderDraftService
         $draft = $this->requireDraft($draftId);
         $this->assertDraftEditable($draft);
         $item = $this->requireItemForDraft($draftId, $itemId);
-        $this->items->updateQuantity((int) $item['id'], $this->normalizeQuantity($quantity));
+        $normalizedQuantity = $this->normalizeQuantity($quantity);
+        if ($normalizedQuantity < (int) ($item['received_quantity'] ?? 0)) {
+            throw new InvalidArgumentException('Beställd kvantitet kan inte vara lägre än redan mottagen kvantitet.');
+        }
+
+        $this->items->updateQuantity((int) $item['id'], $normalizedQuantity);
     }
 
     public function removeItem(int $draftId, int $itemId): void
@@ -139,6 +164,10 @@ final class PurchaseOrderDraftService
         $draft = $this->requireDraft($draftId);
         $this->assertDraftEditable($draft);
         $item = $this->requireItemForDraft($draftId, $itemId);
+        if ((int) ($item['received_quantity'] ?? 0) > 0) {
+            throw new InvalidArgumentException('Rader med mottagen kvantitet kan inte tas bort.');
+        }
+
         $this->items->deleteById((int) $item['id']);
     }
 
@@ -171,6 +200,12 @@ final class PurchaseOrderDraftService
     public function statuses(): array
     {
         return self::ALLOWED_STATUSES;
+    }
+
+    /** @return array<int,string> */
+    public function receivingStatuses(): array
+    {
+        return self::ALLOWED_RECEIVING_STATUSES;
     }
 
     private function generateOrderNumber(): string
@@ -210,6 +245,16 @@ final class PurchaseOrderDraftService
         }
 
         return in_array($normalized, self::ALLOWED_STATUSES, true) ? $normalized : null;
+    }
+
+    private function normalizeReceivingStatusFilter(?string $status): ?string
+    {
+        $normalized = trim((string) $status);
+        if ($normalized === '') {
+            return null;
+        }
+
+        return in_array($normalized, self::ALLOWED_RECEIVING_STATUSES, true) ? $normalized : null;
     }
 
     /** @return array<string,mixed> */

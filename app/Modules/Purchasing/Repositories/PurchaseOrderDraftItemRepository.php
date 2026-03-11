@@ -25,6 +25,8 @@ final class PurchaseOrderDraftItemRepository
                 quantity,
                 unit_cost_snapshot,
                 line_note,
+                received_quantity,
+                last_received_at,
                 created_at,
                 updated_at
             ) VALUES (
@@ -37,6 +39,8 @@ final class PurchaseOrderDraftItemRepository
                 :quantity,
                 :unit_cost_snapshot,
                 :line_note,
+                0,
+                NULL,
                 NOW(),
                 NOW()
             )');
@@ -79,6 +83,18 @@ final class PurchaseOrderDraftItemRepository
                     updated_at = NOW()
                 WHERE id = :id');
         $stmt->execute(['id' => $itemId, 'quantity' => $quantity]);
+    }
+
+
+
+    public function updateReceivedQuantity(int $itemId, int $receivedQuantity): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE purchase_order_draft_items
+                SET received_quantity = :received_quantity,
+                    last_received_at = NOW(),
+                    updated_at = NOW()
+                WHERE id = :id');
+        $stmt->execute(['id' => $itemId, 'received_quantity' => $receivedQuantity]);
     }
 
     public function deleteById(int $itemId): void

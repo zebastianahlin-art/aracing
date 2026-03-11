@@ -932,3 +932,42 @@ Lokal testning:
 6. Försök lägga till en femte produkt och verifiera tydligt felmeddelande.
 7. Ta bort en produkt från `/compare` och verifiera att tabellen uppdateras.
 8. Markera en jämförd produkt som inaktiv eller sökdold i admin och verifiera att den inte längre visas i `/compare`.
+
+## Inbound receiving / stock receipt v1
+
+Databas:
+- kör även `database/migrations/034_inbound_receiving_stock_receipt_v1.sql`
+
+Admin:
+- `/admin/purchase-order-drafts` visar nu både utkaststatus och mottagningsstatus
+- filter finns för `receiving_status` (`not_received`, `partially_received`, `received`, `cancelled`)
+- draftdetaljen visar per rad: beställt, mottaget, kvar och radstatus
+- inleverans registreras på exporterade utkast via formulär på draftdetaljen
+
+Receiving-flöde i v1:
+1. Skapa inköpsutkast från restock-behov.
+2. Markera utkastet som exporterat.
+3. Öppna utkastet och ange mottaget antal per rad (0 tillåtet för rader som inte levererats ännu).
+4. Spara inleveransen.
+
+Vad systemet gör:
+- validerar att mottagna kvantiteter är heltal >= 0
+- blockerar övermottagning mot beställt antal
+- uppdaterar `received_quantity` och `last_received_at` på draft-rader
+- uppdaterar draftens `receiving_status` och vid full mottagning även `received_at`
+- skapar central lageruppdatering i `products.stock_quantity`
+- loggar lagerrörelse i `inventory_stock_movements` med `movement_type = purchase_receipt`
+- sparar mottagningshändelser i `purchase_order_receipts` + `purchase_order_receipt_items`
+
+Lokal manuell test:
+1. Kör migrationer inkl. `034_inbound_receiving_stock_receipt_v1.sql`.
+2. Skapa ett inköpsutkast med minst en rad som har produktkoppling.
+3. Markera utkastet som exporterat.
+4. Registrera en delmottagning och verifiera:
+   - draft får `receiving_status = partially_received`
+   - raden får uppdaterad `received_quantity`
+   - lagersaldo ökar
+   - `inventory_stock_movements` får en `purchase_receipt`.
+5. Registrera återstående kvantitet och verifiera:
+   - draft får `receiving_status = received`
+   - `received_at` sätts.

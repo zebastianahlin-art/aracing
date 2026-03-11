@@ -76,9 +76,11 @@ use App\Modules\Purchasing\Repositories\PurchaseListItemRepository;
 use App\Modules\Purchasing\Repositories\PurchaseListRepository;
 use App\Modules\Purchasing\Repositories\PurchaseOrderDraftItemRepository;
 use App\Modules\Purchasing\Repositories\PurchaseOrderDraftRepository;
+use App\Modules\Purchasing\Repositories\PurchaseOrderReceiptRepository;
 use App\Modules\Purchasing\Repositories\RefillNeedRepository;
 use App\Modules\Purchasing\Repositories\RestockFlagRepository;
 use App\Modules\Purchasing\Services\PurchaseOrderDraftService;
+use App\Modules\Purchasing\Services\PurchaseReceivingService;
 use App\Modules\Purchasing\Services\PurchasingService;
 use App\Modules\Storefront\Controllers\StorefrontController;
 use App\Modules\StockAlert\Controllers\StockAlertController;
@@ -233,7 +235,16 @@ $purchaseOrderDraftService = new PurchaseOrderDraftService(
     $app['pdo'],
     new RefillNeedRepository($app['pdo']),
     new PurchaseOrderDraftRepository($app['pdo']),
-    new PurchaseOrderDraftItemRepository($app['pdo'])
+    new PurchaseOrderDraftItemRepository($app['pdo']),
+    new PurchaseOrderReceiptRepository($app['pdo'])
+);
+$purchaseReceivingService = new PurchaseReceivingService(
+    $app['pdo'],
+    new PurchaseOrderDraftRepository($app['pdo']),
+    new PurchaseOrderDraftItemRepository($app['pdo']),
+    new PurchaseOrderReceiptRepository($app['pdo']),
+    new InventoryRepository($app['pdo']),
+    new StockMovementRepository($app['pdo'])
 );
 
 $seoService = new SeoService();
@@ -273,7 +284,7 @@ $supportCaseService = new SupportCaseService(
 $supportCaseStorefront = new SupportCaseStorefrontController($app['view'], $supportCaseService, $authService, $cmsPageService);
 $supportCaseAdmin = new SupportCaseAdminController($app['view'], $supportCaseService);
 $orderAdmin = new OrderAdminController($app['view'], $orderService, $paymentEventRepository, $returnRequestService, $supportCaseService);
-$purchasingAdmin = new PurchasingAdminController($app['view'], $purchasingService, $purchaseOrderDraftService);
+$purchasingAdmin = new PurchasingAdminController($app['view'], $purchasingService, $purchaseOrderDraftService, $purchaseReceivingService);
 $cmsPageAdmin = new CmsPageAdminController($app['view'], $cmsPageService);
 $homepageAdmin = new HomepageAdminController($app['view'], $homepageService);
 $shippingMethodAdmin = new ShippingMethodAdminController($app['view'], $shippingService);
@@ -426,6 +437,7 @@ $app['router']->post('/admin/purchase-order-drafts/{id}/update', [$purchasingAdm
 $app['router']->post('/admin/purchase-order-drafts/{id}/items/{itemId}/quantity', [$purchasingAdmin, 'updateDraftItemQuantity']);
 $app['router']->post('/admin/purchase-order-drafts/{id}/items/{itemId}/delete', [$purchasingAdmin, 'removeDraftItem']);
 $app['router']->post('/admin/purchase-order-drafts/{id}/export', [$purchasingAdmin, 'markDraftExported']);
+$app['router']->post('/admin/purchase-order-drafts/{id}/receive', [$purchasingAdmin, 'receiveDraft']);
 $app['router']->post('/admin/purchase-order-drafts/{id}/cancel', [$purchasingAdmin, 'cancelDraft']);
 
 

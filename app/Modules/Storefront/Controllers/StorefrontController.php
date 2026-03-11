@@ -15,6 +15,7 @@ use App\Modules\Storefront\Services\SeoService;
 use App\Modules\StockAlert\Services\StockAlertService;
 use App\Modules\Wishlist\Services\WishlistService;
 use App\Modules\Compare\Services\CompareService;
+use App\Modules\Fitment\Services\FitmentService;
 
 final class StorefrontController
 {
@@ -28,7 +29,8 @@ final class StorefrontController
         private readonly WishlistService $wishlists,
         private readonly StockAlertService $stockAlerts,
         private readonly RecentViewedService $recentViewed,
-        private readonly CompareService $compare
+        private readonly CompareService $compare,
+        private readonly FitmentService $fitment
     ) {
     }
 
@@ -39,25 +41,31 @@ final class StorefrontController
             'recentlyViewedProducts' => $this->recentViewed->recentlyViewedProducts(6),
             'infoPages' => $this->pages->storefrontInfoPages(),
             'seo' => $this->seo->forStaticPage('Start', '/'),
+            'fitment' => $this->fitment->selectorData(),
+            'fitmentNotice' => trim((string) ($_GET['fitment_notice'] ?? '')),
         ]));
     }
 
     public function category(string $slug): Response
     {
-        $payload = $this->catalog->categoryPage($slug, $_GET);
+        $payload = $this->catalog->categoryPage($slug, $this->fitment->catalogQueryWithFitment($_GET));
         $payload['infoPages'] = $this->pages->storefrontInfoPages();
 
         $secondaryFilters = $this->hasSecondaryCategoryFilters($_GET);
         $payload['seo'] = $this->seo->forCategory($payload['category'], '/category/' . rawurlencode($slug), $secondaryFilters);
+        $payload['fitment'] = $this->fitment->selectorData();
+        $payload['fitmentNotice'] = trim((string) ($_GET['fitment_notice'] ?? ''));
 
         return new Response($this->views->render('storefront.category', $payload));
     }
 
     public function search(): Response
     {
-        $payload = $this->catalog->searchPage($_GET);
+        $payload = $this->catalog->searchPage($this->fitment->catalogQueryWithFitment($_GET));
         $payload['infoPages'] = $this->pages->storefrontInfoPages();
         $payload['seo'] = $this->seo->forSearch('/search');
+        $payload['fitment'] = $this->fitment->selectorData();
+        $payload['fitmentNotice'] = trim((string) ($_GET['fitment_notice'] ?? ''));
 
         return new Response($this->views->render('storefront.search', $payload));
     }
@@ -114,6 +122,9 @@ final class StorefrontController
             'hasActiveStockAlert' => $hasActiveStockAlert,
             'infoPages' => $this->pages->storefrontInfoPages(),
             'seo' => $this->seo->forProduct($product, '/product/' . rawurlencode($slug)),
+            'fitment' => $this->fitment->selectorData(),
+            'fitmentStatus' => $product !== null ? $this->fitment->productFitmentStatus((int) $product['id']) : null,
+            'fitmentNotice' => trim((string) ($_GET['fitment_notice'] ?? '')),
         ]));
     }
 
@@ -121,6 +132,8 @@ final class StorefrontController
     {
         return new Response($this->views->render('storefront.cart', [
             'infoPages' => $this->pages->storefrontInfoPages(),
+            'fitment' => $this->fitment->selectorData(),
+            'fitmentNotice' => trim((string) ($_GET['fitment_notice'] ?? '')),
         ]));
     }
 
@@ -128,6 +141,8 @@ final class StorefrontController
     {
         return new Response($this->views->render('storefront.checkout', [
             'infoPages' => $this->pages->storefrontInfoPages(),
+            'fitment' => $this->fitment->selectorData(),
+            'fitmentNotice' => trim((string) ($_GET['fitment_notice'] ?? '')),
         ]));
     }
 

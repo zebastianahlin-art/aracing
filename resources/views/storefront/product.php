@@ -31,6 +31,11 @@ ob_start();
     <?php endif; ?>
     <p class="muted">Lagerstatus: <?= htmlspecialchars((string) ($product['storefront_stock_label'] ?? 'Tillfälligt slut'), ENT_QUOTES, 'UTF-8') ?> (<?= (int) ($product['stock_quantity'] ?? 0) ?>)</p>
 
+    <?php if (is_array($fitmentStatus ?? null)): ?>
+      <?php $fitmentClass = ($fitmentStatus['code'] ?? '') === 'confirmed' ? 'ok' : (($fitmentStatus['code'] ?? '') === 'unknown' ? 'bad' : ''); ?>
+      <p><span class="pill <?= htmlspecialchars($fitmentClass, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) ($fitmentStatus['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span></p>
+    <?php endif; ?>
+
     <?php
       $summary = is_array($reviewSummary ?? null) ? $reviewSummary : ['review_count' => 0, 'average_rating' => 0];
       $reviewCount = (int) ($summary['review_count'] ?? 0);

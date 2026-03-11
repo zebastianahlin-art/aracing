@@ -18,6 +18,13 @@ use App\Modules\Category\Controllers\CategoryAdminController;
 use App\Modules\Category\Repositories\CategoryRepository;
 use App\Modules\Category\Services\CategoryService;
 use App\Modules\Discount\Controllers\DiscountCodeAdminController;
+use App\Modules\Fitment\Controllers\FitmentSelectionController;
+use App\Modules\Fitment\Controllers\VehicleAdminController;
+use App\Modules\Fitment\Repositories\ProductFitmentRepository;
+use App\Modules\Fitment\Repositories\VehicleRepository;
+use App\Modules\Fitment\Services\FitmentService;
+use App\Modules\Fitment\Services\ProductFitmentService;
+use App\Modules\Fitment\Services\VehicleService;
 use App\Modules\Discount\Repositories\DiscountCodeRepository;
 use App\Modules\Discount\Services\DiscountService;
 use App\Modules\Checkout\Controllers\CheckoutController;
@@ -167,6 +174,9 @@ $productMediaService = new ProductMediaService(
     new ProductImageRepository($app['pdo']),
     new ProductImageStorageService()
 );
+$vehicleRepository = new VehicleRepository($app['pdo']);
+$productFitmentService = new ProductFitmentService(new ProductFitmentRepository($app['pdo']), $vehicleRepository, new ProductRepository($app['pdo']));
+$fitmentService = new FitmentService($vehicleRepository, new ProductFitmentRepository($app['pdo']));
 $catalogRepository = new CatalogRepository($app['pdo']);
 $productRecommendationService = new ProductRecommendationService(
     $productRelationService,
@@ -257,7 +267,7 @@ $robotsService = new RobotsService();
 $sitemapController = new SitemapController($sitemapService, $robotsService);
 $recentViewedService = new RecentViewedService($catalogRepository, $inventoryService);
 $compareService = new CompareService($catalogRepository, $inventoryService);
-$storefront = new StorefrontController($app['view'], $catalogService, $cmsPageService, $authService, $productReviewService, $seoService, $wishlistService, $stockAlertService, $recentViewedService, $compareService);
+$storefront = new StorefrontController($app['view'], $catalogService, $cmsPageService, $authService, $productReviewService, $seoService, $wishlistService, $stockAlertService, $recentViewedService, $compareService, $fitmentService);
 $cmsStorefront = new CmsStorefrontController($app['view'], $homepageService, $cmsPageService, $seoService);
 $cartController = new CartController($app['view'], $cartService, $cmsPageService);
 $checkoutController = new CheckoutController($app['view'], $cartService, new CheckoutService(), $orderService, $shippingService, $checkoutTotalsService, $cmsPageService, $paymentService, $authService);
@@ -265,7 +275,7 @@ $admin = new AdminController($app['view']);
 $brandAdmin = new BrandAdminController($app['view'], $brandService);
 $categoryAdmin = new CategoryAdminController($app['view'], $categoryService);
 $redirectAdmin = new RedirectAdminController($app['view'], $redirectService);
-$productAdmin = new ProductAdminController($app['view'], $productService, $productMediaService, $productRelationService, $brandService, $categoryService, $supplierService, $productSupplierLinkService);
+$productAdmin = new ProductAdminController($app['view'], $productService, $productMediaService, $productRelationService, $brandService, $categoryService, $supplierService, $productSupplierLinkService, $productFitmentService);
 $supplierAdmin = new SupplierAdminController($app['view'], $supplierService);
 $importProfileAdmin = new ImportProfileAdminController($app['view'], $importProfileService, $supplierService);
 $importRunAdmin = new ImportRunAdminController($app['view'], $importRunService, $importProfileService, $csvImportService);
@@ -298,12 +308,16 @@ $returnRequestCustomerController = new ReturnRequestCustomerController($app['vie
 $returnRequestAdmin = new ReturnRequestAdminController($app['view'], $returnRequestService);
 $productReviewStorefront = new ProductReviewStorefrontController($authService, $catalogService, $productReviewService);
 $productReviewAdmin = new ProductReviewAdminController($app['view'], $productReviewService);
+$vehicleAdmin = new VehicleAdminController($app['view'], new VehicleService($vehicleRepository));
+$fitmentSelectionController = new FitmentSelectionController($fitmentService);
 
 $app['router']->get('/', [$cmsStorefront, 'home']);
 $app['router']->get('/category/{slug}', [$storefront, 'category']);
 $app['router']->get('/product/{slug}', [$storefront, 'product']);
 $app['router']->post('/product/{slug}/reviews', [$productReviewStorefront, 'store']);
 $app['router']->post('/product/{slug}/stock-alerts', [$stockAlertController, 'subscribe']);
+$app['router']->post('/fitment/select', [$fitmentSelectionController, 'select']);
+$app['router']->post('/fitment/clear', [$fitmentSelectionController, 'clear']);
 $app['router']->get('/search', [$storefront, 'search']);
 $app['router']->get('/compare', [$compareController, 'index']);
 $app['router']->post('/compare/add', [$compareController, 'add']);
@@ -373,6 +387,11 @@ $app['router']->post('/admin/categories', [$categoryAdmin, 'store']);
 $app['router']->get('/admin/categories/{id}/edit', [$categoryAdmin, 'editForm']);
 $app['router']->post('/admin/categories/{id}', [$categoryAdmin, 'update']);
 
+$app['router']->get('/admin/vehicles', [$vehicleAdmin, 'index']);
+$app['router']->get('/admin/vehicles/create', [$vehicleAdmin, 'createForm']);
+$app['router']->post('/admin/vehicles', [$vehicleAdmin, 'store']);
+$app['router']->get('/admin/vehicles/{id}/edit', [$vehicleAdmin, 'editForm']);
+$app['router']->post('/admin/vehicles/{id}', [$vehicleAdmin, 'update']);
 $app['router']->get('/admin/products', [$productAdmin, 'index']);
 $app['router']->post('/admin/products/operations', [$productAdmin, 'runBulkAction']);
 $app['router']->post('/admin/products/{id}/operations', [$productAdmin, 'runProductAction']);
@@ -388,6 +407,8 @@ $app['router']->post('/admin/products/{id}/images/{imageId}/delete', [$productAd
 $app['router']->post('/admin/products/{id}/relations', [$productAdmin, 'createRelation']);
 $app['router']->post('/admin/products/{id}/relations/{relationId}/update', [$productAdmin, 'updateRelation']);
 $app['router']->post('/admin/products/{id}/relations/{relationId}/delete', [$productAdmin, 'deleteRelation']);
+$app['router']->post('/admin/products/{id}/fitments', [$productAdmin, 'createFitment']);
+$app['router']->post('/admin/products/{id}/fitments/{fitmentId}/delete', [$productAdmin, 'deleteFitment']);
 
 $app['router']->get('/admin/reviews', [$productReviewAdmin, 'index']);
 $app['router']->get('/admin/reviews/{id}', [$productReviewAdmin, 'show']);

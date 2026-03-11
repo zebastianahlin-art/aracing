@@ -342,6 +342,18 @@ final class CatalogRepository
             $params['search_term'] = '%' . (string) $filters['q'] . '%';
         }
 
+        if (!isset($ignored['fitment_only'])
+            && (($filters['fitment_only'] ?? '0') === '1')
+            && (int) ($filters['fitment_vehicle_id'] ?? 0) > 0) {
+            $where[] = "EXISTS (
+                SELECT 1
+                FROM product_fitments pf
+                WHERE pf.product_id = p.id
+                  AND ((pf.vehicle_id = :fitment_vehicle_id AND pf.fitment_type = 'confirmed') OR pf.fitment_type = 'universal')
+            )";
+            $params['fitment_vehicle_id'] = (int) $filters['fitment_vehicle_id'];
+        }
+
         return $where;
     }
 

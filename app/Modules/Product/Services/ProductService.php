@@ -54,6 +54,14 @@ final class ProductService
         return $this->products->searchForSupplierMatch($query);
     }
 
+    /** @return array<int, array<string, mixed>> */
+    public function searchForRelationSelection(string $query, int $excludeProductId): array
+    {
+        $rows = $this->products->searchForSupplierMatch($query);
+
+        return array_values(array_filter($rows, static fn (array $row): bool => (int) $row['id'] !== $excludeProductId));
+    }
+
     /** @return array{supplier_item: array<string,mixed>, product_defaults: array<string,mixed>, source_data_gaps: array<int,string>, product_data_gaps: array<int,string>}|null */
     public function prefillDraftFromSupplierItem(int $supplierItemId): ?array
     {

@@ -718,3 +718,36 @@ Lokal testning:
 3. Verifiera att kunden ser meddelandet "inväntar granskning".
 4. Öppna admin `/admin/reviews`, godkänn recensionen.
 5. Gå tillbaka till produktsidan och verifiera att recension samt uppdaterat snittbetyg visas.
+
+## Related products / cross-sell v1
+
+Databas:
+- kör även `database/migrations/027_related_products_cross_sell_v1.sql`
+
+Relationstyper i v1:
+- `related`
+- `cross_sell`
+
+Admin:
+- hanteras i produktens editvy (`/admin/products/{id}/edit`) i sektionen `Relaterade produkter / cross-sell`
+- admin kan lägga till koppling genom att välja produkt, relationstyp, sortering och aktiv/inaktiv
+- admin kan uppdatera relationstyp/sortering/aktiv-status eller ta bort koppling
+
+Storefront:
+- produktsidan visar `Relaterade produkter` och `Passar bra med`
+- manuella kopplingar prioriteras
+- fallback används för att fylla ut upp till rimligt antal när manuella kopplingar saknas
+
+Fallbacklogik i v1:
+- exkluderar aktuell produkt
+- använder endast publika/synliga produkter (`is_active = 1`, `is_search_hidden = 0`)
+- prioriterar först samma kategori + brand
+- fyller vid behov med samma kategori
+- använder enkel, stabil sortering med befintliga signals (`stock_status`, `sort_priority`, `is_featured`, `search_boost`, `updated_at`)
+
+Lokal testning:
+1. Kör migration `027_related_products_cross_sell_v1.sql`.
+2. Öppna en produkt i admin och lägg till minst en `related` och en `cross_sell`.
+3. Verifiera på produktsidan att sektionerna visas och att produkter är klickbara.
+4. Inaktivera eller ta bort manuella kopplingar och verifiera att fallback visas.
+5. Markera en relaterad produkt som inaktiv eller sökdold och verifiera att den inte visas i storefront.

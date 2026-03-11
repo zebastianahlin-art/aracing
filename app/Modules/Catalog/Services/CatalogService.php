@@ -9,8 +9,11 @@ use App\Modules\Catalog\Repositories\CatalogRepository;
 
 final class CatalogService
 {
-    public function __construct(private readonly CatalogRepository $catalog, private readonly InventoryService $inventory)
-    {
+    public function __construct(
+        private readonly CatalogRepository $catalog,
+        private readonly InventoryService $inventory,
+        private readonly ProductRecommendationService $recommendations
+    ) {
     }
 
     /** @return array<int, array<string, mixed>> */
@@ -74,6 +77,8 @@ final class CatalogService
         $product['attributes'] = $this->catalog->productAttributes((int) $product['id']);
         $product['images'] = $this->catalog->productImages((int) $product['id']);
         $product = $this->decorateProduct($product);
+        $product['related_products'] = $this->recommendations->relatedProducts($product, 6);
+        $product['cross_sell_products'] = $this->recommendations->crossSellProducts($product, 4);
 
         return $product;
     }

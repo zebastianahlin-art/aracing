@@ -13,6 +13,7 @@ use App\Modules\Cart\Repositories\CartRepository;
 use App\Modules\Cart\Services\CartService;
 use App\Modules\Catalog\Repositories\CatalogRepository;
 use App\Modules\Catalog\Services\CatalogService;
+use App\Modules\Catalog\Services\ProductRecommendationService;
 use App\Modules\Category\Controllers\CategoryAdminController;
 use App\Modules\Category\Repositories\CategoryRepository;
 use App\Modules\Category\Services\CategoryService;
@@ -62,12 +63,14 @@ use App\Modules\Payment\Services\PaymentService;
 use App\Modules\Product\Controllers\ProductAdminController;
 use App\Modules\Product\Repositories\ProductAttributeRepository;
 use App\Modules\Product\Repositories\ProductImageRepository;
+use App\Modules\Product\Repositories\ProductRelationRepository;
 use App\Modules\Product\Repositories\ProductRepository;
 use App\Modules\Product\Repositories\ProductSupplierItemLookupRepository;
 use App\Modules\Product\Repositories\ProductSupplierLinkRepository;
 use App\Modules\Product\Services\ProductService;
 use App\Modules\Product\Services\ProductMediaService;
 use App\Modules\Product\Services\ProductImageStorageService;
+use App\Modules\Product\Services\ProductRelationService;
 use App\Modules\Product\Services\ProductSupplierLinkService;
 use App\Modules\Purchasing\Controllers\PurchasingAdminController;
 use App\Modules\Purchasing\Repositories\PurchaseListItemRepository;
@@ -131,12 +134,22 @@ $productService = new ProductService(
     $inventoryService,
     $redirectService
 );
+$productRelationService = new ProductRelationService(
+    new ProductRelationRepository($app['pdo']),
+    new ProductRepository($app['pdo'])
+);
 $productMediaService = new ProductMediaService(
     new ProductRepository($app['pdo']),
     new ProductImageRepository($app['pdo']),
     new ProductImageStorageService()
 );
-$catalogService = new CatalogService(new CatalogRepository($app['pdo']), $inventoryService);
+$catalogRepository = new CatalogRepository($app['pdo']);
+$productRecommendationService = new ProductRecommendationService(
+    $productRelationService,
+    $catalogRepository,
+    $inventoryService
+);
+$catalogService = new CatalogService($catalogRepository, $inventoryService, $productRecommendationService);
 $shippingService = new ShippingService(new ShippingMethodRepository($app['pdo']));
 $checkoutTotalsService = new CheckoutTotalsService();
 $discountService = new DiscountService(new DiscountCodeRepository($app['pdo']));
@@ -208,7 +221,7 @@ $admin = new AdminController($app['view']);
 $brandAdmin = new BrandAdminController($app['view'], $brandService);
 $categoryAdmin = new CategoryAdminController($app['view'], $categoryService);
 $redirectAdmin = new RedirectAdminController($app['view'], $redirectService);
-$productAdmin = new ProductAdminController($app['view'], $productService, $productMediaService, $brandService, $categoryService, $supplierService, $productSupplierLinkService);
+$productAdmin = new ProductAdminController($app['view'], $productService, $productMediaService, $productRelationService, $brandService, $categoryService, $supplierService, $productSupplierLinkService);
 $supplierAdmin = new SupplierAdminController($app['view'], $supplierService);
 $importProfileAdmin = new ImportProfileAdminController($app['view'], $importProfileService, $supplierService);
 $importRunAdmin = new ImportRunAdminController($app['view'], $importRunService, $importProfileService, $csvImportService);
@@ -316,6 +329,9 @@ $app['router']->post('/admin/products/{id}/images/upload', [$productAdmin, 'uplo
 $app['router']->post('/admin/products/{id}/images/{imageId}/update', [$productAdmin, 'updateImage']);
 $app['router']->post('/admin/products/{id}/images/{imageId}/primary', [$productAdmin, 'setPrimaryImage']);
 $app['router']->post('/admin/products/{id}/images/{imageId}/delete', [$productAdmin, 'deleteImage']);
+$app['router']->post('/admin/products/{id}/relations', [$productAdmin, 'createRelation']);
+$app['router']->post('/admin/products/{id}/relations/{relationId}/update', [$productAdmin, 'updateRelation']);
+$app['router']->post('/admin/products/{id}/relations/{relationId}/delete', [$productAdmin, 'deleteRelation']);
 
 $app['router']->get('/admin/reviews', [$productReviewAdmin, 'index']);
 $app['router']->get('/admin/reviews/{id}', [$productReviewAdmin, 'show']);

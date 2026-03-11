@@ -208,8 +208,15 @@ final class ProductService
         }
 
         $newQuantity = $stock !== null ? max(0, (int) $stock) : 0;
+        $wasPurchasable = $this->inventory->isPurchasable($current);
+
         $this->products->updateStockQuantity($productId, $newQuantity);
         $this->inventory->logStockSync($productId, (int) ($current['stock_quantity'] ?? 0), $newQuantity, 'Synk från supplier snapshot.');
+
+        $updated = $this->products->findById($productId);
+        if ($updated !== null) {
+            $this->inventory->notifyWhenProductBecomesPurchasable($productId, $wasPurchasable, $this->inventory->isPurchasable($updated));
+        }
     }
 
     public function refreshPublishedStockStatusFromQuantity(int $productId): void
@@ -220,7 +227,14 @@ final class ProductService
         }
 
         $status = $this->deriveStockStatusFromQuantity($product['stock_quantity']);
+        $wasPurchasable = $this->inventory->isPurchasable($product);
+
         $this->products->updateStockStatus($productId, $status);
+
+        $updated = $this->products->findById($productId);
+        if ($updated !== null) {
+            $this->inventory->notifyWhenProductBecomesPurchasable($productId, $wasPurchasable, $this->inventory->isPurchasable($updated));
+        }
     }
 
     public function setActiveStatus(int $productId, bool $active): void

@@ -11,6 +11,7 @@ use App\Modules\Cms\Services\CmsPageService;
 use App\Modules\Customer\Services\AuthService;
 use App\Modules\Review\Services\ProductReviewService;
 use App\Modules\Storefront\Services\SeoService;
+use App\Modules\StockAlert\Services\StockAlertService;
 use App\Modules\Wishlist\Services\WishlistService;
 
 final class StorefrontController
@@ -22,7 +23,8 @@ final class StorefrontController
         private readonly AuthService $auth,
         private readonly ProductReviewService $reviews,
         private readonly SeoService $seo,
-        private readonly WishlistService $wishlists
+        private readonly WishlistService $wishlists,
+        private readonly StockAlertService $stockAlerts
     ) {
     }
 
@@ -72,6 +74,12 @@ final class StorefrontController
             $isWishlisted = $this->wishlists->isSaved((int) $customer['id'], (int) $product['id']);
         }
 
+        $stockAlertPrefill = $customer !== null ? (string) ($customer['email'] ?? '') : '';
+        $hasActiveStockAlert = false;
+        if ($product !== null && (bool) ($product['is_purchasable'] ?? false) === false && $stockAlertPrefill !== '') {
+            $hasActiveStockAlert = $this->stockAlerts->hasActiveSubscription((int) $product['id'], $stockAlertPrefill);
+        }
+
         return new Response($this->views->render('storefront.product', [
             'product' => $product,
             'reviewSummary' => $summary,
@@ -82,6 +90,11 @@ final class StorefrontController
             'wishlistError' => trim((string) ($_GET['error'] ?? '')),
             'reviewMessage' => trim((string) ($_GET['review_message'] ?? '')),
             'reviewError' => trim((string) ($_GET['review_error'] ?? '')),
+            'stockAlertMessage' => trim((string) ($_GET['stock_alert_message'] ?? '')),
+            'stockAlertNotice' => trim((string) ($_GET['stock_alert_notice'] ?? '')),
+            'stockAlertError' => trim((string) ($_GET['stock_alert_error'] ?? '')),
+            'stockAlertEmailPrefill' => $stockAlertPrefill,
+            'hasActiveStockAlert' => $hasActiveStockAlert,
             'infoPages' => $this->pages->storefrontInfoPages(),
             'seo' => $this->seo->forProduct($product, '/product/' . rawurlencode($slug)),
         ]));

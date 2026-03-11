@@ -6,6 +6,7 @@ namespace App\Modules\Inventory\Services;
 
 use App\Modules\Inventory\Repositories\InventoryRepository;
 use App\Modules\Inventory\Repositories\StockMovementRepository;
+use App\Modules\StockAlert\Services\StockAlertService;
 use InvalidArgumentException;
 use RuntimeException;
 
@@ -15,7 +16,8 @@ final class InventoryService
 
     public function __construct(
         private readonly InventoryRepository $inventory,
-        private readonly StockMovementRepository $movements
+        private readonly StockMovementRepository $movements,
+        private readonly ?StockAlertService $stockAlerts = null
     ) {
     }
 
@@ -94,6 +96,7 @@ final class InventoryService
         }
 
         $normalizedStatus = $this->normalizeStockStatus($stockStatus);
+        $wasPurchasable = $this->isPurchasable($current);
         $previousQuantity = max(0, (int) $current['stock_quantity']);
         $delta = $newQuantity - $previousQuantity;
 
@@ -113,6 +116,11 @@ final class InventoryService
                 'created_by_user_id' => null,
             ]);
             $this->inventory->commit();
+
+            $updated = $this->inventory->findProductInventory($productId);
+            if ($updated !== null) {
+                $this->notifyWhenProductBecomesPurchasable($productId, $wasPurchasable, $this->isPurchasable($updated));
+            }
         } catch (\Throwable $exception) {
             $this->inventory->rollBack();
             throw $exception;
@@ -131,6 +139,7 @@ final class InventoryService
 
         $previousQuantity = max(0, (int) $current['stock_quantity']);
         $newQuantity = $previousQuantity + $delta;
+        $wasPurchasable = $this->isPurchasable($current);
 
         if ($newQuantity < 0) {
             throw new InvalidArgumentException('Justering ger negativt lagersaldo.');
@@ -157,6 +166,11 @@ final class InventoryService
                 'created_by_user_id' => null,
             ]);
             $this->inventory->commit();
+
+            $updated = $this->inventory->findProductInventory($productId);
+            if ($updated !== null) {
+                $this->notifyWhenProductBecomesPurchasable($productId, $wasPurchasable, $this->isPurchasable($updated));
+            }
         } catch (\Throwable $exception) {
             $this->inventory->rollBack();
             throw $exception;
@@ -182,5 +196,16 @@ final class InventoryService
     public function stockMovementsForProduct(int $productId, int $limit = 25): array
     {
         return $this->movements->listForProduct($productId, $limit);
+    }
+
+    public function notifyWhenProductBecomesPurchasable(int $productId, bool $wasPurchasable, bool $isPurchasable): void
+    {
+        if ($this->stockAlerts === null || $productId <= 0) {
+            return;
+        }
+
+        if ($wasPurchasable === false && $isPurchasable === true) {
+            $this->stockAlerts->triggerNotificationsForProduct($productId, true);
+        }
     }
 }

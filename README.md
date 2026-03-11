@@ -780,3 +780,37 @@ Lokal testning:
 4. Öppna `/account/wishlist` och verifiera att produkten visas.
 5. Klicka `Ta bort från sparade` i produktsida eller wishlist-sida och verifiera att produkten försvinner.
 6. Markera en sparad produkt som inaktiv eller sökdold i admin och verifiera att den inte längre visas i `/account/wishlist`.
+
+## Stock alerts / back-in-stock v1
+
+Databas:
+- kör även `database/migrations/029_stock_alerts_back_in_stock_v1.sql`
+
+Storefront:
+- produktsida visar nu "Bevaka produkt" när en produkt inte är köpbar
+- både gäst och inloggad kund kan registrera e-post för bevakning
+- inloggad kund får e-post förifylld
+- aktiv dubblett för samma `product + email` stoppas centralt
+
+Notifiering:
+- när produkt går från ej köpbar till köpbar triggas utskick via befintligt transactional email-lager
+- utskick loggas i `email_messages` med `related_type=stock_alert_subscription` och `email_type=stock_alert_back_in_stock`
+- subscription markeras `notified` först efter lyckat utskick
+- misslyckat mail lämnar subscription som `active` för senare försök
+
+Statusar:
+- `active` = bevakning väntar på att produkt blir köpbar
+- `notified` = notifieringsmail skickat
+- `unsubscribed` = avslutad av kund
+
+Mina sidor:
+- `/account/stock-alerts` visar kundens bevakningar och status
+- aktiv bevakning kan avslutas manuellt
+
+Lokal testning (manuell):
+1. Sätt en produkt till ej köpbar (t.ex. `out_of_stock` eller `stock_quantity=0`).
+2. Öppna produktsidan och skapa bevakning med e-post.
+3. Verifiera att ny rad finns i `stock_alert_subscriptions` med `status=active`.
+4. Ändra lagret så produkten blir köpbar igen via adminflödet.
+5. Verifiera att mailrad skapas i `email_messages` och att subscription går till `notified` vid lyckat utskick.
+6. Testa att samma subscription inte skickas igen utan ny/återaktiverad bevakning.

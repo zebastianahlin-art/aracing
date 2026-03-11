@@ -48,6 +48,19 @@ ob_start();
       </form>
     <?php else: ?>
       <p class="muted">Produkten kan inte köpas just nu (saknar pris eller är slut i lager).</p>
+      <?php if (($stockAlertMessage ?? '') !== ''): ?><p class="ok-msg"><?= htmlspecialchars((string) $stockAlertMessage, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
+      <?php if (($stockAlertNotice ?? '') !== ''): ?><p class="muted"><?= htmlspecialchars((string) $stockAlertNotice, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
+      <?php if (($stockAlertError ?? '') !== ''): ?><p class="err-msg"><?= htmlspecialchars((string) $stockAlertError, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
+
+      <?php if (($hasActiveStockAlert ?? false) === true): ?>
+        <p class="muted">Du har redan en aktiv bevakning för denna produkt.</p>
+      <?php else: ?>
+        <form method="post" action="/product/<?= rawurlencode((string) $product['slug']) ?>/stock-alerts" class="inline-form">
+          <label for="stock-alert-email">Meddela mig när den finns i lager</label>
+          <input id="stock-alert-email" type="email" name="email" required value="<?= htmlspecialchars((string) ($stockAlertEmailPrefill ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="din@epost.se" style="min-width:240px;">
+          <button type="submit" class="btn-secondary">Bevaka produkt</button>
+        </form>
+      <?php endif; ?>
     <?php endif; ?>
 
     <?php if (($wishlistMessage ?? '') !== ''): ?><p class="ok-msg"><?= htmlspecialchars((string) $wishlistMessage, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>

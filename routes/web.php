@@ -78,6 +78,10 @@ use App\Modules\Purchasing\Repositories\PurchaseListRepository;
 use App\Modules\Purchasing\Repositories\RefillNeedRepository;
 use App\Modules\Purchasing\Services\PurchasingService;
 use App\Modules\Storefront\Controllers\StorefrontController;
+use App\Modules\StockAlert\Controllers\StockAlertController;
+use App\Modules\StockAlert\Repositories\StockAlertRepository;
+use App\Modules\StockAlert\Services\StockAlertNotificationService;
+use App\Modules\StockAlert\Services\StockAlertService;
 use App\Modules\Storefront\Controllers\SitemapController;
 use App\Modules\Storefront\Services\RobotsService;
 use App\Modules\Storefront\Services\SitemapService;
@@ -118,9 +122,16 @@ $brandService = new BrandService(new BrandRepository($app['pdo']));
 $redirectService = new RedirectService(new RedirectRepository($app['pdo']));
 $categoryService = new CategoryService(new CategoryRepository($app['pdo']), $redirectService);
 $supplierItemRepository = new SupplierItemRepository($app['pdo']);
+$emailMessageRepository = new EmailMessageRepository($app['pdo']);
+$stockAlertService = new StockAlertService(
+    new StockAlertRepository($app['pdo']),
+    new ProductRepository($app['pdo']),
+    new StockAlertNotificationService($emailMessageRepository, new TransactionalEmailSender(), $app['view'])
+);
 $inventoryService = new InventoryService(
     new InventoryRepository($app['pdo']),
-    new StockMovementRepository($app['pdo'])
+    new StockMovementRepository($app['pdo']),
+    $stockAlertService
 );
 
 $productSupplierLinkService = new ProductSupplierLinkService(
@@ -169,7 +180,6 @@ $csvImportService = new CsvImportService(
 );
 $cartService = new CartService(new CartRepository($app['pdo']), new CartProductRepository($app['pdo']), $inventoryService, $discountService, $checkoutTotalsService);
 $orderRepository = new OrderRepository($app['pdo']);
-$emailMessageRepository = new EmailMessageRepository($app['pdo']);
 $orderEmailService = new OrderEmailService($orderRepository, $emailMessageRepository, new TransactionalEmailSender(), $app['view']);
 $orderService = new OrderService($orderRepository, $emailMessageRepository, $orderEmailService, $shippingService, $checkoutTotalsService, $discountService);
 $paymentEventRepository = new PaymentEventRepository($app['pdo']);
@@ -218,7 +228,7 @@ $sitemapService = new SitemapService(
 );
 $robotsService = new RobotsService();
 $sitemapController = new SitemapController($sitemapService, $robotsService);
-$storefront = new StorefrontController($app['view'], $catalogService, $cmsPageService, $authService, $productReviewService, $seoService, $wishlistService);
+$storefront = new StorefrontController($app['view'], $catalogService, $cmsPageService, $authService, $productReviewService, $seoService, $wishlistService, $stockAlertService);
 $cmsStorefront = new CmsStorefrontController($app['view'], $cmsHomeService, $cmsPageService, $seoService);
 $cartController = new CartController($app['view'], $cartService, $cmsPageService);
 $checkoutController = new CheckoutController($app['view'], $cartService, new CheckoutService(), $orderService, $shippingService, $checkoutTotalsService, $cmsPageService, $paymentService, $authService);
@@ -253,6 +263,7 @@ $discountCodeAdmin = new DiscountCodeAdminController($app['view'], $discountServ
 $authController = new AuthController($app['view'], $authService, $cmsPageService);
 $customerAccountController = new CustomerAccountController($app['view'], $authService, $customerAccountService, $cmsPageService);
 $wishlistController = new WishlistController($app['view'], $authService, $cmsPageService, $wishlistService);
+$stockAlertController = new StockAlertController($app['view'], $authService, $catalogService, $cmsPageService, $stockAlertService);
 $returnRequestCustomerController = new ReturnRequestCustomerController($app['view'], $authService, $cmsPageService, $returnRequestService);
 $returnRequestAdmin = new ReturnRequestAdminController($app['view'], $returnRequestService);
 $productReviewStorefront = new ProductReviewStorefrontController($authService, $catalogService, $productReviewService);
@@ -262,6 +273,7 @@ $app['router']->get('/', [$cmsStorefront, 'home']);
 $app['router']->get('/category/{slug}', [$storefront, 'category']);
 $app['router']->get('/product/{slug}', [$storefront, 'product']);
 $app['router']->post('/product/{slug}/reviews', [$productReviewStorefront, 'store']);
+$app['router']->post('/product/{slug}/stock-alerts', [$stockAlertController, 'subscribe']);
 $app['router']->get('/search', [$storefront, 'search']);
 $app['router']->get('/robots.txt', [$sitemapController, 'robots']);
 $app['router']->get('/sitemap.xml', [$sitemapController, 'index']);
@@ -294,6 +306,8 @@ $app['router']->post('/logout', [$authController, 'logout']);
 
 $app['router']->get('/account', [$customerAccountController, 'dashboard']);
 $app['router']->get('/account/wishlist', [$wishlistController, 'index']);
+$app['router']->get('/account/stock-alerts', [$stockAlertController, 'accountIndex']);
+$app['router']->post('/account/stock-alerts/{id}/unsubscribe', [$stockAlertController, 'unsubscribe']);
 $app['router']->post('/wishlist/items', [$wishlistController, 'add']);
 $app['router']->post('/wishlist/items/remove', [$wishlistController, 'remove']);
 $app['router']->get('/account/orders', [$customerAccountController, 'orders']);

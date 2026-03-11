@@ -4,7 +4,17 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title><?= htmlspecialchars($title ?? 'A-Racing Storefront', ENT_QUOTES, 'UTF-8') ?></title>
+<?php $seo = is_array($seo ?? null) ? $seo : []; ?>
+  <title><?= htmlspecialchars((string) ($seo['title'] ?? $title ?? 'A-Racing Storefront'), ENT_QUOTES, 'UTF-8') ?></title>
+  <?php if (!empty($seo['description'])): ?>
+    <meta name="description" content="<?= htmlspecialchars((string) $seo['description'], ENT_QUOTES, 'UTF-8') ?>">
+  <?php endif; ?>
+  <?php if (!empty($seo['robots'])): ?>
+    <meta name="robots" content="<?= htmlspecialchars((string) $seo['robots'], ENT_QUOTES, 'UTF-8') ?>">
+  <?php endif; ?>
+  <?php if (!empty($seo['canonical'])): ?>
+    <link rel="canonical" href="<?= htmlspecialchars((string) $seo['canonical'], ENT_QUOTES, 'UTF-8') ?>">
+  <?php endif; ?>
   <style>
     :root { --bg:#0f0f12; --surface:#17171b; --text:#f3f3f4; --muted:#a0a0ab; --accent:#e10600; --line:#23232b; }
     body { margin:0; font-family:Inter,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--text); }

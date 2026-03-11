@@ -15,7 +15,7 @@ final class CmsPageRepository
     /** @return array<int, array<string, mixed>> */
     public function all(): array
     {
-        return $this->pdo->query('SELECT id, title, slug, page_type, is_active, updated_at FROM cms_pages ORDER BY updated_at DESC, id DESC')->fetchAll();
+        return $this->pdo->query('SELECT id, title, slug, page_type, is_active, meta_title, meta_robots, is_indexable, updated_at FROM cms_pages ORDER BY updated_at DESC, id DESC')->fetchAll();
     }
 
     /** @return array<string, mixed>|null */
@@ -69,7 +69,7 @@ final class CmsPageRepository
 
     public function create(array $data): int
     {
-        $stmt = $this->pdo->prepare('INSERT INTO cms_pages (title, slug, page_type, is_active, meta_title, meta_description, content_html, created_at, updated_at) VALUES (:title, :slug, :page_type, :is_active, :meta_title, :meta_description, :content_html, NOW(), NOW())');
+        $stmt = $this->pdo->prepare('INSERT INTO cms_pages (title, slug, page_type, is_active, meta_title, meta_description, canonical_url, meta_robots, is_indexable, content_html, created_at, updated_at) VALUES (:title, :slug, :page_type, :is_active, :meta_title, :meta_description, :canonical_url, :meta_robots, :is_indexable, :content_html, NOW(), NOW())');
         $stmt->execute($data);
 
         return (int) $this->pdo->lastInsertId();
@@ -78,7 +78,7 @@ final class CmsPageRepository
     public function update(int $id, array $data): void
     {
         $data['id'] = $id;
-        $stmt = $this->pdo->prepare('UPDATE cms_pages SET title = :title, slug = :slug, page_type = :page_type, is_active = :is_active, meta_title = :meta_title, meta_description = :meta_description, content_html = :content_html, updated_at = NOW() WHERE id = :id');
+        $stmt = $this->pdo->prepare('UPDATE cms_pages SET title = :title, slug = :slug, page_type = :page_type, is_active = :is_active, meta_title = :meta_title, meta_description = :meta_description, canonical_url = :canonical_url, meta_robots = :meta_robots, is_indexable = :is_indexable, content_html = :content_html, updated_at = NOW() WHERE id = :id');
         $stmt->execute($data);
     }
 }

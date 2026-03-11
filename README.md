@@ -587,3 +587,31 @@ Lokal manuell test:
 3. Verifiera att produkter med `is_search_hidden=1` inte visas på `/search` eller i kategori-listning.
 4. Sök på produktnamn/brand och verifiera att relevansordning påverkas av exact/prefix/partial match samt boost/featured.
 5. Öppna en kategori och verifiera att standardordning känns kuraterad (prioritet/featured) samt att valbar sortering fortfarande fungerar.
+
+## SEO / content scaling v1
+
+Databas:
+- kör även `database/migrations/024_seo_content_scaling_v1.sql`
+
+Detta steg lägger till grundläggande SEO-fält för produkter, kategorier och CMS-sidor:
+- `seo_title` / `meta_title`
+- `seo_description` / `meta_description`
+- `canonical_url`
+- `meta_robots`
+- `is_indexable`
+
+Storefront använder nu central SEO-byggare med fallback-regler:
+- title: explicit SEO-titel -> naturlig sidtitel -> sitenamn
+- description: explicit SEO-beskrivning -> kort sanerad fallback från innehåll -> tom
+- canonical: explicit canonical_url -> sidans normala URL
+- robots: explicit meta_robots -> `noindex,follow` när `is_indexable=0` -> annars `index,follow`
+
+Enkel indexeringsstrategi i v1:
+- produktsidor, kategorisidor och CMS-sidor följer sina SEO-inställningar
+- söksidor renderas med `noindex,follow`
+- kategorisidor med sekundära filterkombinationer renderas med `noindex,follow`
+
+Lokal snabbtest:
+1. Öppna admin för produkt, kategori och CMS-sida och fyll i SEO-fält.
+2. Öppna respektive storefront-sida och verifiera `<title>`, `meta description`, `canonical` och `meta robots` i sidkällan.
+3. Testa en söksida (`/search?q=test`) och en filtrerad kategori, verifiera `noindex,follow`.

@@ -122,7 +122,7 @@ final class ProductAdminController
             'selected_supplier_id' => $selectedSupplierId,
             'supplier_item_query' => $supplierItemQuery,
             'supplier_items' => $this->productSupplierLinks->searchSupplierItems($selectedSupplierId, $supplierItemQuery),
-            'stock_movements' => $this->products->stockMovements((int) $id),
+            'stock_movements' => [],
         ]));
     }
 
@@ -162,7 +162,7 @@ final class ProductAdminController
             'selected_supplier_id' => $selectedSupplierId,
             'supplier_item_query' => $supplierItemQuery,
             'supplier_items' => $this->productSupplierLinks->searchSupplierItems($selectedSupplierId, $supplierItemQuery),
-            'stock_movements' => $this->products->stockMovements((int) $id),
+            'stock_movements' => [],
         ]));
     }
 

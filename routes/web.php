@@ -75,6 +75,7 @@ use App\Modules\Purchasing\Repositories\PurchaseListRepository;
 use App\Modules\Purchasing\Repositories\RefillNeedRepository;
 use App\Modules\Purchasing\Services\PurchasingService;
 use App\Modules\Storefront\Controllers\StorefrontController;
+use App\Modules\Storefront\Services\SeoService;
 use App\Modules\Supplier\Controllers\SupplierAdminController;
 use App\Modules\Supplier\Repositories\SupplierRepository;
 use App\Modules\Supplier\Services\SupplierService;
@@ -174,8 +175,9 @@ $purchasingService = new PurchasingService(
     new PurchaseListItemRepository($app['pdo'])
 );
 
-$storefront = new StorefrontController($app['view'], $catalogService, $cmsPageService);
-$cmsStorefront = new CmsStorefrontController($app['view'], $cmsHomeService, $cmsPageService);
+$seoService = new SeoService();
+$storefront = new StorefrontController($app['view'], $catalogService, $cmsPageService, $seoService);
+$cmsStorefront = new CmsStorefrontController($app['view'], $cmsHomeService, $cmsPageService, $seoService);
 $cartController = new CartController($app['view'], $cartService, $cmsPageService);
 $checkoutController = new CheckoutController($app['view'], $cartService, new CheckoutService(), $orderService, $shippingService, $checkoutTotalsService, $cmsPageService, $paymentService, $authService);
 $admin = new AdminController($app['view']);

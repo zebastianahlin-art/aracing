@@ -121,6 +121,25 @@ ob_start();
     <?php endif; ?>
 
     <label>Beskrivning</label><textarea name="description"><?= htmlspecialchars((string) ($product['description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
+
+
+    <h4>SEO (v1)</h4>
+    <div class="grid">
+      <div><label>SEO-titel</label><input name="seo_title" maxlength="255" value="<?= htmlspecialchars((string) ($product['seo_title'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></div>
+      <div><label>Canonical URL (valfri override)</label><input name="canonical_url" maxlength="255" placeholder="/product/exempel eller https://..." value="<?= htmlspecialchars((string) ($product['canonical_url'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></div>
+      <div>
+        <label>Meta robots override</label>
+        <?php $metaRobots = (string) ($product['meta_robots'] ?? ''); ?>
+        <select name="meta_robots">
+          <option value="">Automatisk</option>
+          <option value="index,follow" <?= $metaRobots === 'index,follow' ? 'selected' : '' ?>>index,follow</option>
+          <option value="noindex,follow" <?= $metaRobots === 'noindex,follow' ? 'selected' : '' ?>>noindex,follow</option>
+        </select>
+      </div>
+      <div><label><input type="checkbox" name="is_indexable" value="1" <?= (int) ($product['is_indexable'] ?? 1) === 1 ? 'checked' : '' ?>> Indexerbar sida</label></div>
+    </div>
+    <label>SEO-beskrivning</label><textarea name="seo_description" maxlength="1000"><?= htmlspecialchars((string) ($product['seo_description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
+
     <label>Attribut (en rad per attribut: key|value)</label><textarea name="attributes"><?= htmlspecialchars($attributesText, ENT_QUOTES, 'UTF-8') ?></textarea>
     <br><button class="btn" type="submit">Spara</button>
   </form>

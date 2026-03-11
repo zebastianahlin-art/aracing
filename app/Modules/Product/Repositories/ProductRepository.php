@@ -28,6 +28,10 @@ final class ProductRepository
                        p.backorder_allowed,
                        p.stock_updated_at,
                        p.is_active,
+                       p.is_search_hidden,
+                       p.is_featured,
+                       p.search_boost,
+                       p.sort_priority,
                        b.name AS brand_name,
                        c.name AS category_name,
                        psl.id AS supplier_link_id,
@@ -75,6 +79,18 @@ final class ProductRepository
         if ($stockStatus !== '') {
             $where[] = 'p.stock_status = :stock_status';
             $params['stock_status'] = $stockStatus;
+        }
+
+        $featured = (string) ($filters['featured'] ?? '');
+        if ($featured === '1' || $featured === '0') {
+            $where[] = 'p.is_featured = :is_featured';
+            $params['is_featured'] = (int) $featured;
+        }
+
+        $hidden = (string) ($filters['hidden'] ?? '');
+        if ($hidden === '1' || $hidden === '0') {
+            $where[] = 'p.is_search_hidden = :is_search_hidden';
+            $params['is_search_hidden'] = (int) $hidden;
         }
 
         $lowStock = (string) ($filters['low_stock'] ?? '');
@@ -157,6 +173,10 @@ final class ProductRepository
                        p.description,
                        p.sale_price,
                        p.is_active,
+                       p.is_search_hidden,
+                       p.is_featured,
+                       p.search_boost,
+                       p.sort_priority,
                        CASE WHEN psl.id IS NULL THEN 0 ELSE 1 END AS has_supplier_link,
                        CASE WHEN pi.id IS NULL THEN 0 ELSE 1 END AS has_image
                 FROM products p
@@ -225,7 +245,7 @@ final class ProductRepository
     /** @return array<string, mixed>|null */
     public function findById(int $id): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT id, brand_id, category_id, name, slug, sku, description, sale_price, currency_code, stock_status, stock_quantity, backorder_allowed, stock_updated_at, is_active FROM products WHERE id = :id');
+        $stmt = $this->pdo->prepare('SELECT id, brand_id, category_id, name, slug, sku, description, sale_price, currency_code, stock_status, stock_quantity, backorder_allowed, stock_updated_at, is_active, is_search_hidden, is_featured, search_boost, sort_priority FROM products WHERE id = :id');
         $stmt->execute(['id' => $id]);
         $row = $stmt->fetch();
 
@@ -248,6 +268,10 @@ final class ProductRepository
                     backorder_allowed,
                     stock_updated_at,
                     is_active,
+                    is_search_hidden,
+                    is_featured,
+                    search_boost,
+                    sort_priority,
                     created_at,
                     updated_at
                 )
@@ -265,6 +289,10 @@ final class ProductRepository
                     :backorder_allowed,
                     :stock_updated_at,
                     :is_active,
+                    :is_search_hidden,
+                    :is_featured,
+                    :search_boost,
+                    :sort_priority,
                     NOW(),
                     NOW()
                 )';
@@ -283,6 +311,10 @@ final class ProductRepository
         $stmt->bindValue('backorder_allowed', $data['backorder_allowed'], PDO::PARAM_INT);
         $stmt->bindValue('stock_updated_at', $data['stock_updated_at']);
         $stmt->bindValue('is_active', $data['is_active'], PDO::PARAM_INT);
+        $stmt->bindValue('is_search_hidden', $data['is_search_hidden'], PDO::PARAM_INT);
+        $stmt->bindValue('is_featured', $data['is_featured'], PDO::PARAM_INT);
+        $stmt->bindValue('search_boost', $data['search_boost'], PDO::PARAM_INT);
+        $stmt->bindValue('sort_priority', $data['sort_priority'], PDO::PARAM_INT);
         $stmt->execute();
 
         return (int) $this->pdo->lastInsertId();
@@ -304,6 +336,10 @@ final class ProductRepository
                     backorder_allowed = :backorder_allowed,
                     stock_updated_at = :stock_updated_at,
                     is_active = :is_active,
+                    is_search_hidden = :is_search_hidden,
+                    is_featured = :is_featured,
+                    search_boost = :search_boost,
+                    sort_priority = :sort_priority,
                     updated_at = NOW()
                 WHERE id = :id';
 
@@ -322,6 +358,10 @@ final class ProductRepository
         $stmt->bindValue('backorder_allowed', $data['backorder_allowed'], PDO::PARAM_INT);
         $stmt->bindValue('stock_updated_at', $data['stock_updated_at']);
         $stmt->bindValue('is_active', $data['is_active'], PDO::PARAM_INT);
+        $stmt->bindValue('is_search_hidden', $data['is_search_hidden'], PDO::PARAM_INT);
+        $stmt->bindValue('is_featured', $data['is_featured'], PDO::PARAM_INT);
+        $stmt->bindValue('search_boost', $data['search_boost'], PDO::PARAM_INT);
+        $stmt->bindValue('sort_priority', $data['sort_priority'], PDO::PARAM_INT);
         $stmt->execute();
     }
 

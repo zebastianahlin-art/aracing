@@ -108,11 +108,12 @@ final class CatalogService
      */
     private function normalizeFilters(array $query, ?int $forcedCategoryId): array
     {
-        $sort = (string) ($query['sort'] ?? 'latest');
-        $allowedSorts = ['latest', 'name_asc', 'name_desc', 'price_asc', 'price_desc'];
+        $queryText = trim((string) ($query['q'] ?? ''));
+        $sort = (string) ($query['sort'] ?? ($queryText !== '' ? 'relevance' : 'curated'));
+        $allowedSorts = ['curated', 'relevance', 'latest', 'name_asc', 'name_desc', 'price_asc', 'price_desc'];
 
         return [
-            'q' => trim((string) ($query['q'] ?? '')),
+            'q' => $queryText,
             'category_id' => $forcedCategoryId ?? max(0, (int) ($query['category_id'] ?? 0)),
             'brand_id' => max(0, (int) ($query['brand_id'] ?? 0)),
             'min_price' => trim((string) ($query['min_price'] ?? '')),
@@ -130,6 +131,8 @@ final class CatalogService
             'brands' => $this->catalog->filterBrands(),
             'stock_statuses' => $this->catalog->filterStockStatuses(),
             'sorts' => [
+                'curated' => 'Rekommenderad',
+                'relevance' => 'Bästa träff',
                 'latest' => 'Senaste',
                 'name_asc' => 'Namn A-Ö',
                 'name_desc' => 'Namn Ö-A',

@@ -1,5 +1,5 @@
 <?php
-$filters = $filters ?? ['name' => '', 'sku' => '', 'active' => '', 'has_link' => '', 'deviation' => '', 'low_stock' => '', 'stock_status' => ''];
+$filters = $filters ?? ['name' => '', 'sku' => '', 'active' => '', 'has_link' => '', 'deviation' => '', 'low_stock' => '', 'stock_status' => '', 'featured' => '', 'hidden' => ''];
 ?>
 <?php ob_start(); ?>
 <section class="card">
@@ -57,6 +57,22 @@ $filters = $filters ?? ['name' => '', 'sku' => '', 'active' => '', 'has_link' =>
         <?php endforeach; ?>
       </select>
     </div>
+    <div>
+      <label for="featured">Merchandising: featured</label>
+      <select id="featured" name="featured">
+        <option value="">Alla</option>
+        <option value="1" <?= $filters['featured'] === '1' ? 'selected' : '' ?>>Featured</option>
+        <option value="0" <?= $filters['featured'] === '0' ? 'selected' : '' ?>>Ej featured</option>
+      </select>
+    </div>
+    <div>
+      <label for="hidden">Publik synlighet</label>
+      <select id="hidden" name="hidden">
+        <option value="">Alla</option>
+        <option value="0" <?= $filters['hidden'] === '0' ? 'selected' : '' ?>>Synlig</option>
+        <option value="1" <?= $filters['hidden'] === '1' ? 'selected' : '' ?>>Dold i sök/listning</option>
+      </select>
+    </div>
     <div style="display:flex; gap:.5rem; align-items:flex-end;">
       <button class="btn" type="submit">Filtrera</button>
       <a class="btn" href="/admin/products">Nollställ</a>
@@ -91,12 +107,16 @@ $filters = $filters ?? ['name' => '', 'sku' => '', 'active' => '', 'has_link' =>
             <span class="muted">SKU: <?= htmlspecialchars((string) ($product['sku'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></span><br>
             <span class="muted">Brand: <?= htmlspecialchars((string) ($product['brand_name'] ?? '-'), ENT_QUOTES, 'UTF-8') ?> · Kategori: <?= htmlspecialchars((string) ($product['category_name'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></span><br>
             <span class="pill <?= (int) $product['is_active'] === 1 ? 'ok' : 'bad' ?>"><?= (int) $product['is_active'] === 1 ? 'Aktiv' : 'Inaktiv' ?></span>
+            <span class="pill <?= (int) ($product['is_search_hidden'] ?? 0) === 1 ? 'warn' : 'ok' ?>"><?= (int) ($product['is_search_hidden'] ?? 0) === 1 ? 'Dold publikt' : 'Synlig publikt' ?></span>
+            <?php if ((int) ($product['is_featured'] ?? 0) === 1): ?><span class="pill ok">Featured</span><?php endif; ?>
           </td>
           <td>
             Pris: <?= $product['sale_price'] !== null ? htmlspecialchars((string) $product['sale_price'], ENT_QUOTES, 'UTF-8') . ' ' . htmlspecialchars((string) ($product['currency_code'] ?? 'SEK'), ENT_QUOTES, 'UTF-8') : '-' ?><br>
             Lagerstatus: <?= htmlspecialchars((string) ($product['stock_status'] ?? 'out_of_stock'), ENT_QUOTES, 'UTF-8') ?><br>
             Antal: <?= (int) ($product['stock_quantity'] ?? 0) ?><br>
-            Backorder: <?= (int) ($product['backorder_allowed'] ?? 0) === 1 ? 'Ja' : 'Nej' ?>
+            Backorder: <?= (int) ($product['backorder_allowed'] ?? 0) === 1 ? 'Ja' : 'Nej' ?><br>
+            Search boost: <?= (int) ($product['search_boost'] ?? 0) ?><br>
+            Sort priority: <?= (int) ($product['sort_priority'] ?? 0) ?>
           </td>
           <td>
             Leverantör: <?= htmlspecialchars((string) ($product['supplier_name'] ?? '-'), ENT_QUOTES, 'UTF-8') ?><br>

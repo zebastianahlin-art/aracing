@@ -559,3 +559,31 @@ Lokal manuell test:
 4. Lägg order och verifiera i `/checkout/confirmation` eller `/order-status` att företagsuppgifter visas när de finns.
 5. Öppna `/admin/orders/{id}` och verifiera att företagsuppgifter visas i kundsektionen.
 6. Uppdatera kundprofilens företagsuppgifter och verifiera att redan lagd order behåller tidigare snapshot-värden.
+
+## Search relevance / merchandising v1
+
+Databas:
+- kör även `database/migrations/023_search_merchandising_v1.sql`
+
+Nya produktfält i v1:
+- `is_search_hidden` (dölj i publik sök/listning)
+- `is_featured` (lätt prioriteringssignal)
+- `search_boost` (manuell sökboost)
+- `sort_priority` (manuell listprioritet)
+
+Storefront:
+- publik synlighet är centraliserad till aktiva + ej dolda produkter
+- sök använder enkel förklarbar relevansmodell (namn/SKU/brand/kategori + merchandising-signaler)
+- kategori/listning använder kuraterad standardsortering via `sort_priority`, `is_featured` och `search_boost`
+- befintlig manuell sortering (namn/pris/senaste) fungerar fortsatt
+
+Admin:
+- `/admin/products/{id}/edit` har sektion för synlighet & merchandising
+- `/admin/products` visar featured/hidden/boost/prioritet och kan filtrera på featured/hidden
+
+Lokal manuell test:
+1. Kör migration `023_search_merchandising_v1.sql`.
+2. Öppna `/admin/products/{id}/edit` och sätt olika värden för featured/hidden/boost/prioritet.
+3. Verifiera att produkter med `is_search_hidden=1` inte visas på `/search` eller i kategori-listning.
+4. Sök på produktnamn/brand och verifiera att relevansordning påverkas av exact/prefix/partial match samt boost/featured.
+5. Öppna en kategori och verifiera att standardordning känns kuraterad (prioritet/featured) samt att valbar sortering fortfarande fungerar.

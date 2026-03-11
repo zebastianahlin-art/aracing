@@ -69,6 +69,10 @@ final class ProductService
             'backorder_allowed' => 0,
             'currency_code' => 'SEK',
             'is_active' => 0,
+            'is_search_hidden' => 0,
+            'is_featured' => 0,
+            'search_boost' => 0,
+            'sort_priority' => 0,
             'supplier_item_id' => (int) $item['id'],
             'link_is_primary' => 1,
         ];
@@ -271,6 +275,10 @@ final class ProductService
             'backorder_allowed' => isset($input['backorder_allowed']) ? 1 : 0,
             'stock_updated_at' => date('Y-m-d H:i:s'),
             'is_active' => isset($input['is_active']) ? 1 : 0,
+            'is_search_hidden' => isset($input['is_search_hidden']) ? 1 : 0,
+            'is_featured' => isset($input['is_featured']) ? 1 : 0,
+            'search_boost' => $this->toIntInRange($input['search_boost'] ?? 0, -1000, 1000),
+            'sort_priority' => $this->toIntInRange($input['sort_priority'] ?? 0, -1000, 1000),
         ];
     }
 
@@ -284,6 +292,8 @@ final class ProductService
         $deviation = (string) ($filters['deviation'] ?? '');
         $lowStock = (string) ($filters['low_stock'] ?? '');
         $stockStatus = mb_strtolower(trim((string) ($filters['stock_status'] ?? '')));
+        $featured = (string) ($filters['featured'] ?? '');
+        $hidden = (string) ($filters['hidden'] ?? '');
 
         return [
             'name' => trim((string) ($filters['name'] ?? '')),
@@ -293,6 +303,8 @@ final class ProductService
             'deviation' => $deviation === '1' ? '1' : '',
             'low_stock' => $lowStock === '1' ? '1' : '',
             'stock_status' => in_array($stockStatus, ['in_stock', 'out_of_stock', 'backorder'], true) ? $stockStatus : '',
+            'featured' => in_array($featured, ['0', '1'], true) ? $featured : '',
+            'hidden' => in_array($hidden, ['0', '1'], true) ? $hidden : '',
         ];
     }
 
@@ -499,6 +511,16 @@ final class ProductService
         }
 
         return $images;
+    }
+
+
+    private function toIntInRange(mixed $value, int $min, int $max): int
+    {
+        if ($value === null || trim((string) $value) === "") {
+            return 0;
+        }
+
+        return max($min, min($max, (int) $value));
     }
 
     private function toNullableInt(mixed $value): ?int

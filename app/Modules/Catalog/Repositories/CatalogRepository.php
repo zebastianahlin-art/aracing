@@ -15,12 +15,12 @@ final class CatalogRepository
     /** @return array<int, array<string, mixed>> */
     public function latestActiveProducts(int $limit = 12): array
     {
-        $stmt = $this->pdo->prepare('SELECT p.id, p.name, p.slug, p.sku, p.description, p.sale_price, p.currency_code, p.stock_status, p.stock_quantity, p.backorder_allowed, b.name AS brand_name,
+        $stmt = $this->pdo->prepare('SELECT p.id, p.name, p.slug, p.sku, p.description, p.sale_price, p.currency_code, p.stock_status, p.stock_quantity, p.backorder_allowed, p.is_featured, p.search_boost, p.sort_priority, b.name AS brand_name,
             (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.is_primary DESC, pi.sort_order ASC, pi.id ASC LIMIT 1) AS image_url
             FROM products p
             LEFT JOIN brands b ON b.id = p.brand_id
-            WHERE p.is_active = 1
-            ORDER BY p.updated_at DESC, p.id DESC
+            WHERE ' . $this->publicVisibilityWhereSql() . '
+            ORDER BY p.sort_priority DESC, p.is_featured DESC, p.search_boost DESC, p.updated_at DESC, p.id DESC
             LIMIT :limit');
         $stmt->bindValue('limit', $limit, PDO::PARAM_INT);
         $stmt->execute();
@@ -43,7 +43,7 @@ final class CatalogRepository
     {
         return $this->searchActiveProducts([
             'category_id' => $categoryId,
-            'sort' => 'name_asc',
+            'sort' => 'curated',
         ]);
     }
 
@@ -54,13 +54,16 @@ final class CatalogRepository
     {
         $params = [];
         $where = $this->buildListingWhere($filters, $params);
+        $orderBy = $this->resolveOrderBy($filters, $params);
 
-        $sql = 'SELECT p.id, p.name, p.slug, p.sku, p.sale_price, p.currency_code, p.stock_status, p.stock_quantity, p.backorder_allowed, b.name AS brand_name,
+        $sql = 'SELECT p.id, p.name, p.slug, p.sku, p.sale_price, p.currency_code, p.stock_status, p.stock_quantity, p.backorder_allowed, p.is_featured, p.search_boost, p.sort_priority,
+            b.name AS brand_name, c.name AS category_name,
             (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.is_primary DESC, pi.sort_order ASC, pi.id ASC LIMIT 1) AS image_url
             FROM products p
             LEFT JOIN brands b ON b.id = p.brand_id
+            LEFT JOIN categories c ON c.id = p.category_id
             WHERE ' . implode(' AND ', $where) . '
-            ORDER BY ' . $this->mapSort((string) ($filters['sort'] ?? 'latest'));
+            ORDER BY ' . $orderBy;
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
@@ -76,6 +79,7 @@ final class CatalogRepository
 
         $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM products p
             LEFT JOIN brands b ON b.id = p.brand_id
+            LEFT JOIN categories c ON c.id = p.category_id
             WHERE ' . implode(' AND ', $where));
         $stmt->execute($params);
 
@@ -88,7 +92,7 @@ final class CatalogRepository
         return $this->pdo->query('SELECT c.id, c.name, c.slug
             FROM categories c
             INNER JOIN products p ON p.category_id = c.id
-            WHERE p.is_active = 1
+            WHERE ' . $this->publicVisibilityWhereSql('p') . '
             GROUP BY c.id, c.name, c.slug
             ORDER BY c.name ASC')->fetchAll();
     }
@@ -99,7 +103,7 @@ final class CatalogRepository
         return $this->pdo->query('SELECT b.id, b.name, b.slug
             FROM brands b
             INNER JOIN products p ON p.brand_id = b.id
-            WHERE p.is_active = 1
+            WHERE ' . $this->publicVisibilityWhereSql('p') . '
             GROUP BY b.id, b.name, b.slug
             ORDER BY b.name ASC')->fetchAll();
     }
@@ -109,7 +113,7 @@ final class CatalogRepository
     {
         $rows = $this->pdo->query("SELECT DISTINCT stock_status
             FROM products
-            WHERE is_active = 1
+            WHERE " . $this->publicVisibilityWhereSql('products') . "
             ORDER BY FIELD(stock_status, 'in_stock', 'out_of_stock', 'backorder')")->fetchAll();
 
         return array_map(static fn (array $row): string => (string) $row['stock_status'], $rows);
@@ -118,11 +122,11 @@ final class CatalogRepository
     /** @return array<string, mixed>|null */
     public function activeProductBySlug(string $slug): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT p.id, p.name, p.slug, p.sku, p.description, p.sale_price, p.currency_code, p.stock_status, p.stock_quantity, p.backorder_allowed, b.name AS brand_name,
+        $stmt = $this->pdo->prepare('SELECT p.id, p.name, p.slug, p.sku, p.description, p.sale_price, p.currency_code, p.stock_status, p.stock_quantity, p.backorder_allowed, p.is_featured, p.search_boost, p.sort_priority, b.name AS brand_name,
             (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.is_primary DESC, pi.sort_order ASC, pi.id ASC LIMIT 1) AS image_url
             FROM products p
             LEFT JOIN brands b ON b.id = p.brand_id
-            WHERE p.slug = :slug AND p.is_active = 1');
+            WHERE p.slug = :slug AND ' . $this->publicVisibilityWhereSql());
         $stmt->execute(['slug' => $slug]);
         $row = $stmt->fetch();
 
@@ -153,7 +157,7 @@ final class CatalogRepository
      */
     private function buildListingWhere(array $filters, array &$params): array
     {
-        $where = ['p.is_active = 1'];
+        $where = [$this->publicVisibilityWhereSql()];
 
         if (isset($filters['category_id']) && (int) $filters['category_id'] > 0) {
             $where[] = 'p.category_id = :category_id';
@@ -181,11 +185,45 @@ final class CatalogRepository
         }
 
         if (!empty($filters['q'])) {
-            $where[] = '(p.name LIKE :search_term OR p.sku LIKE :search_term OR b.name LIKE :search_term)';
+            $where[] = '(p.name LIKE :search_term OR p.sku LIKE :search_term OR b.name LIKE :search_term OR c.name LIKE :search_term)';
             $params['search_term'] = '%' . (string) $filters['q'] . '%';
         }
 
         return $where;
+    }
+
+    /** @param array<string, mixed> $filters
+     * @param array<string, mixed> $params
+     */
+    private function resolveOrderBy(array $filters, array &$params): string
+    {
+        $sort = (string) ($filters['sort'] ?? 'curated');
+
+        if ($sort === 'relevance' && !empty($filters['q'])) {
+            $q = trim((string) $filters['q']);
+            $params['q_exact'] = $q;
+            $params['q_prefix'] = $q . '%';
+            $params['q_contains'] = '%' . $q . '%';
+
+            $score = "(CASE
+                WHEN p.name = :q_exact THEN 120
+                WHEN p.name LIKE :q_prefix THEN 80
+                WHEN p.name LIKE :q_contains THEN 40
+                ELSE 0
+            END)
+            + (CASE WHEN p.sku = :q_exact THEN 45 WHEN p.sku LIKE :q_prefix THEN 25 ELSE 0 END)
+            + (CASE WHEN b.name = :q_exact THEN 20 WHEN b.name LIKE :q_contains THEN 10 ELSE 0 END)
+            + (CASE WHEN c.name LIKE :q_contains THEN 8 ELSE 0 END)
+            + (p.search_boost * 3)
+            + (p.sort_priority * 2)
+            + (CASE WHEN p.is_featured = 1 THEN 12 ELSE 0 END)
+            + (CASE WHEN p.stock_status = 'in_stock' THEN 6 WHEN p.stock_status = 'backorder' THEN 2 ELSE 0 END)
+            + (CASE WHEN p.sale_price IS NULL THEN -2 ELSE 2 END)";
+
+            return $score . ' DESC, p.sort_priority DESC, p.is_featured DESC, p.updated_at DESC, p.id DESC';
+        }
+
+        return $this->mapSort($sort);
     }
 
     private function mapSort(string $sort): string
@@ -195,7 +233,13 @@ final class CatalogRepository
             'name_desc' => 'p.name DESC',
             'price_asc' => 'p.sale_price ASC, p.name ASC',
             'price_desc' => 'p.sale_price DESC, p.name ASC',
-            default => 'p.updated_at DESC, p.id DESC',
+            'latest' => 'p.updated_at DESC, p.id DESC',
+            default => "p.sort_priority DESC, p.is_featured DESC, p.search_boost DESC, FIELD(p.stock_status, 'in_stock', 'backorder', 'out_of_stock') ASC, p.updated_at DESC, p.id DESC",
         };
+    }
+
+    private function publicVisibilityWhereSql(string $tableAlias = 'p'): string
+    {
+        return $tableAlias . '.is_active = 1 AND ' . $tableAlias . '.is_search_hidden = 0';
     }
 }

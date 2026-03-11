@@ -193,6 +193,84 @@ ob_start();
 </section>
 <?php endif; ?>
 
+
+<?php if ($isEdit): ?>
+<section id="relations" class="card" style="margin-top:.8rem;">
+  <h3>Relaterade produkter / cross-sell</h3>
+
+  <form method="get" action="/admin/products/<?= (int) $product['id'] ?>/edit" style="display:grid;gap:.5rem;grid-template-columns:1fr auto;align-items:end;margin-bottom:.6rem;">
+    <div>
+      <label>Sök produkt att koppla (namn/SKU)</label>
+      <input name="relation_query" value="<?= htmlspecialchars((string) ($relation_query ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+    </div>
+    <button class="btn" type="submit">Sök</button>
+  </form>
+
+  <form method="post" action="/admin/products/<?= (int) $product['id'] ?>/relations" style="display:grid;gap:.5rem;grid-template-columns:2fr 1fr 1fr auto;align-items:end;margin-bottom:.8rem;">
+    <div>
+      <label>Relaterad produkt</label>
+      <select name="related_product_id" required>
+        <option value="">Välj produkt</option>
+        <?php foreach (($relation_candidates ?? []) as $candidate): ?>
+          <option value="<?= (int) $candidate['id'] ?>">#<?= (int) $candidate['id'] ?> · <?= htmlspecialchars((string) $candidate['name'], ENT_QUOTES, 'UTF-8') ?> (<?= htmlspecialchars((string) ($candidate['sku'] ?? '-'), ENT_QUOTES, 'UTF-8') ?>)</option>
+        <?php endforeach; ?>
+      </select>
+    </div>
+    <div>
+      <label>Relationstyp</label>
+      <select name="relation_type">
+        <?php foreach (($relation_types ?? []) as $relationType): ?>
+          <option value="<?= htmlspecialchars((string) $relationType, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $relationType, ENT_QUOTES, 'UTF-8') ?></option>
+        <?php endforeach; ?>
+      </select>
+    </div>
+    <div>
+      <label>Sortering</label>
+      <input type="number" name="sort_order" value="0">
+    </div>
+    <div>
+      <label><input type="checkbox" name="is_active" value="1" checked> Aktiv</label>
+      <button class="btn" type="submit">Lägg till</button>
+    </div>
+  </form>
+
+  <?php if (($product_relations ?? []) === []): ?>
+    <p class="muted">Inga produktkopplingar ännu.</p>
+  <?php else: ?>
+    <table class="table compact">
+      <thead><tr><th>Produkt</th><th>Typ</th><th>Sortering</th><th>Aktiv</th><th>Åtgärder</th></tr></thead>
+      <tbody>
+      <?php foreach ($product_relations as $relation): ?>
+        <tr>
+          <td>
+            #<?= (int) $relation['related_product_id'] ?> · <?= htmlspecialchars((string) $relation['related_product_name'], ENT_QUOTES, 'UTF-8') ?><br>
+            <span class="muted">SKU: <?= htmlspecialchars((string) ($relation['related_product_sku'] ?? '-'), ENT_QUOTES, 'UTF-8') ?><?php if ((int) ($relation['related_is_active'] ?? 0) !== 1 || (int) ($relation['related_is_hidden'] ?? 0) === 1): ?> · Ej publik just nu<?php endif; ?></span>
+          </td>
+          <td>
+            <form method="post" action="/admin/products/<?= (int) $product['id'] ?>/relations/<?= (int) $relation['id'] ?>/update" style="display:flex;gap:.35rem;align-items:center;">
+              <select name="relation_type">
+                <?php foreach (($relation_types ?? []) as $relationType): ?>
+                  <option value="<?= htmlspecialchars((string) $relationType, ENT_QUOTES, 'UTF-8') ?>" <?= (string) $relation['relation_type'] === (string) $relationType ? 'selected' : '' ?>><?= htmlspecialchars((string) $relationType, ENT_QUOTES, 'UTF-8') ?></option>
+                <?php endforeach; ?>
+              </select>
+          </td>
+          <td><input type="number" name="sort_order" value="<?= (int) ($relation['sort_order'] ?? 0) ?>" style="max-width:88px;"></td>
+          <td><input type="checkbox" name="is_active" value="1" <?= (int) ($relation['is_active'] ?? 0) === 1 ? 'checked' : '' ?>></td>
+          <td>
+              <button class="btn" type="submit">Spara</button>
+            </form>
+            <form method="post" action="/admin/products/<?= (int) $product['id'] ?>/relations/<?= (int) $relation['id'] ?>/delete" onsubmit="return confirm('Ta bort produktkoppling?');" style="margin-top:.3rem;">
+              <button class="btn" type="submit">Ta bort</button>
+            </form>
+          </td>
+        </tr>
+      <?php endforeach; ?>
+      </tbody>
+    </table>
+  <?php endif; ?>
+</section>
+<?php endif; ?>
+
 <?php if ($isEdit): ?>
 <section id="media" class="card" style="margin-top:.8rem;">
   <div class="topline"><h3>Produktmedia v1</h3></div>

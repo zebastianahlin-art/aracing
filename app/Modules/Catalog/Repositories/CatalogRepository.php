@@ -122,7 +122,7 @@ final class CatalogRepository
     /** @return array<string, mixed>|null */
     public function activeProductBySlug(string $slug): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT p.id, p.name, p.slug, p.sku, p.description, p.seo_title, p.seo_description, p.canonical_url, p.meta_robots, p.is_indexable, p.sale_price, p.currency_code, p.stock_status, p.stock_quantity, p.backorder_allowed, p.is_featured, p.search_boost, p.sort_priority, b.name AS brand_name,
+        $stmt = $this->pdo->prepare('SELECT p.id, p.brand_id, p.category_id, p.name, p.slug, p.sku, p.description, p.seo_title, p.seo_description, p.canonical_url, p.meta_robots, p.is_indexable, p.sale_price, p.currency_code, p.stock_status, p.stock_quantity, p.backorder_allowed, p.is_featured, p.search_boost, p.sort_priority, b.name AS brand_name,
             (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.is_primary DESC, pi.sort_order ASC, pi.id ASC LIMIT 1) AS image_url
             FROM products p
             LEFT JOIN brands b ON b.id = p.brand_id
@@ -138,6 +138,97 @@ final class CatalogRepository
     {
         $stmt = $this->pdo->prepare('SELECT attribute_key, attribute_value FROM product_attributes WHERE product_id = :product_id ORDER BY attribute_key ASC');
         $stmt->execute(['product_id' => $productId]);
+
+        return $stmt->fetchAll();
+    }
+
+    /** @param array<int,int> $ids
+     * @return array<int,array<string,mixed>>
+     */
+    public function publicProductsByIds(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $sql = 'SELECT p.id, p.name, p.slug, p.sku, p.sale_price, p.currency_code, p.stock_status, p.stock_quantity, p.backorder_allowed,
+                    p.is_featured, p.search_boost, p.sort_priority,
+                    b.name AS brand_name,
+                    (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.is_primary DESC, pi.sort_order ASC, pi.id ASC LIMIT 1) AS image_url
+                FROM products p
+                LEFT JOIN brands b ON b.id = p.brand_id
+                WHERE ' . $this->publicVisibilityWhereSql() . ' AND p.id IN (' . $placeholders . ')';
+
+        $stmt = $this->pdo->prepare($sql);
+        foreach (array_values($ids) as $index => $id) {
+            $stmt->bindValue($index + 1, $id, PDO::PARAM_INT);
+        }
+        $stmt->execute();
+
+        $rows = $stmt->fetchAll();
+        $byId = [];
+        foreach ($rows as $row) {
+            $byId[(int) $row['id']] = $row;
+        }
+
+        $ordered = [];
+        foreach ($ids as $id) {
+            if (isset($byId[$id])) {
+                $ordered[] = $byId[$id];
+            }
+        }
+
+        return $ordered;
+    }
+
+    /** @param array<int,int> $excludeIds
+     * @return array<int,array<string,mixed>>
+     */
+    public function fallbackRelatedProducts(int $currentProductId, ?int $categoryId, ?int $brandId, int $limit, array $excludeIds = []): array
+    {
+        if ($limit <= 0) {
+            return [];
+        }
+
+        $excludeIds = array_values(array_unique(array_merge([$currentProductId], $excludeIds)));
+        $excludePlaceholders = implode(',', array_fill(0, count($excludeIds), '?'));
+
+        $sql = 'SELECT p.id, p.name, p.slug, p.sku, p.sale_price, p.currency_code, p.stock_status, p.stock_quantity, p.backorder_allowed,
+                    p.is_featured, p.search_boost, p.sort_priority,
+                    b.name AS brand_name,
+                    (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.is_primary DESC, pi.sort_order ASC, pi.id ASC LIMIT 1) AS image_url
+                FROM products p
+                LEFT JOIN brands b ON b.id = p.brand_id
+                WHERE ' . $this->publicVisibilityWhereSql() . '
+                  AND p.id NOT IN (' . $excludePlaceholders . ')';
+
+        $params = $excludeIds;
+
+        if ($categoryId !== null && $categoryId > 0) {
+            $sql .= ' AND p.category_id = ?';
+            $params[] = $categoryId;
+        }
+
+        if ($brandId !== null && $brandId > 0) {
+            $sql .= ' AND p.brand_id = ?';
+            $params[] = $brandId;
+        }
+
+        $sql .= " ORDER BY FIELD(p.stock_status, 'in_stock', 'backorder', 'out_of_stock') ASC,
+                          p.sort_priority DESC,
+                          p.is_featured DESC,
+                          p.search_boost DESC,
+                          p.updated_at DESC,
+                          p.id DESC
+                  LIMIT ?";
+        $params[] = $limit;
+
+        $stmt = $this->pdo->prepare($sql);
+        foreach ($params as $index => $value) {
+            $stmt->bindValue($index + 1, $value, PDO::PARAM_INT);
+        }
+        $stmt->execute();
 
         return $stmt->fetchAll();
     }

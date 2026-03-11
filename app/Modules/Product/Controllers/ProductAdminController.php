@@ -9,6 +9,7 @@ use App\Core\View\ViewFactory;
 use App\Modules\Brand\Services\BrandService;
 use App\Modules\Category\Services\CategoryService;
 use App\Modules\Product\Services\ProductService;
+use App\Modules\Product\Services\ProductRelationService;
 use App\Modules\Product\Services\ProductMediaService;
 use App\Modules\Product\Services\ProductSupplierLinkService;
 use App\Modules\Supplier\Services\SupplierService;
@@ -19,6 +20,7 @@ final class ProductAdminController
         private readonly ViewFactory $views,
         private readonly ProductService $products,
         private readonly ProductMediaService $media,
+        private readonly ProductRelationService $relations,
         private readonly BrandService $brands,
         private readonly CategoryService $categories,
         private readonly SupplierService $suppliers,
@@ -151,8 +153,10 @@ final class ProductAdminController
     public function editForm(string $id): Response
     {
         $product = $this->products->get((int) $id);
+        $productId = (int) ($product['id'] ?? 0);
         $selectedSupplierId = $this->toNullableInt($_GET['supplier_id'] ?? ($product['primary_supplier_link']['supplier_id'] ?? null));
         $supplierItemQuery = trim((string) ($_GET['supplier_item_query'] ?? ''));
+        $relationQuery = trim((string) ($_GET['relation_query'] ?? ''));
 
         return new Response($this->views->render('admin.products.form', [
             'product' => $product,
@@ -163,6 +167,10 @@ final class ProductAdminController
             'supplier_item_query' => $supplierItemQuery,
             'supplier_items' => $this->productSupplierLinks->searchSupplierItems($selectedSupplierId, $supplierItemQuery),
             'stock_movements' => [],
+            'relation_query' => $relationQuery,
+            'relation_candidates' => $productId > 0 ? $this->products->searchForRelationSelection($relationQuery, $productId) : [],
+            'product_relations' => $product !== null ? $this->relations->adminRelationsForProduct($productId) : [],
+            'relation_types' => $this->relations->allowedTypes(),
         ]));
     }
 
@@ -226,6 +234,40 @@ final class ProductAdminController
         $this->media->deleteImage($productId, (int) $imageId);
 
         return $this->redirect('/admin/products/' . $productId . '/edit?notice=' . urlencode('Bild borttagen') . '#media');
+    }
+
+    public function createRelation(string $id): Response
+    {
+        $productId = (int) $id;
+
+        try {
+            $this->relations->createForProduct($productId, $_POST);
+
+            return $this->redirect('/admin/products/' . $productId . '/edit?notice=' . urlencode('Produktkoppling sparad') . '#relations');
+        } catch (\RuntimeException $exception) {
+            return $this->redirect('/admin/products/' . $productId . '/edit?media_error=' . urlencode($exception->getMessage()) . '#relations');
+        }
+    }
+
+    public function updateRelation(string $id, string $relationId): Response
+    {
+        $productId = (int) $id;
+
+        try {
+            $this->relations->updateForProduct($productId, (int) $relationId, $_POST);
+
+            return $this->redirect('/admin/products/' . $productId . '/edit?notice=' . urlencode('Produktkoppling uppdaterad') . '#relations');
+        } catch (\RuntimeException $exception) {
+            return $this->redirect('/admin/products/' . $productId . '/edit?media_error=' . urlencode($exception->getMessage()) . '#relations');
+        }
+    }
+
+    public function deleteRelation(string $id, string $relationId): Response
+    {
+        $productId = (int) $id;
+        $this->relations->deleteForProduct($productId, (int) $relationId);
+
+        return $this->redirect('/admin/products/' . $productId . '/edit?notice=' . urlencode('Produktkoppling borttagen') . '#relations');
     }
 
     private function redirect(string $location): Response

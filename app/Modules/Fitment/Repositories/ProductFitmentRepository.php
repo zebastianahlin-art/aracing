@@ -44,6 +44,35 @@ final class ProductFitmentRepository
         $stmt->execute(['id' => $fitmentId, 'product_id' => $productId]);
     }
 
+
+
+    /** @return array<int,array<string,mixed>> */
+    public function searchVehiclesForAssignment(string $query, int $limit = 80): array
+    {
+        $sql = 'SELECT id, make, model, generation, engine, year_from, year_to, is_active
+'
+             . 'FROM vehicles
+'
+             . 'WHERE is_active = 1';
+        $params = [];
+
+        $query = trim($query);
+        if ($query !== '') {
+            $sql .= ' AND (make LIKE :query OR model LIKE :query OR generation LIKE :query OR engine LIKE :query)';
+            $params['query'] = '%' . $query . '%';
+        }
+
+        $sql .= ' ORDER BY make ASC, model ASC, generation ASC, engine ASC, year_from ASC, id ASC LIMIT :limit';
+        $stmt = $this->pdo->prepare($sql);
+        if (isset($params['query'])) {
+            $stmt->bindValue('query', $params['query']);
+        }
+        $stmt->bindValue('limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll();
+    }
+
     /** @return array<int,array<string,mixed>> */
     public function productFitmentsForVehicle(int $productId, int $vehicleId): array
     {

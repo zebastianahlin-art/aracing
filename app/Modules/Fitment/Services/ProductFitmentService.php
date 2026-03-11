@@ -27,9 +27,9 @@ final class ProductFitmentService
     }
 
     /** @return array<int,array<string,mixed>> */
-    public function activeVehicles(): array
+    public function activeVehicles(string $query = ''): array
     {
-        return $this->vehicles->activeForSelector();
+        return $this->fitments->searchVehiclesForAssignment($query);
     }
 
     /** @param array<string,mixed> $input */

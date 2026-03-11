@@ -275,6 +275,15 @@ ob_start();
 <?php if ($isEdit): ?>
 <section id="fitment" class="card" style="margin-top:.8rem;">
   <h3>Fitment / Fordonskopplingar (YMM v1)</h3>
+  <p class="muted">Totalt antal kopplingar: <?= count($product_fitments ?? []) ?></p>
+
+  <form method="get" action="/admin/products/<?= (int) $product['id'] ?>/edit#fitment" style="display:grid;gap:.5rem;grid-template-columns:1fr auto;align-items:end;margin-bottom:.6rem;">
+    <div>
+      <label>Sök fordon (make/modell/generation/motor)</label>
+      <input name="fitment_vehicle_query" value="<?= htmlspecialchars((string) ($fitment_vehicle_query ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+    </div>
+    <button class="btn" type="submit">Filtrera fordon</button>
+  </form>
 
   <form method="post" action="/admin/products/<?= (int) $product['id'] ?>/fitments" style="display:grid;gap:.5rem;grid-template-columns:2fr 1fr 2fr auto;align-items:end;margin-bottom:.8rem;">
     <div>

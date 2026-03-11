@@ -45,6 +45,7 @@
     <a href="/admin/categories">Categories</a>
     <a href="/admin/products">Products</a>
     <a href="/admin/vehicles">Fordon / YMM</a>
+    <a href="/admin/fitment-workflow">Fitment-arbetsvy</a>
     <a href="/admin/products/article-care">Artikelvårdskö</a>
     <a href="/admin/orders">Orders</a>
     <a href="/admin/returns">Returer</a>

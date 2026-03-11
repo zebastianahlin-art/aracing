@@ -215,6 +215,38 @@ Lokal manuell test:
 
 
 
+
+## Fitment data workflow v1 (admin)
+
+Databas:
+- kör även `database/migrations/036_fitment_data_workflow_v1.sql`
+
+Admin:
+- `/admin/fitment-workflow` ger operativ kö för fitmentarbete.
+- Filter/snabbval:
+  - `Saknar fitment`
+  - `Har fitment`
+  - `Endast universal`
+  - `Behöver granskning`
+  - valfritt filter på brand/kategori + sök på produkt/SKU
+- Vyn visar signaler per produkt:
+  - `no_fitment_links`
+  - `universal_only`
+  - `has_confirmed_fitments`
+  - `needs_review`
+- Admin kan sätta enkel intern status per produkt (`needs_fitment`, `reviewed`, `handling`) och intern notering.
+
+Produktadmin (`/admin/products/{id}/edit#fitment`):
+- visar tydligt antal fordonskopplingar
+- stöd för att söka/filtera fordonslistan innan koppling läggs till
+- fortsatt stöd för lägga till/ta bort produkt↔fordon-koppling
+
+Lokal testning:
+1. Kör migrationer (`php scripts/migrate.php`) och applicera SQL-filer i MariaDB inkl. `035_fitment_ymm_v1.sql` + `036_fitment_data_workflow_v1.sql`.
+2. Öppna `/admin/fitment-workflow`, testa köfilter + brand/kategorifilter.
+3. Uppdatera status/notering på en produkt och verifiera att värdet sparas.
+4. Öppna en produkt och verifiera att fitmentsektionen visar antal kopplingar, fordonssök och add/remove fungerar.
+
 ## Order fulfillment / packing workflow v2
 
 Databas:

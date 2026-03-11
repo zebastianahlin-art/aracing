@@ -21,13 +21,17 @@ use App\Modules\Discount\Controllers\DiscountCodeAdminController;
 use App\Modules\Fitment\Controllers\FitmentSelectionController;
 use App\Modules\Fitment\Controllers\VehicleAdminController;
 use App\Modules\Fitment\Controllers\FitmentWorkflowAdminController;
+use App\Modules\Fitment\Controllers\SupplierFitmentReviewAdminController;
 use App\Modules\Fitment\Repositories\ProductFitmentRepository;
 use App\Modules\Fitment\Repositories\VehicleRepository;
 use App\Modules\Fitment\Repositories\FitmentFlagRepository;
+use App\Modules\Fitment\Repositories\SupplierFitmentCandidateRepository;
 use App\Modules\Fitment\Services\FitmentService;
 use App\Modules\Fitment\Services\ProductFitmentService;
 use App\Modules\Fitment\Services\VehicleService;
 use App\Modules\Fitment\Services\FitmentWorkflowService;
+use App\Modules\Fitment\Services\SupplierFitmentIntakeService;
+use App\Modules\Fitment\Services\SupplierFitmentReviewService;
 use App\Modules\Discount\Repositories\DiscountCodeRepository;
 use App\Modules\Discount\Services\DiscountService;
 use App\Modules\Checkout\Controllers\CheckoutController;
@@ -181,6 +185,9 @@ $vehicleRepository = new VehicleRepository($app['pdo']);
 $productFitmentService = new ProductFitmentService(new ProductFitmentRepository($app['pdo']), $vehicleRepository, new ProductRepository($app['pdo']));
 $fitmentService = new FitmentService($vehicleRepository, new ProductFitmentRepository($app['pdo']));
 $fitmentWorkflowService = new FitmentWorkflowService(new ProductRepository($app['pdo']), new FitmentFlagRepository($app['pdo']));
+$supplierFitmentCandidateRepository = new SupplierFitmentCandidateRepository($app['pdo']);
+$supplierFitmentIntakeService = new SupplierFitmentIntakeService($supplierFitmentCandidateRepository, $supplierItemRepository, new ProductSupplierLinkRepository($app['pdo']), $vehicleRepository);
+$supplierFitmentReviewService = new SupplierFitmentReviewService($app['pdo'], $supplierFitmentCandidateRepository, $supplierFitmentIntakeService, new ProductFitmentRepository($app['pdo']), new ProductRepository($app['pdo']), $vehicleRepository);
 $catalogRepository = new CatalogRepository($app['pdo']);
 $productRecommendationService = new ProductRecommendationService(
     $productRelationService,
@@ -314,6 +321,7 @@ $productReviewStorefront = new ProductReviewStorefrontController($authService, $
 $productReviewAdmin = new ProductReviewAdminController($app['view'], $productReviewService);
 $vehicleAdmin = new VehicleAdminController($app['view'], new VehicleService($vehicleRepository));
 $fitmentWorkflowAdmin = new FitmentWorkflowAdminController($app['view'], $fitmentWorkflowService, $brandService, $categoryService);
+$supplierFitmentReviewAdmin = new SupplierFitmentReviewAdminController($app['view'], $supplierFitmentReviewService, $supplierService);
 $fitmentSelectionController = new FitmentSelectionController($fitmentService);
 
 $app['router']->get('/', [$cmsStorefront, 'home']);
@@ -500,6 +508,13 @@ $app['router']->get('/admin/cms/pages/{id}/edit', [$cmsPageAdmin, 'editForm']);
 $app['router']->post('/admin/cms/pages/{id}', [$cmsPageAdmin, 'update']);
 $app['router']->get('/admin/homepage-sections', [$homepageAdmin, 'index']);
 $app['router']->post('/admin/homepage-sections', [$homepageAdmin, 'handle']);
+
+
+$app['router']->get('/admin/supplier-fitment-review', [$supplierFitmentReviewAdmin, 'index']);
+$app['router']->post('/admin/supplier-fitment-review/intake', [$supplierFitmentReviewAdmin, 'intake']);
+$app['router']->post('/admin/supplier-fitment-review/{id}/approve', [$supplierFitmentReviewAdmin, 'approve']);
+$app['router']->post('/admin/supplier-fitment-review/{id}/reject', [$supplierFitmentReviewAdmin, 'reject']);
+$app['router']->post('/admin/supplier-fitment-review/{id}/skip', [$supplierFitmentReviewAdmin, 'skip']);
 
 $app['router']->get('/admin/supplier-item-review', [$supplierItemReviewAdmin, 'index']);
 $app['router']->post('/admin/supplier-item-review/{id}/match', [$supplierItemReviewAdmin, 'match']);

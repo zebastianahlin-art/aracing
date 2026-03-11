@@ -42,6 +42,36 @@ final class VehicleRepository
         return $row !== false ? $row : null;
     }
 
+
+    /** @return array<string,mixed>|null */
+    public function findExactMatch(?string $make, ?string $model, ?string $generation, ?string $engine, ?int $yearFrom, ?int $yearTo): ?array
+    {
+        if ($make === null || $model === null) {
+            return null;
+        }
+
+        $stmt = $this->pdo->prepare('SELECT id, make, model, generation, engine, year_from, year_to
+            FROM vehicles
+            WHERE make = :make
+              AND model = :model
+              AND (generation <=> :generation)
+              AND (engine <=> :engine)
+              AND (year_from <=> :year_from)
+              AND (year_to <=> :year_to)
+            ORDER BY id ASC
+            LIMIT 1');
+        $stmt->bindValue('make', $make);
+        $stmt->bindValue('model', $model);
+        $stmt->bindValue('generation', $generation);
+        $stmt->bindValue('engine', $engine);
+        $stmt->bindValue('year_from', $yearFrom, $yearFrom !== null ? PDO::PARAM_INT : PDO::PARAM_NULL);
+        $stmt->bindValue('year_to', $yearTo, $yearTo !== null ? PDO::PARAM_INT : PDO::PARAM_NULL);
+        $stmt->execute();
+
+        $row = $stmt->fetch();
+
+        return $row !== false ? $row : null;
+    }
     public function create(array $data): int
     {
         $stmt = $this->pdo->prepare('INSERT INTO vehicles (make, model, generation, engine, fuel_type, year_from, year_to, body_type, is_active, sort_order, created_at, updated_at)

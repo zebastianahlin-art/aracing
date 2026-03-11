@@ -63,6 +63,25 @@ ob_start();
       <?php endif; ?>
     <?php endif; ?>
 
+    <?php if (($compareMessage ?? '') !== ''): ?><p class="ok-msg"><?= htmlspecialchars((string) $compareMessage, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
+    <?php if (($compareError ?? '') !== ''): ?><p class="err-msg"><?= htmlspecialchars((string) $compareError, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
+    <div class="inline-form" style="align-items:center;">
+      <?php if (($isCompared ?? false) === true): ?>
+        <form method="post" action="/compare/remove" class="inline-form" style="margin:0;">
+          <input type="hidden" name="product_id" value="<?= (int) $product['id'] ?>">
+          <input type="hidden" name="back_to" value="/product/<?= rawurlencode((string) $product['slug']) ?>">
+          <button type="submit" class="btn-secondary">Ta bort från jämförelse</button>
+        </form>
+      <?php else: ?>
+        <form method="post" action="/compare/add" class="inline-form" style="margin:0;">
+          <input type="hidden" name="product_id" value="<?= (int) $product['id'] ?>">
+          <input type="hidden" name="back_to" value="/product/<?= rawurlencode((string) $product['slug']) ?>">
+          <button type="submit" class="btn-secondary">Jämför produkt</button>
+        </form>
+      <?php endif; ?>
+      <a class="btn-secondary" href="/compare">Jämförelse (<?= (int) ($compareCount ?? 0) ?>/<?= (int) ($maxCompareItems ?? 4) ?>)</a>
+    </div>
+
     <?php if (($wishlistMessage ?? '') !== ''): ?><p class="ok-msg"><?= htmlspecialchars((string) $wishlistMessage, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
     <?php if (($wishlistError ?? '') !== ''): ?><p class="err-msg"><?= htmlspecialchars((string) $wishlistError, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
     <?php if ($customer !== null): ?>

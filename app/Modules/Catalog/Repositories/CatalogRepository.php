@@ -152,7 +152,8 @@ final class CatalogRepository
         }
 
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
-        $sql = 'SELECT p.id, p.name, p.slug, p.sku, p.sale_price, p.currency_code, p.stock_status, p.stock_quantity, p.backorder_allowed,
+        $sql = 'SELECT p.id, p.name, p.slug, p.sku, p.description, p.review_count, p.average_rating,
+                    p.sale_price, p.currency_code, p.stock_status, p.stock_quantity, p.backorder_allowed,
                     p.is_featured, p.search_boost, p.sort_priority,
                     b.name AS brand_name,
                     (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.is_primary DESC, pi.sort_order ASC, pi.id ASC LIMIT 1) AS image_url

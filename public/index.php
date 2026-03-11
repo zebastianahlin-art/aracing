@@ -2,6 +2,10 @@
 
 declare(strict_types=1);
 
+use App\Core\Http\Response;
+use App\Modules\Redirect\Repositories\RedirectRepository;
+use App\Modules\Redirect\Services\RedirectService;
+
 $app = require dirname(__DIR__) . '/bootstrap/app.php';
 
 if (session_status() != PHP_SESSION_ACTIVE) {
@@ -9,5 +13,30 @@ if (session_status() != PHP_SESSION_ACTIVE) {
 }
 require dirname(__DIR__) . '/routes/web.php';
 
-$response = $app['router']->dispatch($_SERVER['REQUEST_METHOD'] ?? 'GET', $_SERVER['REQUEST_URI'] ?? '/');
+$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+$uri = $_SERVER['REQUEST_URI'] ?? '/';
+
+if (in_array($method, ['GET', 'HEAD'], true)) {
+    $redirectService = new RedirectService(new RedirectRepository($app['pdo']));
+    $requestPath = parse_url($uri, PHP_URL_PATH) ?: '/';
+    $resolved = $redirectService->resolveForPath($requestPath);
+
+    if ($resolved !== null) {
+        $redirectService->registerHit((int) $resolved['redirect_id']);
+
+        $location = (string) $resolved['target_path'];
+        $query = (string) (parse_url($uri, PHP_URL_QUERY) ?? '');
+        if ($query !== '') {
+            $location .= (str_contains($location, '?') ? '&' : '?') . $query;
+        }
+
+        (new Response('', (int) $resolved['redirect_type'], [
+            'Location' => $location,
+            'Content-Type' => 'text/html; charset=UTF-8',
+        ]))->send();
+        exit;
+    }
+}
+
+$response = $app['router']->dispatch($method, $uri);
 $response->send();

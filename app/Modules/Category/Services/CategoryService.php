@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Category\Services;
 
 use App\Modules\Category\Repositories\CategoryRepository;
+use App\Modules\Redirect\Services\RedirectService;
 use App\Shared\Support\Slugger;
 
 final class CategoryService
@@ -14,7 +15,7 @@ final class CategoryService
         'noindex,follow',
     ];
 
-    public function __construct(private readonly CategoryRepository $categories)
+    public function __construct(private readonly CategoryRepository $categories, private readonly RedirectService $redirects)
     {
     }
 
@@ -45,12 +46,21 @@ final class CategoryService
     /** @param array<string, mixed> $input */
     public function update(int $id, array $input): void
     {
+        $existing = $this->categories->findById($id);
         $data = $this->normalize($input);
         if (($data['parent_id'] ?? null) === $id) {
             $data['parent_id'] = null;
         }
 
         $this->categories->update($id, $data);
+
+        if ($existing !== null && (string) ($existing['slug'] ?? '') !== (string) $data['slug']) {
+            $this->redirects->createSlugChangeRedirect(
+                '/category/' . (string) $existing['slug'],
+                '/category/' . (string) $data['slug'],
+                'Auto: kategorislug uppdaterad.'
+            );
+        }
     }
 
     /** @param array<string, mixed> $input

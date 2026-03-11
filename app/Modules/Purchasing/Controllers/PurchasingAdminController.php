@@ -19,15 +19,31 @@ final class PurchasingAdminController
     {
         $filters = [
             'search' => trim((string) ($_GET['search'] ?? '')),
-            'supplier_id' => trim((string) ($_GET['supplier_id'] ?? '')),
+            'supplier_id' => (string) max(0, (int) ($_GET['supplier_id'] ?? 0)),
+            'reason' => trim((string) ($_GET['reason'] ?? '')),
+            'manual_status' => trim((string) ($_GET['manual_status'] ?? '')),
         ];
 
         return new Response($this->views->render('admin.purchasing.refill_needs', [
             'rows' => $this->purchasing->listRefillNeeds($filters),
             'filters' => $filters,
+            'supplierOptions' => $this->purchasing->listSupplierOptions(),
+            'reasonOptions' => $this->purchasing->restockReasonOptions(),
+            'manualStatusOptions' => $this->purchasing->manualRestockStatusOptions(),
             'error' => trim((string) ($_GET['error'] ?? '')),
             'message' => trim((string) ($_GET['message'] ?? '')),
         ]));
+    }
+
+    public function updateRestockFlag(string $productId): Response
+    {
+        try {
+            $this->purchasing->updateRestockFlag((int) $productId, (string) ($_POST['manual_status'] ?? 'new'), (string) ($_POST['manual_note'] ?? ''));
+
+            return $this->redirect('/admin/purchasing?message=' . urlencode('Restockmarkering uppdaterad.'));
+        } catch (InvalidArgumentException $e) {
+            return $this->redirect('/admin/purchasing?error=' . urlencode($e->getMessage()));
+        }
     }
 
     public function createPurchaseList(): Response

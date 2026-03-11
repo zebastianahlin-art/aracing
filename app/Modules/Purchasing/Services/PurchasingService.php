@@ -7,30 +7,108 @@ namespace App\Modules\Purchasing\Services;
 use App\Modules\Purchasing\Repositories\PurchaseListItemRepository;
 use App\Modules\Purchasing\Repositories\PurchaseListRepository;
 use App\Modules\Purchasing\Repositories\RefillNeedRepository;
+use App\Modules\Purchasing\Repositories\RestockFlagRepository;
 use InvalidArgumentException;
 
 final class PurchasingService
 {
     private const ALLOWED_STATUSES = ['draft', 'reviewed', 'exported'];
+    private const MANUAL_RESTOCK_STATUSES = ['new', 'reviewed', 'handling'];
+    private const LOW_STOCK_THRESHOLD = 2;
 
     public function __construct(
         private readonly RefillNeedRepository $refillNeeds,
         private readonly PurchaseListRepository $purchaseLists,
         private readonly PurchaseListItemRepository $purchaseListItems,
+        private readonly RestockFlagRepository $restockFlags,
     ) {
     }
 
     /** @return array<int, array<string, mixed>> */
     public function listRefillNeeds(array $filters = []): array
     {
-        $rows = $this->refillNeeds->listRefillNeeds($filters);
+        $normalizedFilters = $this->normalizeRefillFilters($filters);
+        $rows = $this->refillNeeds->listRefillNeeds(['search' => $normalizedFilters['search'], 'supplier_id' => $normalizedFilters['supplier_id'], 'low_stock_threshold' => self::LOW_STOCK_THRESHOLD]);
 
-        foreach ($rows as &$row) {
+        $productIds = array_map(static fn (array $row): int => (int) $row['product_id'], $rows);
+        $flags = $this->indexFlagsByProductId($this->restockFlags->listByProductIds($productIds));
+        $filteredRows = [];
+
+        foreach ($rows as $row) {
+            $manual = $flags[(int) $row['product_id']] ?? null;
+            $reasons = $this->buildReasons($row);
+
+            $manualStatus = (string) ($manual['status'] ?? 'new');
+            if (!in_array($manualStatus, self::MANUAL_RESTOCK_STATUSES, true)) {
+                $manualStatus = 'new';
+            }
+
+            if ($normalizedFilters['reason'] !== '' && !in_array($normalizedFilters['reason'], $reasons, true)) {
+                continue;
+            }
+
+            if ($normalizedFilters['manual_status'] !== '' && $manualStatus !== $normalizedFilters['manual_status']) {
+                continue;
+            }
+
             $row['suggested_quantity'] = $this->suggestedQuantity($row['stock_quantity']);
-            $row['refill_indicator'] = $this->refillIndicator($row['stock_quantity']);
+            $row['reasons'] = $reasons;
+            $row['reason_labels'] = array_map(fn (string $reason): string => $this->reasonLabel($reason), $reasons);
+            $row['manual_status'] = $manualStatus;
+            $row['manual_note'] = $this->normalizeNotes($manual['note'] ?? null);
+            $row['manual_updated_at'] = $manual['updated_at'] ?? null;
+            $row['has_supplier_link'] = $row['supplier_item_id'] !== null || $row['supplier_id'] !== null;
+
+            $filteredRows[] = $row;
         }
 
-        return $rows;
+        return $filteredRows;
+    }
+
+    /** @return array<int,array{id:int,name:string}> */
+    public function listSupplierOptions(): array
+    {
+        return $this->refillNeeds->listSupplierOptions();
+    }
+
+    /** @return array<int,string> */
+    public function restockReasonOptions(): array
+    {
+        return [
+            'out_of_stock' => 'Slut i lager',
+            'low_stock' => 'Låg nivå',
+            'backorder_enabled' => 'Backorder aktiv',
+            'missing_supplier_link' => 'Utan leverantörskoppling',
+        ];
+    }
+
+    /** @return array<int,string> */
+    public function manualRestockStatusOptions(): array
+    {
+        return [
+            'new' => 'Ny',
+            'reviewed' => 'Granskad',
+            'handling' => 'Hanteras',
+        ];
+    }
+
+    public function updateRestockFlag(int $productId, string $status, ?string $note): void
+    {
+        if ($productId <= 0) {
+            throw new InvalidArgumentException('Ogiltigt produkt-id för restockmarkering.');
+        }
+
+        $normalizedStatus = trim($status);
+        if ($normalizedStatus === 'new') {
+            $this->restockFlags->delete($productId);
+            return;
+        }
+
+        if (!in_array($normalizedStatus, self::MANUAL_RESTOCK_STATUSES, true)) {
+            throw new InvalidArgumentException('Ogiltig restockstatus.');
+        }
+
+        $this->restockFlags->upsert($productId, $normalizedStatus, $this->normalizeNotes($note));
     }
 
     /** @param array<int, int|string> $selectedProductIds
@@ -132,20 +210,42 @@ final class PurchasingService
         return max(1, 5 - (int) $stockQuantity);
     }
 
-    private function refillIndicator(mixed $stockQuantity): string
+    /** @param array<string,mixed> $row
+     * @return array<int,string>
+     */
+    private function buildReasons(array $row): array
     {
-        if ($stockQuantity === null) {
-            return 'Saknar publicerat saldo';
+        $reasons = [];
+
+        if ((string) ($row['stock_status'] ?? '') === 'out_of_stock') {
+            $reasons[] = 'out_of_stock';
         }
 
-        return (int) $stockQuantity <= 0 ? 'Kritiskt låg' : 'Låg nivå';
+        if ($row['stock_quantity'] === null || (int) $row['stock_quantity'] <= self::LOW_STOCK_THRESHOLD) {
+            $reasons[] = 'low_stock';
+        }
+
+        if ((int) ($row['backorder_allowed'] ?? 0) === 1 || (string) ($row['stock_status'] ?? '') === 'backorder') {
+            $reasons[] = 'backorder_enabled';
+        }
+
+        if ($row['supplier_item_id'] === null && $row['supplier_id'] === null) {
+            $reasons[] = 'missing_supplier_link';
+        }
+
+        return $reasons;
+    }
+
+    private function reasonLabel(string $reason): string
+    {
+        return $this->restockReasonOptions()[$reason] ?? $reason;
     }
 
     private function normalizeNotes(?string $notes): ?string
     {
         $normalized = trim((string) $notes);
 
-        return $normalized === '' ? null : $normalized;
+        return $normalized === '' ? null : mb_substr($normalized, 0, 2000);
     }
 
     private function normalizeNullableString(?string $value): ?string
@@ -162,5 +262,42 @@ final class PurchasingService
         }
 
         return max(1, (int) $value);
+    }
+
+    /** @param array<int,array<string,mixed>> $flags
+     * @return array<int,array<string,mixed>>
+     */
+    private function indexFlagsByProductId(array $flags): array
+    {
+        $indexed = [];
+
+        foreach ($flags as $flag) {
+            $indexed[(int) $flag['product_id']] = $flag;
+        }
+
+        return $indexed;
+    }
+
+    /** @param array<string,mixed> $filters
+     * @return array{search:string,supplier_id:int,reason:string,manual_status:string}
+     */
+    private function normalizeRefillFilters(array $filters): array
+    {
+        $reason = trim((string) ($filters['reason'] ?? ''));
+        if (!array_key_exists($reason, $this->restockReasonOptions())) {
+            $reason = '';
+        }
+
+        $manualStatus = trim((string) ($filters['manual_status'] ?? ''));
+        if ($manualStatus !== '' && !in_array($manualStatus, self::MANUAL_RESTOCK_STATUSES, true)) {
+            $manualStatus = '';
+        }
+
+        return [
+            'search' => trim((string) ($filters['search'] ?? '')),
+            'supplier_id' => max(0, (int) ($filters['supplier_id'] ?? 0)),
+            'reason' => $reason,
+            'manual_status' => $manualStatus,
+        ];
     }
 }

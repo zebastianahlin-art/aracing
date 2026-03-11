@@ -6,13 +6,15 @@ namespace App\Modules\Customer\Services;
 
 use App\Modules\Customer\Repositories\CustomerOrderRepository;
 use App\Modules\Customer\Repositories\UserRepository;
+use App\Modules\Returns\Services\ReturnRequestService;
 use InvalidArgumentException;
 
 final class CustomerAccountService
 {
     public function __construct(
         private readonly UserRepository $users,
-        private readonly CustomerOrderRepository $orders
+        private readonly CustomerOrderRepository $orders,
+        private readonly ReturnRequestService $returns
     ) {
     }
 
@@ -82,6 +84,7 @@ final class CustomerAccountService
         return [
             'order' => $order,
             'items' => $this->orders->orderItems($orderId),
+            'returns' => $this->returns->listForOrder($orderId),
         ];
     }
 

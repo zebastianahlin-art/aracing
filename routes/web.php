@@ -78,6 +78,13 @@ use App\Modules\Storefront\Controllers\StorefrontController;
 use App\Modules\Supplier\Controllers\SupplierAdminController;
 use App\Modules\Supplier\Repositories\SupplierRepository;
 use App\Modules\Supplier\Services\SupplierService;
+use App\Modules\Returns\Controllers\ReturnRequestAdminController;
+use App\Modules\Returns\Controllers\ReturnRequestCustomerController;
+use App\Modules\Returns\Repositories\ReturnOrderRepository;
+use App\Modules\Returns\Repositories\ReturnRequestHistoryRepository;
+use App\Modules\Returns\Repositories\ReturnRequestItemRepository;
+use App\Modules\Returns\Repositories\ReturnRequestRepository;
+use App\Modules\Returns\Services\ReturnRequestService;
 use App\Modules\Shipping\Controllers\ShippingMethodAdminController;
 use App\Modules\Shipping\Repositories\ShippingMethodRepository;
 use App\Modules\Shipping\Services\CheckoutTotalsService;
@@ -146,7 +153,14 @@ $cmsHomeService = new CmsHomeService(
 
 $userRepository = new UserRepository($app['pdo']);
 $authService = new AuthService($userRepository);
-$customerAccountService = new CustomerAccountService($userRepository, new CustomerOrderRepository($app['pdo']));
+$returnRequestService = new ReturnRequestService(
+    new ReturnRequestRepository($app['pdo']),
+    new ReturnRequestItemRepository($app['pdo']),
+    new ReturnRequestHistoryRepository($app['pdo']),
+    new ReturnOrderRepository($app['pdo'])
+);
+
+$customerAccountService = new CustomerAccountService($userRepository, new CustomerOrderRepository($app['pdo']), $returnRequestService);
 
 $purchasingService = new PurchasingService(
     new RefillNeedRepository($app['pdo']),
@@ -172,7 +186,7 @@ $supplierItemReviewService = new SupplierItemReviewService(
     new ProductSupplierItemLookupRepository($app['pdo'])
 );
 $supplierItemReviewAdmin = new SupplierItemReviewAdminController($app['view'], $supplierItemReviewService, $supplierService, $importRunService, $productService);
-$orderAdmin = new OrderAdminController($app['view'], $orderService, $paymentEventRepository);
+$orderAdmin = new OrderAdminController($app['view'], $orderService, $paymentEventRepository, $returnRequestService);
 $purchasingAdmin = new PurchasingAdminController($app['view'], $purchasingService);
 $cmsPageAdmin = new CmsPageAdminController($app['view'], $cmsPageService);
 $cmsHomeAdmin = new CmsHomeAdminController($app['view'], $cmsHomeService);
@@ -180,6 +194,8 @@ $shippingMethodAdmin = new ShippingMethodAdminController($app['view'], $shipping
 $discountCodeAdmin = new DiscountCodeAdminController($app['view'], $discountService);
 $authController = new AuthController($app['view'], $authService, $cmsPageService);
 $customerAccountController = new CustomerAccountController($app['view'], $authService, $customerAccountService, $cmsPageService);
+$returnRequestCustomerController = new ReturnRequestCustomerController($app['view'], $authService, $cmsPageService, $returnRequestService);
+$returnRequestAdmin = new ReturnRequestAdminController($app['view'], $returnRequestService);
 
 $app['router']->get('/', [$cmsStorefront, 'home']);
 $app['router']->get('/category/{slug}', [$storefront, 'category']);
@@ -214,6 +230,10 @@ $app['router']->get('/account/profile', [$customerAccountController, 'profileFor
 $app['router']->post('/account/profile', [$customerAccountController, 'updateProfile']);
 $app['router']->get('/account/address', [$customerAccountController, 'addressForm']);
 $app['router']->post('/account/address', [$customerAccountController, 'updateAddress']);
+$app['router']->get('/account/returns', [$returnRequestCustomerController, 'index']);
+$app['router']->get('/account/orders/{orderId}/returns/create', [$returnRequestCustomerController, 'createForm']);
+$app['router']->post('/account/orders/{orderId}/returns', [$returnRequestCustomerController, 'store']);
+$app['router']->get('/account/returns/{returnId}', [$returnRequestCustomerController, 'show']);
 
 $app['router']->get('/admin', [$admin, 'dashboard']);
 $app['router']->get('/admin/brands', [$brandAdmin, 'index']);
@@ -250,6 +270,11 @@ $app['router']->post('/admin/orders/{id}/fulfillment-status', [$orderAdmin, 'tra
 $app['router']->post('/admin/orders/{id}/shipment', [$orderAdmin, 'updateShipment']);
 $app['router']->post('/admin/orders/{id}/internal-reference', [$orderAdmin, 'updateInternalReference']);
 $app['router']->get('/admin/orders/{id}/print', [$orderAdmin, 'printView']);
+
+$app['router']->get('/admin/returns', [$returnRequestAdmin, 'index']);
+$app['router']->get('/admin/returns/{id}', [$returnRequestAdmin, 'show']);
+$app['router']->post('/admin/returns/{id}/status', [$returnRequestAdmin, 'updateStatus']);
+$app['router']->post('/admin/returns/{id}/notes', [$returnRequestAdmin, 'addNote']);
 
 
 $app['router']->get('/admin/shipping-methods', [$shippingMethodAdmin, 'index']);

@@ -2,6 +2,16 @@
 ob_start();
 $order = $detail['order'] ?? null;
 $items = $detail['items'] ?? [];
+$returns = $detail['returns'] ?? [];
+$statusLabels = [
+  'requested' => 'Begärd',
+  'under_review' => 'Under granskning',
+  'approved' => 'Godkänd',
+  'rejected' => 'Avslagen',
+  'received' => 'Mottagen',
+  'completed' => 'Slutförd',
+  'cancelled' => 'Annullerad',
+];
 ?>
 <section class="panel">
   <?php if ($order === null): ?>
@@ -31,6 +41,25 @@ $items = $detail['items'] ?? [];
       <?php endforeach; ?>
       </tbody>
     </table>
+
+    <h3>Returer</h3>
+    <p><a class="btn-secondary" href="/account/orders/<?= (int) $order['id'] ?>/returns/create">Skapa returförfrågan</a> <a class="btn-secondary" href="/account/returns">Visa alla returer</a></p>
+    <?php if ($returns !== []): ?>
+      <table class="table">
+        <thead><tr><th>RMA</th><th>Status</th><th>Skapad</th><th></th></tr></thead>
+        <tbody>
+        <?php foreach ($returns as $return): ?>
+          <tr>
+            <td><?= htmlspecialchars((string) $return['return_number'], ENT_QUOTES, 'UTF-8') ?></td>
+            <td><?= htmlspecialchars((string) ($statusLabels[$return['status']] ?? $return['status']), ENT_QUOTES, 'UTF-8') ?></td>
+            <td><?= htmlspecialchars((string) $return['requested_at'], ENT_QUOTES, 'UTF-8') ?></td>
+            <td><a href="/account/returns/<?= (int) $return['id'] ?>">Visa</a></td>
+          </tr>
+        <?php endforeach; ?>
+        </tbody>
+      </table>
+    <?php endif; ?>
+
   <?php endif; ?>
 </section>
 <?php

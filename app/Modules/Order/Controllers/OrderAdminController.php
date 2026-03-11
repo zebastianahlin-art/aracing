@@ -8,6 +8,7 @@ use App\Core\Http\Response;
 use App\Core\View\ViewFactory;
 use App\Modules\Order\Services\OrderService;
 use App\Modules\Payment\Repositories\PaymentEventRepository;
+use App\Modules\Returns\Services\ReturnRequestService;
 use InvalidArgumentException;
 
 final class OrderAdminController
@@ -15,7 +16,8 @@ final class OrderAdminController
     public function __construct(
         private readonly ViewFactory $views,
         private readonly OrderService $orders,
-        private readonly PaymentEventRepository $paymentEvents
+        private readonly PaymentEventRepository $paymentEvents,
+        private readonly ReturnRequestService $returns
     ) {
     }
 
@@ -46,6 +48,7 @@ final class OrderAdminController
             'error' => trim((string) ($_GET['error'] ?? '')),
             'message' => trim((string) ($_GET['message'] ?? '')),
             'paymentEvents' => $detail !== null ? $this->paymentEvents->forOrder((int) ($detail['order']['id'] ?? 0)) : [],
+            'returnRequests' => $detail !== null ? $this->returns->listForOrder((int) ($detail['order']['id'] ?? 0)) : [],
         ]));
     }
 

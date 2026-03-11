@@ -8,6 +8,8 @@ use App\Core\Http\Response;
 use App\Core\View\ViewFactory;
 use App\Modules\Catalog\Services\CatalogService;
 use App\Modules\Cms\Services\CmsPageService;
+use App\Modules\Customer\Services\AuthService;
+use App\Modules\Review\Services\ProductReviewService;
 use App\Modules\Storefront\Services\SeoService;
 
 final class StorefrontController
@@ -16,6 +18,8 @@ final class StorefrontController
         private readonly ViewFactory $views,
         private readonly CatalogService $catalog,
         private readonly CmsPageService $pages,
+        private readonly AuthService $auth,
+        private readonly ProductReviewService $reviews,
         private readonly SeoService $seo
     ) {
     }
@@ -53,8 +57,20 @@ final class StorefrontController
     {
         $product = $this->catalog->productPage($slug);
 
+        $summary = ['review_count' => 0, 'average_rating' => 0.0];
+        $publicReviews = [];
+        if ($product !== null) {
+            $summary = $this->reviews->publicSummaryForProduct((int) $product['id']);
+            $publicReviews = $this->reviews->publicReviewsForProduct((int) $product['id']);
+        }
+
         return new Response($this->views->render('storefront.product', [
             'product' => $product,
+            'reviewSummary' => $summary,
+            'publicReviews' => $publicReviews,
+            'customer' => $this->auth->currentCustomer(),
+            'reviewMessage' => trim((string) ($_GET['review_message'] ?? '')),
+            'reviewError' => trim((string) ($_GET['review_error'] ?? '')),
             'infoPages' => $this->pages->storefrontInfoPages(),
             'seo' => $this->seo->forProduct($product, '/product/' . rawurlencode($slug)),
         ]));

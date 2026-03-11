@@ -687,3 +687,34 @@ Exkluderas i sitemap:
    curl -i http://127.0.0.1:8000/sitemaps/categories.xml
    curl -i http://127.0.0.1:8000/sitemaps/pages.xml
    ```
+
+## Reviews / ratings v1
+
+Databas:
+- kör även `database/migrations/026_reviews_ratings_v1.sql`
+
+Storefront:
+- produktsidan visar nu snittbetyg och antal recensioner baserat på `approved`
+- endast inloggad kund kan lämna recension
+- ny recension skapas alltid som `pending`
+- recension markeras som `is_verified_purchase = 1` endast när kunden har en verklig orderrad på produkten
+
+Admin:
+- `/admin/reviews` listar recensioner med filtrering på status och produkt-id
+- `/admin/reviews/{id}` visar detalj och låter admin sätta status till:
+  - `pending`
+  - `approved`
+  - `rejected`
+  - `hidden`
+- endast `approved` visas publikt i storefront
+
+Summering:
+- `products.review_count` och `products.average_rating` uppdateras centralt i review-servicen när recension skapas/modereras
+- summeringen räknas alltid på `approved` recensioner
+
+Lokal testning:
+1. Logga in som kund.
+2. Öppna en produkt och skicka recension via formuläret.
+3. Verifiera att kunden ser meddelandet "inväntar granskning".
+4. Öppna admin `/admin/reviews`, godkänn recensionen.
+5. Gå tillbaka till produktsidan och verifiera att recension samt uppdaterat snittbetyg visas.

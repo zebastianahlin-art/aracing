@@ -90,6 +90,10 @@ use App\Modules\Returns\Repositories\ReturnRequestItemRepository;
 use App\Modules\Returns\Repositories\ReturnRequestRepository;
 use App\Modules\Returns\Services\ReturnRequestService;
 use App\Modules\Redirect\Controllers\RedirectAdminController;
+use App\Modules\Review\Controllers\ProductReviewAdminController;
+use App\Modules\Review\Controllers\ProductReviewStorefrontController;
+use App\Modules\Review\Repositories\ProductReviewRepository;
+use App\Modules\Review\Services\ProductReviewService;
 use App\Modules\Redirect\Repositories\RedirectRepository;
 use App\Modules\Redirect\Services\RedirectService;
 use App\Modules\Shipping\Controllers\ShippingMethodAdminController;
@@ -177,6 +181,11 @@ $returnRequestService = new ReturnRequestService(
 
 $customerAccountService = new CustomerAccountService($userRepository, new CustomerOrderRepository($app['pdo']), $returnRequestService);
 
+$productReviewService = new ProductReviewService(
+    new ProductReviewRepository($app['pdo']),
+    new ProductRepository($app['pdo'])
+);
+
 $purchasingService = new PurchasingService(
     new RefillNeedRepository($app['pdo']),
     new PurchaseListRepository($app['pdo']),
@@ -191,7 +200,7 @@ $sitemapService = new SitemapService(
 );
 $robotsService = new RobotsService();
 $sitemapController = new SitemapController($sitemapService, $robotsService);
-$storefront = new StorefrontController($app['view'], $catalogService, $cmsPageService, $seoService);
+$storefront = new StorefrontController($app['view'], $catalogService, $cmsPageService, $authService, $productReviewService, $seoService);
 $cmsStorefront = new CmsStorefrontController($app['view'], $cmsHomeService, $cmsPageService, $seoService);
 $cartController = new CartController($app['view'], $cartService, $cmsPageService);
 $checkoutController = new CheckoutController($app['view'], $cartService, new CheckoutService(), $orderService, $shippingService, $checkoutTotalsService, $cmsPageService, $paymentService, $authService);
@@ -227,10 +236,13 @@ $authController = new AuthController($app['view'], $authService, $cmsPageService
 $customerAccountController = new CustomerAccountController($app['view'], $authService, $customerAccountService, $cmsPageService);
 $returnRequestCustomerController = new ReturnRequestCustomerController($app['view'], $authService, $cmsPageService, $returnRequestService);
 $returnRequestAdmin = new ReturnRequestAdminController($app['view'], $returnRequestService);
+$productReviewStorefront = new ProductReviewStorefrontController($authService, $catalogService, $productReviewService);
+$productReviewAdmin = new ProductReviewAdminController($app['view'], $productReviewService);
 
 $app['router']->get('/', [$cmsStorefront, 'home']);
 $app['router']->get('/category/{slug}', [$storefront, 'category']);
 $app['router']->get('/product/{slug}', [$storefront, 'product']);
+$app['router']->post('/product/{slug}/reviews', [$productReviewStorefront, 'store']);
 $app['router']->get('/search', [$storefront, 'search']);
 $app['router']->get('/robots.txt', [$sitemapController, 'robots']);
 $app['router']->get('/sitemap.xml', [$sitemapController, 'index']);
@@ -304,6 +316,10 @@ $app['router']->post('/admin/products/{id}/images/upload', [$productAdmin, 'uplo
 $app['router']->post('/admin/products/{id}/images/{imageId}/update', [$productAdmin, 'updateImage']);
 $app['router']->post('/admin/products/{id}/images/{imageId}/primary', [$productAdmin, 'setPrimaryImage']);
 $app['router']->post('/admin/products/{id}/images/{imageId}/delete', [$productAdmin, 'deleteImage']);
+
+$app['router']->get('/admin/reviews', [$productReviewAdmin, 'index']);
+$app['router']->get('/admin/reviews/{id}', [$productReviewAdmin, 'show']);
+$app['router']->post('/admin/reviews/{id}/status', [$productReviewAdmin, 'updateStatus']);
 
 $app['router']->get('/admin/orders', [$orderAdmin, 'index']);
 $app['router']->get('/admin/orders/{id}', [$orderAdmin, 'show']);

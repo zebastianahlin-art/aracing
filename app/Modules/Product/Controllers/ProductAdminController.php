@@ -128,8 +128,9 @@ final class ProductAdminController
             'supplier_items' => $this->productSupplierLinks->searchSupplierItems($selectedSupplierId, $supplierItemQuery),
             'stock_movements' => [],
             'product_fitments' => [],
-            'fitment_vehicles' => $this->fitments->activeVehicles(),
+            'fitment_vehicles' => $this->fitments->activeVehicles(trim((string) ($_GET['fitment_vehicle_query'] ?? ''))),
             'fitment_types' => $this->fitments->allowedTypes(),
+            'fitment_vehicle_query' => trim((string) ($_GET['fitment_vehicle_query'] ?? '')),
         ]));
     }
 
@@ -177,8 +178,9 @@ final class ProductAdminController
             'product_relations' => $product !== null ? $this->relations->adminRelationsForProduct($productId) : [],
             'relation_types' => $this->relations->allowedTypes(),
             'product_fitments' => $product !== null ? $this->fitments->listForProduct($productId) : [],
-            'fitment_vehicles' => $this->fitments->activeVehicles(),
+            'fitment_vehicles' => $this->fitments->activeVehicles(trim((string) ($_GET['fitment_vehicle_query'] ?? ''))),
             'fitment_types' => $this->fitments->allowedTypes(),
+            'fitment_vehicle_query' => trim((string) ($_GET['fitment_vehicle_query'] ?? '')),
         ]));
     }
 

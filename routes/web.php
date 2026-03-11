@@ -20,11 +20,14 @@ use App\Modules\Category\Services\CategoryService;
 use App\Modules\Discount\Controllers\DiscountCodeAdminController;
 use App\Modules\Fitment\Controllers\FitmentSelectionController;
 use App\Modules\Fitment\Controllers\VehicleAdminController;
+use App\Modules\Fitment\Controllers\FitmentWorkflowAdminController;
 use App\Modules\Fitment\Repositories\ProductFitmentRepository;
 use App\Modules\Fitment\Repositories\VehicleRepository;
+use App\Modules\Fitment\Repositories\FitmentFlagRepository;
 use App\Modules\Fitment\Services\FitmentService;
 use App\Modules\Fitment\Services\ProductFitmentService;
 use App\Modules\Fitment\Services\VehicleService;
+use App\Modules\Fitment\Services\FitmentWorkflowService;
 use App\Modules\Discount\Repositories\DiscountCodeRepository;
 use App\Modules\Discount\Services\DiscountService;
 use App\Modules\Checkout\Controllers\CheckoutController;
@@ -177,6 +180,7 @@ $productMediaService = new ProductMediaService(
 $vehicleRepository = new VehicleRepository($app['pdo']);
 $productFitmentService = new ProductFitmentService(new ProductFitmentRepository($app['pdo']), $vehicleRepository, new ProductRepository($app['pdo']));
 $fitmentService = new FitmentService($vehicleRepository, new ProductFitmentRepository($app['pdo']));
+$fitmentWorkflowService = new FitmentWorkflowService(new ProductRepository($app['pdo']), new FitmentFlagRepository($app['pdo']));
 $catalogRepository = new CatalogRepository($app['pdo']);
 $productRecommendationService = new ProductRecommendationService(
     $productRelationService,
@@ -309,6 +313,7 @@ $returnRequestAdmin = new ReturnRequestAdminController($app['view'], $returnRequ
 $productReviewStorefront = new ProductReviewStorefrontController($authService, $catalogService, $productReviewService);
 $productReviewAdmin = new ProductReviewAdminController($app['view'], $productReviewService);
 $vehicleAdmin = new VehicleAdminController($app['view'], new VehicleService($vehicleRepository));
+$fitmentWorkflowAdmin = new FitmentWorkflowAdminController($app['view'], $fitmentWorkflowService, $brandService, $categoryService);
 $fitmentSelectionController = new FitmentSelectionController($fitmentService);
 
 $app['router']->get('/', [$cmsStorefront, 'home']);
@@ -392,6 +397,8 @@ $app['router']->get('/admin/vehicles/create', [$vehicleAdmin, 'createForm']);
 $app['router']->post('/admin/vehicles', [$vehicleAdmin, 'store']);
 $app['router']->get('/admin/vehicles/{id}/edit', [$vehicleAdmin, 'editForm']);
 $app['router']->post('/admin/vehicles/{id}', [$vehicleAdmin, 'update']);
+$app['router']->get('/admin/fitment-workflow', [$fitmentWorkflowAdmin, 'index']);
+$app['router']->post('/admin/fitment-workflow/{productId}/flag', [$fitmentWorkflowAdmin, 'updateFlag']);
 $app['router']->get('/admin/products', [$productAdmin, 'index']);
 $app['router']->post('/admin/products/operations', [$productAdmin, 'runBulkAction']);
 $app['router']->post('/admin/products/{id}/operations', [$productAdmin, 'runProductAction']);

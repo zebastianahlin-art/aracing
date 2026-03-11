@@ -75,6 +75,7 @@ use App\Modules\Purchasing\Controllers\PurchasingAdminController;
 use App\Modules\Purchasing\Repositories\PurchaseListItemRepository;
 use App\Modules\Purchasing\Repositories\PurchaseListRepository;
 use App\Modules\Purchasing\Repositories\RefillNeedRepository;
+use App\Modules\Purchasing\Repositories\RestockFlagRepository;
 use App\Modules\Purchasing\Services\PurchasingService;
 use App\Modules\Storefront\Controllers\StorefrontController;
 use App\Modules\StockAlert\Controllers\StockAlertController;
@@ -222,7 +223,8 @@ $productReviewService = new ProductReviewService(
 $purchasingService = new PurchasingService(
     new RefillNeedRepository($app['pdo']),
     new PurchaseListRepository($app['pdo']),
-    new PurchaseListItemRepository($app['pdo'])
+    new PurchaseListItemRepository($app['pdo']),
+    new RestockFlagRepository($app['pdo'])
 );
 
 $seoService = new SeoService();
@@ -407,6 +409,7 @@ $app['router']->post('/admin/shipping-methods/{id}', [$shippingMethodAdmin, 'upd
 
 $app['router']->get('/admin/purchasing', [$purchasingAdmin, 'refillNeeds']);
 $app['router']->post('/admin/purchasing/purchase-lists', [$purchasingAdmin, 'createPurchaseList']);
+$app['router']->post('/admin/purchasing/{productId}/flag', [$purchasingAdmin, 'updateRestockFlag']);
 $app['router']->get('/admin/purchase-lists', [$purchasingAdmin, 'purchaseLists']);
 $app['router']->get('/admin/purchase-lists/{id}', [$purchasingAdmin, 'purchaseListDetail']);
 $app['router']->post('/admin/purchase-lists/{id}/update', [$purchasingAdmin, 'updatePurchaseList']);

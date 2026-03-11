@@ -305,17 +305,26 @@ Lokal manuell test:
 
 Databas:
 - kör även `database/migrations/008_purchasing_light_v1.sql`
+- kör även `database/migrations/032_purchase_intake_restock_v1.sql` (liten manuell restockstatus/anteckning)
 
 Admin:
-- `/admin/purchasing` visar produkter med påfyllnadsbehov
+- `/admin/purchasing` är nu en restock-/replenishment-vy för operativ granskning
+- vyn visar produkt, SKU, stock_quantity, stock_status, backorder_allowed och tydliga restock-signaler
+- signaler i v1: `out_of_stock`, `low_stock`, `backorder_enabled`, `missing_supplier_link`
+- supplier item-data visas som beslutsstöd där koppling finns (leverantör, leverantörs-SKU, senast snapshot-pris/lager)
+- produkter utan supplier-koppling kan fortfarande visas när lagersituationen kräver restockgranskning
+- manuell hantering finns direkt i listan: intern notering + status (`Ny`, `Granskad`, `Hanteras`)
+- snabbfilter finns för signal, leverantör och manuell status
 - `/admin/purchase-lists` listar manuella inköpsunderlag
 - `/admin/purchase-lists/{id}` visar detalj med rader, status, anteckning och vald kvantitet
 
 Lokal manuell test:
-1. Säkerställ att produkter har primär leverantörskoppling och lågt/null lager.
-2. Öppna `/admin/purchasing`, markera rader och skapa ett underlag.
-3. Öppna underlaget via `/admin/purchase-lists` och justera `selected_quantity` per rad.
-4. Uppdatera status (`draft/reviewed/exported`) samt anteckning i detaljvyn.
+1. Säkerställ att det finns aktiva produkter i olika lagerlägen (slut/låg nivå/backorder, samt gärna någon utan supplier-länk).
+2. Öppna `/admin/purchasing` och verifiera att restockorsak visas per rad.
+3. Filtrera på `Slut i lager`, `Låg nivå`, `Backorder aktiv` och `Utan leverantörskoppling`.
+4. Spara en manuell status + intern notering och verifiera att raden kan filtreras på vald manuell status.
+5. Markera flera rader och skapa inköpsunderlag; öppna via `/admin/purchase-lists` och justera `selected_quantity` per rad.
+6. Uppdatera inköpsunderlagets status (`draft/reviewed/exported`) samt anteckning i detaljvyn.
 
 
 ## Leverantörsflöde v2: importgranskning + manuell matchningskö

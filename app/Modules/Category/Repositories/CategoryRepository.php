@@ -91,4 +91,18 @@ final class CategoryRepository
 
         return $stmt->fetchAll();
     }
+
+    /** @return array<int, array{slug:string, updated_at:?string}> */
+    public function sitemapIndexableCategories(): array
+    {
+        $sql = 'SELECT c.slug, c.updated_at
+                FROM categories c
+                WHERE c.is_indexable = 1
+                  AND TRIM(COALESCE(c.slug, "")) <> ""
+                  AND (c.meta_robots IS NULL OR LOWER(c.meta_robots) NOT LIKE "%noindex%")
+                ORDER BY c.updated_at DESC, c.id DESC';
+
+        return $this->pdo->query($sql)->fetchAll();
+    }
+
 }

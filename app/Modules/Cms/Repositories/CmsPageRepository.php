@@ -81,4 +81,19 @@ final class CmsPageRepository
         $stmt = $this->pdo->prepare('UPDATE cms_pages SET title = :title, slug = :slug, page_type = :page_type, is_active = :is_active, meta_title = :meta_title, meta_description = :meta_description, canonical_url = :canonical_url, meta_robots = :meta_robots, is_indexable = :is_indexable, content_html = :content_html, updated_at = NOW() WHERE id = :id');
         $stmt->execute($data);
     }
+
+    /** @return array<int, array{slug:string, updated_at:?string}> */
+    public function sitemapIndexablePages(): array
+    {
+        $sql = 'SELECT cp.slug, cp.updated_at
+                FROM cms_pages cp
+                WHERE cp.is_active = 1
+                  AND cp.is_indexable = 1
+                  AND TRIM(COALESCE(cp.slug, "")) <> ""
+                  AND (cp.meta_robots IS NULL OR LOWER(cp.meta_robots) NOT LIKE "%noindex%")
+                ORDER BY cp.updated_at DESC, cp.id DESC';
+
+        return $this->pdo->query($sql)->fetchAll();
+    }
+
 }

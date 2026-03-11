@@ -127,6 +127,113 @@ final class ProductRepository
         return $stmt->fetchAll();
     }
 
+    /** @param array<string,string> $filters
+     * @return array<int,array<string,mixed>>
+     */
+    public function fitmentWorkflowOverview(array $filters): array
+    {
+        $sql = 'SELECT p.id,
+                       p.name,
+                       p.sku,
+                       p.brand_id,
+                       p.category_id,
+                       b.name AS brand_name,
+                       c.name AS category_name,
+                       COUNT(pf.id) AS fitment_count,
+                       SUM(CASE WHEN pf.fitment_type = "confirmed" THEN 1 ELSE 0 END) AS confirmed_fitment_count,
+                       SUM(CASE WHEN pf.fitment_type = "universal" THEN 1 ELSE 0 END) AS universal_fitment_count
+                FROM products p
+                LEFT JOIN brands b ON b.id = p.brand_id
+                LEFT JOIN categories c ON c.id = p.category_id
+                LEFT JOIN product_fitments pf ON pf.product_id = p.id';
+
+        $where = [];
+        $having = [];
+        $params = [];
+
+        $query = trim((string) ($filters['query'] ?? ''));
+        if ($query !== '') {
+            $where[] = '(p.name LIKE :query OR p.sku LIKE :query)';
+            $params['query'] = '%' . $query . '%';
+        }
+
+        if (($filters['brand_id'] ?? '') !== '' && ctype_digit((string) $filters['brand_id'])) {
+            $where[] = 'p.brand_id = :brand_id';
+            $params['brand_id'] = (int) $filters['brand_id'];
+        }
+
+        if (($filters['category_id'] ?? '') !== '' && ctype_digit((string) $filters['category_id'])) {
+            $where[] = 'p.category_id = :category_id';
+            $params['category_id'] = (int) $filters['category_id'];
+        }
+
+        if ($where !== []) {
+            $sql .= ' WHERE ' . implode(' AND ', $where);
+        }
+
+        $sql .= ' GROUP BY p.id';
+
+        $queue = (string) ($filters['queue'] ?? 'all');
+        if ($queue === 'without_fitment') {
+            $having[] = 'COUNT(pf.id) = 0';
+        }
+        if ($queue === 'with_fitment') {
+            $having[] = 'COUNT(pf.id) > 0';
+        }
+        if ($queue === 'universal') {
+            $having[] = 'SUM(CASE WHEN pf.fitment_type = "universal" THEN 1 ELSE 0 END) > 0';
+            $having[] = 'SUM(CASE WHEN pf.fitment_type = "confirmed" THEN 1 ELSE 0 END) = 0';
+        }
+
+        $fitmentCountBand = (string) ($filters['fitment_count_band'] ?? '');
+        if ($fitmentCountBand === 'many') {
+            $having[] = 'COUNT(pf.id) >= 10';
+        }
+
+        if ($having !== []) {
+            $sql .= ' HAVING ' . implode(' AND ', $having);
+        }
+
+        $sql .= ' ORDER BY fitment_count ASC, p.updated_at DESC, p.id DESC';
+
+        $stmt = $this->pdo->prepare($sql);
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+        }
+        $stmt->execute();
+
+        return $stmt->fetchAll();
+    }
+
+    /** @return array<string,int> */
+    public function fitmentWorkflowTotals(): array
+    {
+        $row = $this->pdo->query('SELECT
+                COUNT(*) AS total_products,
+                SUM(CASE WHEN stats.fitment_count = 0 THEN 1 ELSE 0 END) AS without_fitment,
+                SUM(CASE WHEN stats.fitment_count > 0 THEN 1 ELSE 0 END) AS with_fitment,
+                SUM(CASE WHEN stats.universal_count > 0 THEN 1 ELSE 0 END) AS universal_products
+            FROM (
+                SELECT p.id,
+                       COUNT(pf.id) AS fitment_count,
+                       SUM(CASE WHEN pf.fitment_type = "universal" THEN 1 ELSE 0 END) AS universal_count
+                FROM products p
+                LEFT JOIN product_fitments pf ON pf.product_id = p.id
+                GROUP BY p.id
+            ) stats')->fetch();
+
+        if ($row === false) {
+            return ['total_products' => 0, 'without_fitment' => 0, 'with_fitment' => 0, 'universal_products' => 0];
+        }
+
+        return [
+            'total_products' => (int) ($row['total_products'] ?? 0),
+            'without_fitment' => (int) ($row['without_fitment'] ?? 0),
+            'with_fitment' => (int) ($row['with_fitment'] ?? 0),
+            'universal_products' => (int) ($row['universal_products'] ?? 0),
+        ];
+    }
+
 
 
     /** @return array<int, array<string, mixed>> */

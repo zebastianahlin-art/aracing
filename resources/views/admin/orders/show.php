@@ -4,6 +4,7 @@ $order = $detail['order'] ?? null;
 $items = $detail['items'] ?? [];
 $history = $detail['history'] ?? [];
 $emails = $detail['emails'] ?? [];
+$document = $detail['fulfillment_document'] ?? [];
 $returnRequests = $returnRequests ?? [];
 $supportCases = $supportCases ?? [];
 $statusLabels = [
@@ -34,13 +35,21 @@ $canCancelFulfillment = in_array((string) ($order['fulfillment_status'] ?? ''), 
     <?php if (($message ?? '') !== ''): ?><p class="pill ok"><?= htmlspecialchars((string) $message, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
     <?php if (($error ?? '') !== ''): ?><p class="error-box"><?= htmlspecialchars((string) $error, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
 
+    <p>
+      Fulfillment: <span class="pill"><?= htmlspecialchars((string) ($order['fulfillment_status'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></span> |
+      Plockstart: <strong><?= htmlspecialchars((string) ($order['picking_started_at'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></strong> |
+      Packad: <strong><?= htmlspecialchars((string) ($order['packed_at'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></strong> |
+      Skickad: <strong><?= htmlspecialchars((string) ($order['shipped_at'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></strong>
+    </p>
+
     <div class="actions-inline">
       <a class="btn" href="/admin/orders/<?= (int) $order['id'] ?>/print" target="_blank" rel="noopener">Utskriftsvy</a>
       <?php if ($canConfirm): ?><form method="post" action="/admin/orders/<?= (int) $order['id'] ?>/order-status"><input type="hidden" name="order_status" value="confirmed"><button class="btn" type="submit">Bekräfta order</button></form><?php endif; ?>
       <?php if ($canProcessing): ?><form method="post" action="/admin/orders/<?= (int) $order['id'] ?>/order-status"><input type="hidden" name="order_status" value="processing"><button class="btn" type="submit">Markera under behandling</button></form><?php endif; ?>
       <?php if ($canComplete): ?><form method="post" action="/admin/orders/<?= (int) $order['id'] ?>/order-status"><input type="hidden" name="order_status" value="completed"><button class="btn" type="submit">Markera slutförd</button></form><?php endif; ?>
-      <?php if ($canPicking): ?><form method="post" action="/admin/orders/<?= (int) $order['id'] ?>/fulfillment-status"><input type="hidden" name="fulfillment_status" value="picking"><button class="btn" type="submit">Markera plockas</button></form><?php endif; ?>
+      <?php if ($canPicking): ?><form method="post" action="/admin/orders/<?= (int) $order['id'] ?>/fulfillment-status"><input type="hidden" name="fulfillment_status" value="picking"><button class="btn" type="submit">Starta plock</button></form><?php endif; ?>
       <?php if ($canPacked): ?><form method="post" action="/admin/orders/<?= (int) $order['id'] ?>/fulfillment-status"><input type="hidden" name="fulfillment_status" value="packed"><button class="btn" type="submit">Markera packad</button></form><?php endif; ?>
+      <?php if ($canShipped): ?><form method="post" action="/admin/orders/<?= (int) $order['id'] ?>/fulfillment-status"><input type="hidden" name="fulfillment_status" value="shipped"><button class="btn" type="submit">Markera skickad</button></form><?php endif; ?>
       <?php if ($canCancelOrder): ?><form method="post" action="/admin/orders/<?= (int) $order['id'] ?>/order-status"><input type="hidden" name="order_status" value="cancelled"><button class="btn" type="submit">Annullera order</button></form><?php endif; ?>
       <?php if ($canCancelFulfillment): ?><form method="post" action="/admin/orders/<?= (int) $order['id'] ?>/fulfillment-status"><input type="hidden" name="fulfillment_status" value="cancelled"><button class="btn" type="submit">Annullera fulfillment</button></form><?php endif; ?>
       <?php if ($canDelivered): ?><form method="post" action="/admin/orders/<?= (int) $order['id'] ?>/fulfillment-status"><input type="hidden" name="fulfillment_status" value="delivered"><button class="btn" type="submit">Markera levererad</button></form><?php endif; ?>
@@ -181,20 +190,13 @@ $canCancelFulfillment = in_array((string) ($order['fulfillment_status'] ?? ''), 
       <div><button class="btn" type="submit">Spara fraktinfo</button></div>
     </form>
 
-    <?php if ($canShipped): ?>
-      <form method="post" action="/admin/orders/<?= (int) $order['id'] ?>/fulfillment-status">
-        <input type="hidden" name="fulfillment_status" value="shipped">
-        <button class="btn" type="submit">Markera skickad</button>
-      </form>
-    <?php endif; ?>
-
     <h3>Uppdatera betalning</h3>
     <form method="post" action="/admin/orders/<?= (int) $order['id'] ?>/payment" class="grid-4">
       <div>
         <label>Betalstatus</label>
         <select name="payment_status">
           <?php foreach (($statusOptions['payment_status'] ?? []) as $status): ?>
-            <option value="<?= htmlspecialchars((string) ($statusLabels[$status] ?? $status), ENT_QUOTES, 'UTF-8') ?>" <?= $order['payment_status'] === $status ? 'selected' : '' ?>><?= htmlspecialchars((string) ($statusLabels[$status] ?? $status), ENT_QUOTES, 'UTF-8') ?></option>
+            <option value="<?= htmlspecialchars((string) $status, ENT_QUOTES, 'UTF-8') ?>" <?= $order['payment_status'] === $status ? 'selected' : '' ?>><?= htmlspecialchars((string) ($statusLabels[$status] ?? $status), ENT_QUOTES, 'UTF-8') ?></option>
           <?php endforeach; ?>
         </select>
       </div>
@@ -209,21 +211,29 @@ $canCancelFulfillment = in_array((string) ($order['fulfillment_status'] ?? ''), 
       <button class="btn" type="submit">Spara intern referens</button>
     </form>
 
+    <h3>Interna fulfillment-noteringar</h3>
+    <form method="post" action="/admin/orders/<?= (int) $order['id'] ?>/fulfillment-notes" class="grid-4">
+      <div><label>Plocknotering (intern)</label><textarea name="internal_pick_note"><?= htmlspecialchars((string) ($order['internal_pick_note'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea></div>
+      <div><label>Packnotering (intern)</label><textarea name="internal_pack_note"><?= htmlspecialchars((string) ($order['internal_pack_note'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea></div>
+      <div><button class="btn" type="submit">Spara fulfillment-noteringar</button></div>
+    </form>
+
     <h3>Plocklista</h3>
     <table class="table compact">
-      <thead><tr><th>Produktnamn</th><th>SKU</th><th>Antal</th><th>Pris</th><th>Radtotal</th></tr></thead>
+      <thead><tr><th>Produktnamn</th><th>SKU</th><th>Antal</th><th>Lagersignal</th><th>Radtotal</th></tr></thead>
       <tbody>
       <?php foreach ($items as $item): ?>
         <tr>
           <td><?= htmlspecialchars((string) $item['product_name_snapshot'], ENT_QUOTES, 'UTF-8') ?></td>
           <td><?= htmlspecialchars((string) ($item['sku_snapshot'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></td>
           <td><strong><?= (int) $item['quantity'] ?></strong></td>
-          <td><?= number_format((float) $item['unit_price_snapshot'], 2, ',', ' ') ?></td>
+          <td><?= htmlspecialchars((string) ($item['product_stock_status'] ?? 'unknown'), ENT_QUOTES, 'UTF-8') ?></td>
           <td><?= number_format((float) $item['line_total'], 2, ',', ' ') ?></td>
         </tr>
       <?php endforeach; ?>
       </tbody>
     </table>
+    <p><strong>Operativ signal:</strong> <?= (int) ($document['line_count'] ?? 0) ?> rader / <?= (int) ($document['total_quantity'] ?? 0) ?> artiklar.</p>
 
     <h3>E-posthistorik</h3>
     <table class="table compact">

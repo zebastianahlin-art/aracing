@@ -214,6 +214,31 @@ Lokal manuell test:
 6. Öppna utskriftsvyn och kontrollera att sidan är ren för vanlig webbutskrift.
 
 
+
+## Order fulfillment / packing workflow v2
+
+Databas:
+- kör även `database/migrations/031_order_fulfillment_packing_workflow_v2.sql`
+
+Admin:
+- `/admin/orders` har nu operativa köer/snabblägen: `Att behandla`, `Att plocka`, `Att packa`, `Redo att skicka`
+- orderlistan visar tydligare operativ signal med antal rader och totalt artiklar
+- `/admin/orders/{id}` har tydligare fulfillment-block med plockstart/packad/skickad, stegknappar och interna plock/pack-noteringar
+- `/admin/orders/{id}/print` är en utskriftsvänlig plock-/packlista med checkruta och internnoteringar
+
+Fulfillment-actions i v2:
+- Starta plock (`unfulfilled` -> `picking`)
+- Markera packad (`picking` -> `packed`)
+- Markera skickad (`packed` -> `shipped`)
+- Markera levererad (`shipped` -> `delivered`)
+
+Lokal manuell test:
+1. Öppna `/admin/orders` och växla mellan köerna.
+2. Verifiera att orderrader visar statusar + rader/antal.
+3. Öppna en order och kör stegvis `Starta plock` -> `Markera packad` -> `Markera skickad`.
+4. Spara interna plock-/packnoteringar och verifiera historikrader.
+5. Öppna utskriftsvyn och kontrollera att underlaget är läsbart och skrivbart.
+
 ## Betalningsförberedelser v1 (utan extern provider)
 
 Databas:

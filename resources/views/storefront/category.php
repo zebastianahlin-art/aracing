@@ -7,7 +7,6 @@ ob_start();
   <?php else: ?>
     <p class="muted"><a href="/" style="color:#c8c8cf;">Start</a> / <?= htmlspecialchars((string) $category['name'], ENT_QUOTES, 'UTF-8') ?></p>
     <h2><?= htmlspecialchars((string) $category['name'], ENT_QUOTES, 'UTF-8') ?></h2>
-    <p class="muted"><?= (int) ($total ?? 0) ?> träffar</p>
   <?php endif; ?>
 </section>
 

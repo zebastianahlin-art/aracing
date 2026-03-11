@@ -51,6 +51,9 @@
     .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
     .ok-msg { color:#7ee787; }
     .err-msg { color:#ff9c9c; }
+    .pill { display:inline-block; padding:.2rem .45rem; border-radius:999px; font-size:12px; border:1px solid #384055; background:#1a2030; color:#e6e8ef; }
+    .pill.bad { background:#2b1414; border-color:#703030; color:#ffb3b3; }
+    .pill.ok { background:#173021; border-color:#2f7046; color:#9de9bb; }
     .footer-links { display:flex; gap:.8rem; flex-wrap:wrap; margin-top:.4rem; }
     @media (max-width: 800px) { .grid-2 { grid-template-columns:1fr; } }
   </style>

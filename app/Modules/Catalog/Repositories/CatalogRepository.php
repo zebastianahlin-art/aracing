@@ -108,6 +108,26 @@ final class CatalogRepository
             ORDER BY b.name ASC')->fetchAll();
     }
 
+    /** @param array<string,mixed> $filters
+     *  @return array<int,array{id:int,name:string,product_count:int}>
+     */
+    public function filterBrandsByContext(array $filters): array
+    {
+        $params = [];
+        $where = $this->buildListingWhere($filters, $params, ['brand_id']);
+
+        $stmt = $this->pdo->prepare('SELECT b.id, b.name, COUNT(*) AS product_count
+            FROM products p
+            INNER JOIN brands b ON b.id = p.brand_id
+            LEFT JOIN categories c ON c.id = p.category_id
+            WHERE ' . implode(' AND ', $where) . '
+            GROUP BY b.id, b.name
+            ORDER BY b.name ASC');
+        $stmt->execute($params);
+
+        return $stmt->fetchAll();
+    }
+
     /** @return array<int, string> */
     public function filterStockStatuses(): array
     {
@@ -117,6 +137,46 @@ final class CatalogRepository
             ORDER BY FIELD(stock_status, 'in_stock', 'out_of_stock', 'backorder')")->fetchAll();
 
         return array_map(static fn (array $row): string => (string) $row['stock_status'], $rows);
+    }
+
+    /** @param array<string,mixed> $filters
+     *  @return array<int,array{stock_status:string,product_count:int}>
+     */
+    public function filterStockStatusesByContext(array $filters): array
+    {
+        $params = [];
+        $where = $this->buildListingWhere($filters, $params, ['stock_status']);
+
+        $stmt = $this->pdo->prepare("SELECT p.stock_status, COUNT(*) AS product_count
+            FROM products p
+            LEFT JOIN brands b ON b.id = p.brand_id
+            LEFT JOIN categories c ON c.id = p.category_id
+            WHERE " . implode(' AND ', $where) . "
+            GROUP BY p.stock_status
+            ORDER BY FIELD(p.stock_status, 'in_stock', 'out_of_stock', 'backorder')");
+        $stmt->execute($params);
+
+        return $stmt->fetchAll();
+    }
+
+    /** @param array<string,mixed> $filters
+     *  @return array<int,array{id:int,name:string,product_count:int}>
+     */
+    public function filterCategoriesByContext(array $filters): array
+    {
+        $params = [];
+        $where = $this->buildListingWhere($filters, $params, ['category_id']);
+
+        $stmt = $this->pdo->prepare('SELECT c.id, c.name, COUNT(*) AS product_count
+            FROM products p
+            INNER JOIN categories c ON c.id = p.category_id
+            LEFT JOIN brands b ON b.id = p.brand_id
+            WHERE ' . implode(' AND ', $where) . '
+            GROUP BY c.id, c.name
+            ORDER BY c.name ASC');
+        $stmt->execute($params);
+
+        return $stmt->fetchAll();
     }
 
     /** @return array<string, mixed>|null */
@@ -247,36 +307,37 @@ final class CatalogRepository
      *  @param array<string, mixed> $params
      *  @return array<int, string>
      */
-    private function buildListingWhere(array $filters, array &$params): array
+    private function buildListingWhere(array $filters, array &$params, array $ignoredFilters = []): array
     {
         $where = [$this->publicVisibilityWhereSql()];
+        $ignored = array_fill_keys($ignoredFilters, true);
 
-        if (isset($filters['category_id']) && (int) $filters['category_id'] > 0) {
+        if (!isset($ignored['category_id']) && isset($filters['category_id']) && (int) $filters['category_id'] > 0) {
             $where[] = 'p.category_id = :category_id';
             $params['category_id'] = (int) $filters['category_id'];
         }
 
-        if (isset($filters['brand_id']) && (int) $filters['brand_id'] > 0) {
+        if (!isset($ignored['brand_id']) && isset($filters['brand_id']) && (int) $filters['brand_id'] > 0) {
             $where[] = 'p.brand_id = :brand_id';
             $params['brand_id'] = (int) $filters['brand_id'];
         }
 
-        if (!empty($filters['min_price'])) {
+        if (!isset($ignored['min_price']) && !empty($filters['min_price'])) {
             $where[] = 'p.sale_price >= :min_price';
             $params['min_price'] = (float) $filters['min_price'];
         }
 
-        if (!empty($filters['max_price'])) {
+        if (!isset($ignored['max_price']) && !empty($filters['max_price'])) {
             $where[] = 'p.sale_price <= :max_price';
             $params['max_price'] = (float) $filters['max_price'];
         }
 
-        if (!empty($filters['stock_status'])) {
+        if (!isset($ignored['stock_status']) && !empty($filters['stock_status'])) {
             $where[] = 'p.stock_status = :stock_status';
             $params['stock_status'] = (string) $filters['stock_status'];
         }
 
-        if (!empty($filters['q'])) {
+        if (!isset($ignored['q']) && !empty($filters['q'])) {
             $where[] = '(p.name LIKE :search_term OR p.sku LIKE :search_term OR b.name LIKE :search_term OR c.name LIKE :search_term)';
             $params['search_term'] = '%' . (string) $filters['q'] . '%';
         }

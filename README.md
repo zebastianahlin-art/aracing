@@ -814,3 +814,20 @@ Lokal testning (manuell):
 4. Ändra lagret så produkten blir köpbar igen via adminflödet.
 5. Verifiera att mailrad skapas i `email_messages` och att subscription går till `notified` vid lyckat utskick.
 6. Testa att samma subscription inte skickas igen utan ny/återaktiverad bevakning.
+
+## Recently viewed products v1
+
+Storefront:
+- produktsidan (`/product/{slug}`) registrerar nu visad produkt i en central `RecentViewedService`
+- historiken är sessionbaserad (gäller både gäst och inloggad användare i samma session)
+- lagringen är en ordnad lista av `product_id` med senaste först, deduplicering och max 12 poster
+- sektionen **"Nyligen visade produkter"** visas på produktsidan när det finns underlag
+- aktuell produkt exkluderas från sektionen på sin egen produktsida
+- endast publika produkter visas (`is_active = 1` och `is_search_hidden = 0`)
+
+Lokal testning:
+1. Starta applikationen (`composer serve`).
+2. Öppna flera produktsidor i följd.
+3. Gå tillbaka till en produktsida och verifiera att sektionen "Nyligen visade produkter" visas.
+4. Verifiera att aktuell produkt inte visas i sin egen lista.
+5. Verifiera att inaktiva/sökdolda produkter inte visas i listan även om de tidigare besökts.

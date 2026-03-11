@@ -10,6 +10,7 @@ use App\Modules\Catalog\Services\CatalogService;
 use App\Modules\Cms\Services\CmsPageService;
 use App\Modules\Customer\Services\AuthService;
 use App\Modules\Review\Services\ProductReviewService;
+use App\Modules\Storefront\Services\RecentViewedService;
 use App\Modules\Storefront\Services\SeoService;
 use App\Modules\StockAlert\Services\StockAlertService;
 use App\Modules\Wishlist\Services\WishlistService;
@@ -24,7 +25,8 @@ final class StorefrontController
         private readonly ProductReviewService $reviews,
         private readonly SeoService $seo,
         private readonly WishlistService $wishlists,
-        private readonly StockAlertService $stockAlerts
+        private readonly StockAlertService $stockAlerts,
+        private readonly RecentViewedService $recentViewed
     ) {
     }
 
@@ -32,6 +34,7 @@ final class StorefrontController
     {
         return new Response($this->views->render('storefront.home', [
             'products' => $this->catalog->latestProducts(8),
+            'recentlyViewedProducts' => $this->recentViewed->recentlyViewedProducts(6),
             'infoPages' => $this->pages->storefrontInfoPages(),
             'seo' => $this->seo->forStaticPage('Start', '/'),
         ]));
@@ -61,6 +64,12 @@ final class StorefrontController
     {
         $product = $this->catalog->productPage($slug);
 
+        $recentlyViewedProducts = [];
+        if ($product !== null) {
+            $this->recentViewed->trackProductView((int) $product['id']);
+            $recentlyViewedProducts = $this->recentViewed->recentlyViewedProducts(6, (int) $product['id']);
+        }
+
         $summary = ['review_count' => 0, 'average_rating' => 0.0];
         $publicReviews = [];
         if ($product !== null) {
@@ -82,6 +91,7 @@ final class StorefrontController
 
         return new Response($this->views->render('storefront.product', [
             'product' => $product,
+            'recentlyViewedProducts' => $recentlyViewedProducts,
             'reviewSummary' => $summary,
             'publicReviews' => $publicReviews,
             'customer' => $customer,

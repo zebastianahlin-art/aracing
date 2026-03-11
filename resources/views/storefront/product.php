@@ -102,6 +102,29 @@ ob_start();
       </ul>
     <?php endif; ?>
 
+
+    <?php $recentlyViewedProducts = is_array($recentlyViewedProducts ?? null) ? $recentlyViewedProducts : []; ?>
+    <?php if ($recentlyViewedProducts !== []): ?>
+      <h3>Nyligen visade produkter</h3>
+      <div class="product-grid">
+        <?php foreach ($recentlyViewedProducts as $item): ?>
+          <article class="product-card">
+            <a href="/product/<?= rawurlencode((string) $item['slug']) ?>">
+              <?php if (!empty($item['image_url'])): ?>
+                <img src="<?= htmlspecialchars((string) $item['image_url'], ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars((string) $item['name'], ENT_QUOTES, 'UTF-8') ?>">
+              <?php else: ?>
+                <div class="image-placeholder">Ingen bild</div>
+              <?php endif; ?>
+              <h4><?= htmlspecialchars((string) $item['name'], ENT_QUOTES, 'UTF-8') ?></h4>
+            </a>
+            <p class="muted"><?= htmlspecialchars((string) ($item['brand_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+            <p><strong><?= htmlspecialchars((string) ($item['sale_price'] ?? '-'), ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars((string) ($item['currency_code'] ?? 'SEK'), ENT_QUOTES, 'UTF-8') ?></strong></p>
+            <p class="muted"><?= htmlspecialchars((string) ($item['storefront_stock_label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+          </article>
+        <?php endforeach; ?>
+      </div>
+    <?php endif; ?>
+
     <?php $relatedProducts = is_array($product['related_products'] ?? null) ? $product['related_products'] : []; ?>
     <?php $crossSellProducts = is_array($product['cross_sell_products'] ?? null) ? $product['cross_sell_products'] : []; ?>
 

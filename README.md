@@ -1026,3 +1026,32 @@ Lokal snabbtest:
 4. I storefront, välj bil i YMM-sektionen högst upp.
 5. Verifiera i `/search` eller kategori att toggle för passande produkter fungerar.
 6. Öppna en produkt och kontrollera fitment-signalen för vald bil.
+
+## Supplier fitment intake / review v1
+
+Databas:
+- kör även `database/migrations/037_supplier_fitment_intake_review_v1.sql`
+
+Admin:
+- `/admin/supplier-fitment-review`
+
+Vad som ingår i v1:
+- nytt reviewbart underlag i `supplier_fitment_candidates` kopplat till `supplier_items`
+- kandidater lagrar råfält (`raw_make`, `raw_model`, `raw_generation`, `raw_engine`, `raw_year_from`, `raw_year_to`, `raw_text`)
+- statusflöde: `pending`, `approved`, `rejected`, `skipped`
+- confidence label: `exact`, `likely`, `unknown`
+- snabb intake-väg i admin (för intern test/debug)
+- reviewkö med filter för status, matchat/omatchat fordon, utan produktkoppling och leverantör
+
+Reviewregler i v1:
+- godkännande kräver produktkoppling och vehicle-id
+- vid godkännande skapas `product_fitments` (typ `confirmed`) först efter review
+- dubblett mellan produkt och fordon undviks centralt innan ny fitment skapas
+- rejected/skipped skapar inte publika fitments
+
+Lokal snabbtest:
+1. Skapa en kandidat via `/admin/supplier-fitment-review` (sektionen `Snabb intake`).
+2. Verifiera att kandidaten syns med status `pending` i kön.
+3. Sätt/justera `Vehicle ID` och godkänn kandidaten.
+4. Öppna produkten i `/admin/products/{id}/edit#fitment` och verifiera att fitmentkopplingen skapats.
+5. Testa även `Avvisa`/`Skippa` och verifiera att ingen ny `product_fitments` skapas.

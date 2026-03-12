@@ -594,6 +594,61 @@ ob_start();
 
 
 <?php if ($isEdit): ?>
+<section id="ai-fitment-suggestions" class="card" style="margin-top:.8rem;">
+  <h3>AI-assisterade fitmentförslag v1</h3>
+  <p class="muted">Review-first: förslag blir inte live förrän de godkänns manuellt.</p>
+
+  <form method="post" action="/admin/products/<?= (int) $product['id'] ?>/ai-fitment-suggestions" style="margin-bottom:.7rem;">
+    <button class="btn" type="submit">Skapa AI-fitmentförslag</button>
+  </form>
+
+  <?php if (($ai_fitment_suggestions ?? []) === []): ?>
+    <p class="muted">Inga AI-fitmentförslag ännu.</p>
+  <?php else: ?>
+    <table class="table compact">
+      <thead><tr><th>Föreslaget fordon</th><th>Confidence</th><th>Källa</th><th>Motivering</th><th>Status</th><th>Åtgärder</th></tr></thead>
+      <tbody>
+      <?php foreach (($ai_fitment_suggestions ?? []) as $suggestion): ?>
+        <tr>
+          <td>
+            <?= htmlspecialchars((string) $suggestion['make'] . ' ' . $suggestion['model'] . ' ' . ($suggestion['generation'] ?? '') . ' ' . ($suggestion['engine'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+            <?php if ((int) ($suggestion['vehicle_is_active'] ?? 1) !== 1): ?><span class="muted"> (inaktivt fordon)</span><?php endif; ?>
+          </td>
+          <td><span class="pill"><?= htmlspecialchars((string) ($suggestion['confidence_label'] ?? 'unknown'), ENT_QUOTES, 'UTF-8') ?></span></td>
+          <td>
+            <?php
+              $sourceLabel = match ((string) ($suggestion['source_type'] ?? '')) {
+                  'supplier_fitment_candidate' => 'Baserat på supplier-fitmentunderlag',
+                  'product_text' => 'Baserat på produkttext',
+                  'ai_import_draft' => 'Baserat på AI-importutkast',
+                  default => 'Baserat på kombinerat underlag',
+              };
+            ?>
+            <?= htmlspecialchars($sourceLabel, ENT_QUOTES, 'UTF-8') ?>
+          </td>
+          <td><?= nl2br(htmlspecialchars((string) ($suggestion['suggestion_reason'] ?? ''), ENT_QUOTES, 'UTF-8')) ?></td>
+          <td><strong><?= htmlspecialchars((string) ($suggestion['status'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong></td>
+          <td>
+            <?php if ((string) ($suggestion['status'] ?? '') === 'pending'): ?>
+              <form method="post" action="/admin/products/<?= (int) $product['id'] ?>/ai-fitment-suggestions/<?= (int) $suggestion['id'] ?>/approve" style="margin-bottom:.3rem;">
+                <button class="btn" type="submit">Godkänn</button>
+              </form>
+              <form method="post" action="/admin/products/<?= (int) $product['id'] ?>/ai-fitment-suggestions/<?= (int) $suggestion['id'] ?>/reject" onsubmit="return confirm('Avvisa AI-fitmentförslag?');">
+                <button class="btn" type="submit">Avvisa</button>
+              </form>
+            <?php else: ?>
+              <span class="muted">Granskad <?= htmlspecialchars((string) ($suggestion['reviewed_at'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></span>
+            <?php endif; ?>
+          </td>
+        </tr>
+      <?php endforeach; ?>
+      </tbody>
+    </table>
+  <?php endif; ?>
+</section>
+<?php endif; ?>
+
+<?php if ($isEdit): ?>
 <section id="fitment" class="card" style="margin-top:.8rem;">
   <h3>Fitment / Fordonskopplingar (YMM v1)</h3>
   <p class="muted">Totalt antal kopplingar: <?= count($product_fitments ?? []) ?></p>

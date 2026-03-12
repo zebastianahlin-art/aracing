@@ -30,6 +30,7 @@ use App\Modules\Fitment\Repositories\VehicleRepository;
 use App\Modules\Fitment\Repositories\UserVehicleRepository;
 use App\Modules\Fitment\Repositories\FitmentFlagRepository;
 use App\Modules\Fitment\Repositories\SupplierFitmentCandidateRepository;
+use App\Modules\Fitment\Repositories\AiFitmentSuggestionRepository;
 use App\Modules\Fitment\Services\FitmentService;
 use App\Modules\Fitment\Services\ProductFitmentService;
 use App\Modules\Fitment\Services\VehicleService;
@@ -42,6 +43,7 @@ use App\Modules\Fitment\Services\FitmentGapService;
 use App\Modules\Fitment\Services\SupplierFitmentIntakeService;
 use App\Modules\Fitment\Services\SupplierFitmentMappingService;
 use App\Modules\Fitment\Services\SupplierFitmentReviewService;
+use App\Modules\Fitment\Services\AiFitmentSuggestionService;
 use App\Modules\Discount\Repositories\DiscountCodeRepository;
 use App\Modules\Discount\Services\DiscountService;
 use App\Modules\Checkout\Controllers\CheckoutController;
@@ -217,6 +219,16 @@ $supplierFitmentCandidateRepository = new SupplierFitmentCandidateRepository($ap
 $supplierFitmentMappingService = new SupplierFitmentMappingService($vehicleRepository);
 $supplierFitmentIntakeService = new SupplierFitmentIntakeService($supplierFitmentCandidateRepository, $supplierItemRepository, new ProductSupplierLinkRepository($app['pdo']), $supplierFitmentMappingService);
 $supplierFitmentReviewService = new SupplierFitmentReviewService($app['pdo'], $supplierFitmentCandidateRepository, $supplierFitmentIntakeService, new ProductFitmentRepository($app['pdo']), new ProductRepository($app['pdo']), $vehicleRepository);
+$aiFitmentSuggestionService = new AiFitmentSuggestionService(
+    $app['pdo'],
+    new AiFitmentSuggestionRepository($app['pdo']),
+    new ProductRepository($app['pdo']),
+    new ProductAttributeRepository($app['pdo']),
+    $supplierFitmentCandidateRepository,
+    new ProductFitmentRepository($app['pdo']),
+    $vehicleRepository,
+    new AiProductImportDraftRepository($app['pdo'])
+);
 $catalogRepository = new CatalogRepository($app['pdo']);
 $fitmentCoverageService = new FitmentCoverageService($catalogRepository);
 $fitmentGapService = new FitmentGapService(new ProductRepository($app['pdo']), new FitmentFlagRepository($app['pdo']), $supplierFitmentCandidateRepository, $catalogRepository);
@@ -363,7 +375,7 @@ $admin = new AdminController($app['view']);
 $brandAdmin = new BrandAdminController($app['view'], $brandService);
 $categoryAdmin = new CategoryAdminController($app['view'], $categoryService);
 $redirectAdmin = new RedirectAdminController($app['view'], $redirectService);
-$productAdmin = new ProductAdminController($app['view'], $productService, $productMediaService, $productRelationService, $brandService, $categoryService, $supplierService, $productSupplierLinkService, $productFitmentService, $aiProductEnrichmentService, $aiProductAttributeSuggestionService, $aiProductCategorySuggestionService, $aiProductLocalizationService);
+$productAdmin = new ProductAdminController($app['view'], $productService, $productMediaService, $productRelationService, $brandService, $categoryService, $supplierService, $productSupplierLinkService, $productFitmentService, $aiFitmentSuggestionService, $aiProductEnrichmentService, $aiProductAttributeSuggestionService, $aiProductCategorySuggestionService, $aiProductLocalizationService);
 $supplierAdmin = new SupplierAdminController($app['view'], $supplierService);
 $importProfileAdmin = new ImportProfileAdminController($app['view'], $importProfileService, $supplierService);
 $importRunAdmin = new ImportRunAdminController($app['view'], $importRunService, $importProfileService, $csvImportService);
@@ -529,6 +541,9 @@ $app['router']->post('/admin/products/{id}/relations/{relationId}/update', [$pro
 $app['router']->post('/admin/products/{id}/relations/{relationId}/delete', [$productAdmin, 'deleteRelation']);
 $app['router']->post('/admin/products/{id}/fitments', [$productAdmin, 'createFitment']);
 $app['router']->post('/admin/products/{id}/fitments/{fitmentId}/delete', [$productAdmin, 'deleteFitment']);
+$app['router']->post('/admin/products/{id}/ai-fitment-suggestions', [$productAdmin, 'createAiFitmentSuggestions']);
+$app['router']->post('/admin/products/{id}/ai-fitment-suggestions/{suggestionId}/approve', [$productAdmin, 'approveAiFitmentSuggestion']);
+$app['router']->post('/admin/products/{id}/ai-fitment-suggestions/{suggestionId}/reject', [$productAdmin, 'rejectAiFitmentSuggestion']);
 
 $app['router']->get('/admin/reviews', [$productReviewAdmin, 'index']);
 $app['router']->get('/admin/reviews/{id}', [$productReviewAdmin, 'show']);

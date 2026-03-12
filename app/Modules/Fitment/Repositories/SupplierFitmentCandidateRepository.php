@@ -133,6 +133,23 @@ final class SupplierFitmentCandidateRepository
         return $result;
     }
 
+
+
+    /** @return array<int,array<string,mixed>> */
+    public function byProductId(int $productId): array
+    {
+        $stmt = $this->pdo->prepare('SELECT id, supplier_item_id, product_id, raw_make, raw_model, raw_generation, raw_engine,
+                raw_year_from, raw_year_to, raw_text, normalized_make, normalized_model, normalized_generation, normalized_engine,
+                matched_vehicle_id, confidence_label, mapping_source, mapping_note, status, review_note,
+                created_at, reviewed_at, reviewed_by_user_id
+            FROM supplier_fitment_candidates
+            WHERE product_id = :product_id
+            ORDER BY id DESC');
+        $stmt->execute(['product_id' => $productId]);
+
+        return $stmt->fetchAll();
+    }
+
     /** @return array<string,mixed>|null */
     public function findById(int $id): ?array
     {

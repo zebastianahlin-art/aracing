@@ -29,6 +29,9 @@ $aiPayload = json_decode((string) ($draft['ai_structured_payload'] ?? ''), true)
     <input type="hidden" name="review_note" value="Underlag flyttat vidare till manuellt produktflöde.">
     <button class="btn" type="submit">Markera imported</button>
   </form>
+  <form method="post" action="/admin/ai-product-import/<?= (int) $draft['id'] ?>/handoff-product-draft">
+    <button class="btn" type="submit" <?= ((string) ($draft['status'] ?? '') !== 'reviewed' || !empty($draft['handed_off_at'])) ? 'disabled' : '' ?>>Skapa produktutkast</button>
+  </form>
   <a class="btn" href="/admin/products/create">Skapa produktutkast manuellt</a>
 </div>
 
@@ -44,6 +47,19 @@ $aiPayload = json_decode((string) ($draft['ai_structured_payload'] ?? ''), true)
     <p><strong>Status:</strong> <span class="pill"><?= htmlspecialchars((string) $draft['status'], ENT_QUOTES, 'UTF-8') ?></span></p>
     <p><strong>Skapad:</strong> <?= htmlspecialchars((string) ($draft['created_at'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
     <p><strong>Granskad:</strong> <?= htmlspecialchars((string) ($draft['reviewed_at'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+    <p><strong>Handoff:</strong> <?= !empty($draft['handed_off_at']) ? 'Ja' : 'Nej' ?></p>
+    <p><strong>Handoff tid:</strong> <?= htmlspecialchars((string) ($draft['handed_off_at'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
+    <p><strong>Handoff av användare:</strong> <?= htmlspecialchars((string) ($draft['handed_off_by_user_id'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
+    <p><strong>Handoff mål:</strong>
+      <?php if (!empty($draft['handoff_target_type']) && !empty($draft['handoff_target_id'])): ?>
+        <?= htmlspecialchars((string) $draft['handoff_target_type'], ENT_QUOTES, 'UTF-8') ?> #<?= (int) $draft['handoff_target_id'] ?>
+        <?php if ((string) $draft['handoff_target_type'] === 'product'): ?>
+          <a class="btn" href="/admin/products/<?= (int) $draft['handoff_target_id'] ?>/edit">Öppna mål</a>
+        <?php endif; ?>
+      <?php else: ?>
+        -
+      <?php endif; ?>
+    </p>
     <p><strong>Granskningsnotering:</strong> <?= htmlspecialchars((string) ($draft['review_note'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
   </div>
 

@@ -73,6 +73,7 @@ use App\Modules\Import\Services\ImportProfileService;
 use App\Modules\Import\Services\ImportRunService;
 use App\Modules\Import\Services\SupplierItemReviewService;
 use App\Modules\Import\Services\AiProductImportService;
+use App\Modules\Import\Services\AiProductDraftHandoffService;
 use App\Modules\Import\Services\AiProductStructuringService;
 use App\Modules\Import\Services\ProductPageFetchService;
 use App\Modules\Import\Services\ProductPageExtractService;
@@ -246,6 +247,11 @@ $aiProductImportService = new AiProductImportService(
         new HksProductParser(),
     ])
 );
+$aiProductDraftHandoffService = new AiProductDraftHandoffService(
+    new AiProductImportDraftRepository($app['pdo']),
+    $productService,
+    new ProductRepository($app['pdo'])
+);
 $cartService = new CartService(new CartRepository($app['pdo']), new CartProductRepository($app['pdo']), $inventoryService, $discountService, $checkoutTotalsService);
 $orderRepository = new OrderRepository($app['pdo']);
 $orderEmailService = new OrderEmailService($orderRepository, $emailMessageRepository, new TransactionalEmailSender(), $app['view']);
@@ -334,7 +340,7 @@ $supplierItemReviewService = new SupplierItemReviewService(
     new ProductSupplierItemLookupRepository($app['pdo'])
 );
 $supplierItemReviewAdmin = new SupplierItemReviewAdminController($app['view'], $supplierItemReviewService, $supplierService, $importRunService, $productService);
-$aiProductImportAdmin = new AiProductImportAdminController($app['view'], $aiProductImportService);
+$aiProductImportAdmin = new AiProductImportAdminController($app['view'], $aiProductImportService, $aiProductDraftHandoffService);
 $supportCaseService = new SupportCaseService(
     new SupportCaseRepository($app['pdo']),
     new SupportCaseHistoryRepository($app['pdo']),
@@ -576,3 +582,4 @@ $app['router']->get('/admin/ai-product-import/{id}', [$aiProductImportAdmin, 'sh
 $app['router']->post('/admin/ai-product-import/{id}/reviewed', [$aiProductImportAdmin, 'markReviewed']);
 $app['router']->post('/admin/ai-product-import/{id}/rejected', [$aiProductImportAdmin, 'reject']);
 $app['router']->post('/admin/ai-product-import/{id}/imported', [$aiProductImportAdmin, 'markImported']);
+$app['router']->post('/admin/ai-product-import/{id}/handoff-product-draft', [$aiProductImportAdmin, 'handoffToProductDraft']);

@@ -407,7 +407,7 @@ final class ProductRepository
     /** @return array<string, mixed>|null */
     public function findById(int $id): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT id, brand_id, category_id, name, slug, sku, description, seo_title, seo_description, canonical_url, meta_robots, is_indexable, sale_price, currency_code, stock_status, stock_quantity, backorder_allowed, stock_updated_at, is_active, is_search_hidden, is_featured, search_boost, sort_priority FROM products WHERE id = :id');
+        $stmt = $this->pdo->prepare('SELECT id, brand_id, category_id, name, slug, sku, description, seo_title, seo_description, canonical_url, meta_robots, is_indexable, sale_price, currency_code, stock_status, stock_quantity, backorder_allowed, stock_updated_at, is_active, is_search_hidden, is_featured, search_boost, sort_priority, source_type, source_reference_id, source_url FROM products WHERE id = :id');
         $stmt->execute(['id' => $id]);
         $row = $stmt->fetch();
 
@@ -550,6 +550,22 @@ final class ProductRepository
         $stmt->bindValue('search_boost', $data['search_boost'], PDO::PARAM_INT);
         $stmt->bindValue('sort_priority', $data['sort_priority'], PDO::PARAM_INT);
         $stmt->execute();
+    }
+
+    public function setSourceReference(int $id, string $sourceType, int $sourceReferenceId, string $sourceUrl): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE products
+                                     SET source_type = :source_type,
+                                         source_reference_id = :source_reference_id,
+                                         source_url = :source_url,
+                                         updated_at = NOW()
+                                     WHERE id = :id');
+        $stmt->execute([
+            'id' => $id,
+            'source_type' => $sourceType,
+            'source_reference_id' => $sourceReferenceId,
+            'source_url' => $sourceUrl,
+        ]);
     }
 
     public function updateSalePrice(int $id, ?string $salePrice): void

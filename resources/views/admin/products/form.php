@@ -37,6 +37,15 @@ ob_start();
 
 <section class="card">
   <h3><?= $isEdit ? 'Redigera produkt' : 'Skapa produkt' ?></h3>
+  <?php if ($isEdit && (string) ($product['source_type'] ?? '') === 'ai_url_import' && (int) ($product['source_reference_id'] ?? 0) > 0): ?>
+    <p class="pill warn">
+      Källa: AI URL-importutkast #<?= (int) $product['source_reference_id'] ?>.
+      <a href="/admin/ai-product-import/<?= (int) $product['source_reference_id'] ?>">Öppna källa</a>
+    </p>
+    <?php if (trim((string) ($product['source_url'] ?? '')) !== ''): ?>
+      <p class="muted">Käll-URL: <?= htmlspecialchars((string) $product['source_url'], ENT_QUOTES, 'UTF-8') ?></p>
+    <?php endif; ?>
+  <?php endif; ?>
   <?php if (!$isEdit && is_array($prefill_draft ?? null)): ?>
     <p class="pill warn">Manuell produktupprättning från supplier_item #<?= (int) ($prefill_draft['supplier_item']['id'] ?? 0) ?> · kontrollera publicerad data innan du sparar.</p>
     <div class="grid" style="margin-bottom:.7rem;">

@@ -63,6 +63,22 @@ final class AiProductEnrichmentSuggestionRepository
         return $stmt->fetchAll() ?: [];
     }
 
+    /** @return array<int,array<string,mixed>> */
+    public function listForProductByType(int $productId, string $suggestionType, int $limit = 10): array
+    {
+        $stmt = $this->pdo->prepare('SELECT *
+            FROM ai_product_enrichment_suggestions
+            WHERE product_id = :product_id AND suggestion_type = :suggestion_type
+            ORDER BY created_at DESC, id DESC
+            LIMIT :limit');
+        $stmt->bindValue('product_id', $productId, PDO::PARAM_INT);
+        $stmt->bindValue('suggestion_type', $suggestionType, PDO::PARAM_STR);
+        $stmt->bindValue('limit', max(1, min(50, $limit)), PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll() ?: [];
+    }
+
     /** @return array<string,mixed>|null */
     public function findById(int $id): ?array
     {

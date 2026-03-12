@@ -11,7 +11,7 @@ use InvalidArgumentException;
 
 final class AiProductEnrichmentService
 {
-    private const ALLOWED_TYPES = ['content_cleanup', 'title_description', 'seo_assist', 'attribute_summary'];
+    private const ALLOWED_TYPES = ['content_cleanup', 'title_description', 'seo_assist', 'attribute_summary', 'seo_metadata'];
 
     public function __construct(
         private readonly ProductService $products,
@@ -27,6 +27,12 @@ final class AiProductEnrichmentService
         return $this->suggestions->listForProduct($productId);
     }
 
+    /** @return array<int,array<string,mixed>> */
+    public function listSeoSuggestionsForProduct(int $productId): array
+    {
+        return $this->suggestions->listForProductByType($productId, 'seo_metadata', 20);
+    }
+
     public function createSuggestionForProduct(int $productId, string $suggestionType, ?int $createdByUserId = null): int
     {
         $type = trim($suggestionType);
@@ -38,6 +44,8 @@ final class AiProductEnrichmentService
         if ($product === null) {
             throw new InvalidArgumentException('Produkten hittades inte.');
         }
+
+        $this->assertMinimumSeoInput($product);
 
         $snapshot = $this->buildInputSnapshot($product);
         $generated = $this->generateSuggestionPayload($type, $snapshot);
@@ -92,11 +100,11 @@ final class AiProductEnrichmentService
             $updatePayload['description'] = (string) $suggestion['suggested_description'];
         }
 
-        if ((string) ($suggestion['suggested_seo_title'] ?? '') !== '' && in_array($type, ['seo_assist', 'title_description'], true)) {
+        if ((string) ($suggestion['suggested_seo_title'] ?? '') !== '' && in_array($type, ['seo_assist', 'title_description', 'seo_metadata'], true)) {
             $updatePayload['seo_title'] = (string) $suggestion['suggested_seo_title'];
         }
 
-        if ((string) ($suggestion['suggested_meta_description'] ?? '') !== '' && in_array($type, ['seo_assist', 'title_description'], true)) {
+        if ((string) ($suggestion['suggested_meta_description'] ?? '') !== '' && in_array($type, ['seo_assist', 'title_description', 'seo_metadata'], true)) {
             $updatePayload['seo_description'] = (string) $suggestion['suggested_meta_description'];
         }
 
@@ -127,6 +135,17 @@ final class AiProductEnrichmentService
         }
     }
 
+
+    /** @param array<string,mixed> $product */
+    private function assertMinimumSeoInput(array $product): void
+    {
+        $name = trim((string) ($product['name'] ?? ''));
+        $description = trim((string) ($product['description'] ?? ''));
+
+        if ($name === '' && $description === '') {
+            throw new InvalidArgumentException('Produkten saknar tillräckligt underlag för SEO-förslag (namn/beskrivning).');
+        }
+    }
     /** @param array<string,mixed> $product
      *  @return array<string,mixed>
      */
@@ -228,8 +247,8 @@ final class AiProductEnrichmentService
                 ? ($description !== '' ? $description : $short)
                 : null,
             'suggested_attributes' => in_array($type, ['attribute_summary', 'content_cleanup'], true) ? $attributes : null,
-            'suggested_seo_title' => in_array($type, ['seo_assist', 'title_description'], true) ? $seoTitle : null,
-            'suggested_meta_description' => in_array($type, ['seo_assist', 'title_description'], true) ? $seoDescription : null,
+            'suggested_seo_title' => in_array($type, ['seo_assist', 'title_description', 'seo_metadata'], true) ? $seoTitle : null,
+            'suggested_meta_description' => in_array($type, ['seo_assist', 'title_description', 'seo_metadata'], true) ? $seoDescription : null,
             'ai_summary' => 'Förslag skapat för manuell granskning (' . $type . ').',
         ];
     }
@@ -245,7 +264,7 @@ final class AiProductEnrichmentService
             'messages' => [
                 [
                     'role' => 'system',
-                    'content' => 'Du hjälper en svensk e-handelsadmin att förbättra produktutkast. Returnera ENDAST JSON med fält: suggested_title, suggested_short_description, suggested_description, suggested_attributes, suggested_seo_title, suggested_meta_description, ai_summary. Inga påhittade fakta.',
+                    'content' => 'Du hjälper en svensk e-handelsadmin att förbättra produktutkast. Returnera ENDAST JSON med fält: suggested_title, suggested_short_description, suggested_description, suggested_attributes, suggested_seo_title, suggested_meta_description, ai_summary. Skriv sakligt, utan keyword stuffing, och hitta inte på fakta eller fitment.',
                 ],
                 [
                     'role' => 'user',

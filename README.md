@@ -1253,6 +1253,38 @@ Lokal snabbtest:
 6. Verifiera i draft-vyn att handofftid/mål visas och att samma draft inte kan handoffas igen.
 7. Öppna skapad produkt i `/admin/products/{id}/edit` och verifiera källa (`AI URL-importutkast`) samt fortsatt manuell artikelvård.
 
+
+## AI-assisted SEO copy / metadata suggestions v1
+
+Admin (produkt-/artikelvårdsflöde):
+- i `/admin/products/{id}/edit` finns sektionen **AI-assisterade SEO-förslag v1**
+- admin kan skapa ett reviewbart SEO-förslag för aktuell produkt via `seo_metadata`
+- förslaget visar jämförelse mellan nuvarande SEO-fält och AI-föreslaget innehåll:
+  - SEO-titel
+  - meta description
+  - AI-sammanfattning
+- statusflöde i v1:
+  - `pending` -> `applied` eller `rejected`
+
+Review-first och kontroll:
+- AI skriver aldrig direkt till live/publicerad katalog
+- endast admin kan applicera eller avvisa förslag
+- applicering uppdaterar bara produktens SEO-fält (`seo_title`, `seo_description`)
+- inga bulk-actions och ingen massgenerering i denna v1
+
+Input-snapshot och spårbarhet:
+- förslaget bygger på sparat `input_snapshot` i `ai_product_enrichment_suggestions`
+- snapshot innehåller produktdata som namn, SKU, brand/category-id, beskrivning, attribut, befintliga SEO-fält samt ev. AI URL-importkälla
+- alla SEO-förslag sparas med `suggestion_type = seo_metadata` och kan följas i admin
+
+Lokal testning:
+1. Kör migrationerna via `php scripts/migrate.php` och applicera SQL för `043_ai_product_enrichment_v1.sql`.
+2. Öppna en produkt i `/admin/products/{id}/edit`.
+3. Klicka **Skapa AI SEO-förslag**.
+4. Verifiera att förslaget får status `pending` och att nuvarande/föreslaget SEO-innehåll visas sida vid sida.
+5. Testa **Applicera SEO-förslag** och verifiera att endast SEO-fälten uppdateras i produktformuläret.
+6. Skapa ett nytt SEO-förslag och testa **Avvisa SEO-förslag**.
+
 ## AI-assisted product enrichment v1
 
 Databas:

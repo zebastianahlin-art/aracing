@@ -162,6 +162,53 @@ ob_start();
 </section>
 
 <?php if ($isEdit): ?>
+<section id="ai-seo-suggestions" class="card" style="margin-top:.8rem;">
+  <h3>AI-assisterade SEO-förslag v1</h3>
+  <p class="muted">Skapar reviewbara förslag för SEO-titel och meta description på produktnivå. Ingen autopublicering sker.</p>
+
+  <form method="post" action="/admin/products/<?= (int) $product['id'] ?>/ai-seo-suggestions" style="margin-bottom:.8rem;">
+    <button class="btn" type="submit">Skapa AI SEO-förslag</button>
+  </form>
+
+  <?php $aiSeoSuggestions = $ai_seo_suggestions ?? []; ?>
+  <?php if ($aiSeoSuggestions === []): ?>
+    <p class="muted">Inga AI SEO-förslag ännu.</p>
+  <?php else: ?>
+    <?php foreach ($aiSeoSuggestions as $suggestion): ?>
+      <div class="card" style="margin-bottom:.7rem;">
+        <p><strong>SEO-förslag #<?= (int) $suggestion['id'] ?></strong> · status: <?= htmlspecialchars((string) $suggestion['status'], ENT_QUOTES, 'UTF-8') ?></p>
+        <?php if (trim((string) ($suggestion['ai_summary'] ?? '')) !== ''): ?>
+          <p class="muted"><?= nl2br(htmlspecialchars((string) $suggestion['ai_summary'], ENT_QUOTES, 'UTF-8')) ?></p>
+        <?php endif; ?>
+        <div class="grid" style="grid-template-columns:1fr 1fr; gap:.6rem;">
+          <div>
+            <strong>Nuvarande SEO</strong>
+            <p class="muted">SEO-titel: <?= htmlspecialchars((string) ($product['seo_title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+            <p class="muted">Meta description: <?= nl2br(htmlspecialchars((string) ($product['seo_description'] ?? ''), ENT_QUOTES, 'UTF-8')) ?></p>
+          </div>
+          <div>
+            <strong>AI-förslag</strong>
+            <p class="muted">SEO-titel: <?= htmlspecialchars((string) ($suggestion['suggested_seo_title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+            <p class="muted">Meta description: <?= nl2br(htmlspecialchars((string) ($suggestion['suggested_meta_description'] ?? ''), ENT_QUOTES, 'UTF-8')) ?></p>
+          </div>
+        </div>
+        <?php if ((string) ($suggestion['status'] ?? '') === 'pending'): ?>
+          <div style="display:flex; gap:.5rem; margin-top:.6rem;">
+            <form method="post" action="/admin/products/<?= (int) $product['id'] ?>/ai-seo-suggestions/<?= (int) $suggestion['id'] ?>/apply" onsubmit="return confirm('Applicera SEO-förslaget?');">
+              <button class="btn" type="submit">Applicera SEO-förslag</button>
+            </form>
+            <form method="post" action="/admin/products/<?= (int) $product['id'] ?>/ai-seo-suggestions/<?= (int) $suggestion['id'] ?>/reject" onsubmit="return confirm('Avvisa SEO-förslaget?');">
+              <button class="btn" type="submit">Avvisa SEO-förslag</button>
+            </form>
+          </div>
+        <?php endif; ?>
+      </div>
+    <?php endforeach; ?>
+  <?php endif; ?>
+</section>
+<?php endif; ?>
+
+<?php if ($isEdit): ?>
 <section id="ai-enrichment" class="card" style="margin-top:.8rem;">
   <h3>AI-assisterad produktberikning v1</h3>
   <p class="muted">AI-förslag är assistans och kräver manuell review innan applicering till produktutkastet.</p>
@@ -172,7 +219,6 @@ ob_start();
       <select name="suggestion_type" required>
         <option value="title_description">title_description</option>
         <option value="content_cleanup">content_cleanup</option>
-        <option value="seo_assist">seo_assist</option>
         <option value="attribute_summary">attribute_summary</option>
       </select>
     </div>

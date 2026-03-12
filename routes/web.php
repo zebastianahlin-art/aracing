@@ -61,15 +61,21 @@ use App\Modules\Customer\Services\CustomerAccountService;
 use App\Modules\Import\Controllers\ImportProfileAdminController;
 use App\Modules\Import\Controllers\ImportRunAdminController;
 use App\Modules\Import\Controllers\SupplierItemReviewAdminController;
+use App\Modules\Import\Controllers\AiProductImportAdminController;
 use App\Modules\Import\Repositories\ImportProfileRepository;
 use App\Modules\Import\Repositories\ImportRowRepository;
 use App\Modules\Import\Repositories\ImportRunRepository;
 use App\Modules\Import\Repositories\SupplierItemRepository;
 use App\Modules\Import\Repositories\SupplierItemReviewRepository;
+use App\Modules\Import\Repositories\AiProductImportDraftRepository;
 use App\Modules\Import\Services\CsvImportService;
 use App\Modules\Import\Services\ImportProfileService;
 use App\Modules\Import\Services\ImportRunService;
 use App\Modules\Import\Services\SupplierItemReviewService;
+use App\Modules\Import\Services\AiProductImportService;
+use App\Modules\Import\Services\AiProductStructuringService;
+use App\Modules\Import\Services\ProductPageFetchService;
+use App\Modules\Import\Services\ProductPageExtractService;
 use App\Modules\Inventory\Repositories\InventoryRepository;
 use App\Modules\Inventory\Repositories\StockMovementRepository;
 use App\Modules\Inventory\Services\InventoryService;
@@ -225,6 +231,12 @@ $csvImportService = new CsvImportService(
     $supplierItemRepository,
     $importProfileService
 );
+$aiProductImportService = new AiProductImportService(
+    new AiProductImportDraftRepository($app['pdo']),
+    new ProductPageFetchService(),
+    new ProductPageExtractService(),
+    new AiProductStructuringService($app['config'])
+);
 $cartService = new CartService(new CartRepository($app['pdo']), new CartProductRepository($app['pdo']), $inventoryService, $discountService, $checkoutTotalsService);
 $orderRepository = new OrderRepository($app['pdo']);
 $orderEmailService = new OrderEmailService($orderRepository, $emailMessageRepository, new TransactionalEmailSender(), $app['view']);
@@ -313,6 +325,7 @@ $supplierItemReviewService = new SupplierItemReviewService(
     new ProductSupplierItemLookupRepository($app['pdo'])
 );
 $supplierItemReviewAdmin = new SupplierItemReviewAdminController($app['view'], $supplierItemReviewService, $supplierService, $importRunService, $productService);
+$aiProductImportAdmin = new AiProductImportAdminController($app['view'], $aiProductImportService);
 $supportCaseService = new SupportCaseService(
     new SupportCaseRepository($app['pdo']),
     new SupportCaseHistoryRepository($app['pdo']),
@@ -547,3 +560,10 @@ $app['router']->get('/admin/supplier-item-review', [$supplierItemReviewAdmin, 'i
 $app['router']->post('/admin/supplier-item-review/{id}/match', [$supplierItemReviewAdmin, 'match']);
 $app['router']->post('/admin/supplier-item-review/{id}/clear', [$supplierItemReviewAdmin, 'clearMatch']);
 $app['router']->post('/admin/supplier-item-review/{id}/reviewed', [$supplierItemReviewAdmin, 'markReviewed']);
+
+$app['router']->get('/admin/ai-product-import', [$aiProductImportAdmin, 'index']);
+$app['router']->post('/admin/ai-product-import/import', [$aiProductImportAdmin, 'importFromUrl']);
+$app['router']->get('/admin/ai-product-import/{id}', [$aiProductImportAdmin, 'show']);
+$app['router']->post('/admin/ai-product-import/{id}/reviewed', [$aiProductImportAdmin, 'markReviewed']);
+$app['router']->post('/admin/ai-product-import/{id}/rejected', [$aiProductImportAdmin, 'reject']);
+$app['router']->post('/admin/ai-product-import/{id}/imported', [$aiProductImportAdmin, 'markImported']);

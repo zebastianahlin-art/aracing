@@ -1198,3 +1198,31 @@ Lokal snabbtest:
 3. Verifiera totalsiffror och att produkter med saknad fitment/universal-only/pending/needs review visas med tydliga orsaker.
 4. Testa filter för gap-signal, brand, kategori och sök.
 5. Verifiera åtgärdslänkar till produktadmin, `/admin/fitment-workflow` och `/admin/supplier-fitment-review`.
+
+## AI URL product import v1 (admin)
+
+Databas:
+- kör även `database/migrations/040_ai_url_product_import_v1.sql`
+
+Admin:
+- `/admin/ai-product-import` visar URL-form + lista över importutkast
+- `/admin/ai-product-import/{id}` visar detalj/review för utkastet
+
+Flöde i v1:
+1. Klistra in en URL i admin.
+2. Systemet hämtar sidan, extraherar råtext + grunddata (titel, text, bild-URL:er).
+3. AI-strukturering körs defensivt (heuristik + valfritt OpenAI-anrop via `AI_URL_IMPORT_OPENAI_API_KEY`).
+4. Resultatet sparas i `ai_product_import_drafts` som granskningsutkast.
+5. Admin granskar och markerar som `reviewed`, `rejected` eller `imported`.
+
+Viktigt:
+- ingen autopublicering till live-katalog
+- inga direktskrivningar till `products` från AI-importen
+- rådata (`import_raw_text`) och AI-data (`ai_summary`, `ai_structured_payload`) sparas parallellt för spårbar review
+
+Lokal snabbtest:
+1. Starta appen (`composer serve`).
+2. Öppna `/admin/ai-product-import`.
+3. Importera en test-URL.
+4. Verifiera att utkast skapas och att detaljvyn visar både råtext och AI-tolkning.
+5. Testa statusåtgärderna `reviewed`, `rejected`, `imported`.

@@ -6,11 +6,12 @@ $inventoryInsightCounts = is_array($inventoryInsightCounts ?? null) ? $inventory
 $pricingInsightCounts = is_array($pricingInsightCounts ?? null) ? $pricingInsightCounts : [];
 $assortmentGapCounts = is_array($assortmentGapCounts ?? null) ? $assortmentGapCounts : [];
 $demandSignalCounts = is_array($demandSignalCounts ?? null) ? $demandSignalCounts : [];
+$merchInsightCounts = is_array($merchInsightCounts ?? null) ? $merchInsightCounts : [];
 ?>
 <section class="card">
   <h1>A-<span style="color:#e10600;">Racing</span> Admin</h1>
   <p>Katalogblocket är aktivt och leverantör/import v1 finns nu i admin för spårbar CSV-hantering.</p>
-  <p>Snabbval: <a class="btn" href="/admin/ai-alerts">AI Alerts</a> <a class="btn" href="/admin/ai-ops-report">AI Ops-rapport</a> <a class="btn" href="/admin/ai-demand-signals">AI Demand Signals</a> <a class="btn" href="/admin/suppliers">Leverantörer</a> <a class="btn" href="/admin/supplier-watchlist">Supplier watchlist</a> <a class="btn" href="/admin/import-profiles">Importprofiler</a> <a class="btn" href="/admin/import-runs">Importkörningar</a> <a class="btn" href="/admin/purchasing">Inköpsöversikt</a></p>
+  <p>Snabbval: <a class="btn" href="/admin/ai-alerts">AI Alerts</a> <a class="btn" href="/admin/ai-ops-report">AI Ops-rapport</a> <a class="btn" href="/admin/ai-demand-signals">AI Demand Signals</a> <a class="btn" href="/admin/ai-merch-insights">AI Merch Insights</a> <a class="btn" href="/admin/suppliers">Leverantörer</a> <a class="btn" href="/admin/supplier-watchlist">Supplier watchlist</a> <a class="btn" href="/admin/import-profiles">Importprofiler</a> <a class="btn" href="/admin/import-runs">Importkörningar</a> <a class="btn" href="/admin/purchasing">Inköpsöversikt</a></p>
 </section>
 
 <section class="card" style="margin-top:12px;">
@@ -78,6 +79,16 @@ $demandSignalCounts = is_array($demandSignalCounts ?? null) ? $demandSignalCount
   </div>
   <p>Totalt: <strong><?= (int) ($demandSignalCounts['total'] ?? 0) ?></strong> | High interest/low conversion: <strong><?= (int) ($demandSignalCounts['high_interest_low_conversion'] ?? 0) ?></strong> | Repeated interest/no stock: <strong><?= (int) ($demandSignalCounts['repeated_interest_no_stock'] ?? 0) ?></strong></p>
   <p><small>Signalen är regelbaserad och förklarbar. Detta är beslutsstöd, inte automatisk exekvering av pris, lager eller merchandising.</small></p>
+</section>
+
+
+<section class="card" style="margin-top:12px;">
+  <div class="topline">
+    <h2 style="margin:0;">AI Merch Insights (v1)</h2>
+    <a class="btn" href="/admin/ai-merch-insights">Öppna merch insights</a>
+  </div>
+  <p>Totalt: <strong><?= (int) ($merchInsightCounts['total'] ?? 0) ?></strong> | Weak stock: <strong><?= (int) ($merchInsightCounts['weak_section_stock'] ?? 0) ?></strong> | Stale: <strong><?= (int) ($merchInsightCounts['stale_section'] ?? 0) ?></strong> | Low signal: <strong><?= (int) ($merchInsightCounts['low_signal_section'] ?? 0) ?></strong> | Promising: <strong><?= (int) ($merchInsightCounts['promising_section'] ?? 0) ?></strong></p>
+  <p><small>Signalerna är förklarbara och review-first. Ingen automatisk section-publicering eller automatisk optimering utförs.</small></p>
 </section>
 
 <section class="card" style="margin-top:12px;">

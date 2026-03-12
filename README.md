@@ -1791,6 +1791,44 @@ Lokal testning:
 4. Verifiera att varje rad visar retailpris, supplierpris, enkel marginal, supplierprisförändring, reason och action links.
 5. Verifiera dashboard-kortet för "AI Pricing Insights (v1)" i `/admin`.
 
+
+## AI merchandising optimization / section performance insights v1
+
+Adminvy:
+- `/admin/ai-merch-insights`
+
+Syfte i v1:
+- ge beslutsstöd för homepage sections / featured collections
+- identifiera sektioner som verkar svaga eller lovande utan full campaign analytics-plattform
+- återanvända befintlig data och köra signaler on-demand
+
+Insight-typer i v1:
+- `weak_section_stock`: hög andel ej köpbara produkter i sektionen
+- `stale_section`: låg andel nya produkter och svag signal
+- `low_signal_section`: svag order-/demand-signal i sektionens produkter
+- `promising_section`: stark signal och god köpbarhet i sektionen
+
+Datakällor som återanvänds:
+- `homepage_sections` + `homepage_section_items`
+- `products` (aktiv status, lagerstatus, created_at)
+- `orders` + `order_items` (30/60-dagars rörelse)
+- `wishlist_items`
+- `stock_alert_subscriptions`
+- action links till befintliga AI merchandising suggestions / inventory insights / homepage sections / produktedit
+
+Viktigt:
+- detta är beslutsstöd i v1
+- ingen automatisk section-ändring
+- ingen autopublicering
+- ingen black-box optimization engine
+- ingen tung tracking/event-plattform
+
+Lokal testning:
+1. Starta appen (`composer serve`).
+2. Öppna `/admin/ai-merch-insights`.
+3. Testa filter för insight-typ (weak stock, stale, low signal, promising).
+4. Verifiera att tabellen visar section, insight type, product count, available/buyable, demand/order signal, reason och action links.
+5. Verifiera att dashboard-kortet för "AI Merch Insights (v1)" visas i `/admin`.
 ## AI demand signals / interest without conversion v1
 
 Adminvy:

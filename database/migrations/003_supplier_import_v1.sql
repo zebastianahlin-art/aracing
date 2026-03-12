@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS import_profiles (
     updated_at TIMESTAMP NULL,
     INDEX idx_import_profiles_supplier (supplier_id),
     INDEX idx_import_profiles_active (is_active),
-    CONSTRAINT fk_import_profiles_supplier FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE CASCADE
+    CONSTRAINT fk_import_profiles_supplier_id__suppliers_id FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE CASCADE
 );
 
 ALTER TABLE import_runs
@@ -43,8 +43,8 @@ ALTER TABLE import_runs
     ADD INDEX IF NOT EXISTS idx_import_runs_status (status);
 
 ALTER TABLE import_runs
-    ADD CONSTRAINT fk_import_runs_supplier FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL,
-    ADD CONSTRAINT fk_import_runs_profile FOREIGN KEY (import_profile_id) REFERENCES import_profiles(id) ON DELETE SET NULL;
+    ADD CONSTRAINT fk_import_runs_supplier_id__suppliers_id FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL,
+    ADD CONSTRAINT fk_import_runs_import_profile_id__import_profiles_id FOREIGN KEY (import_profile_id) REFERENCES import_profiles(id) ON DELETE SET NULL;
 
 ALTER TABLE supplier_items
     ADD COLUMN IF NOT EXISTS supplier_id BIGINT UNSIGNED NULL AFTER id,
@@ -63,8 +63,8 @@ ALTER TABLE supplier_items
     ADD INDEX idx_supplier_items_import_run (import_run_id);
 
 ALTER TABLE supplier_items
-    ADD CONSTRAINT fk_supplier_items_supplier FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL,
-    ADD CONSTRAINT fk_supplier_items_import_run FOREIGN KEY (import_run_id) REFERENCES import_runs(id) ON DELETE SET NULL;
+    ADD CONSTRAINT fk_supplier_items_supplier_id__suppliers_id FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL,
+    ADD CONSTRAINT fk_supplier_items_import_run_id__import_runs_id FOREIGN KEY (import_run_id) REFERENCES import_runs(id) ON DELETE SET NULL;
 
 CREATE TABLE IF NOT EXISTS import_rows (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -78,5 +78,5 @@ CREATE TABLE IF NOT EXISTS import_rows (
     updated_at TIMESTAMP NULL,
     INDEX idx_import_rows_run (import_run_id),
     INDEX idx_import_rows_status (status),
-    CONSTRAINT fk_import_rows_run FOREIGN KEY (import_run_id) REFERENCES import_runs(id) ON DELETE CASCADE
+    CONSTRAINT fk_import_rows_import_run_id__import_runs_id FOREIGN KEY (import_run_id) REFERENCES import_runs(id) ON DELETE CASCADE
 );

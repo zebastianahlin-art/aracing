@@ -47,6 +47,7 @@
     <a href="/admin/vehicles">Fordon / YMM</a>
     <a href="/admin/fitment-workflow">Fitment-arbetsvy</a>
     <a href="/admin/fitment-coverage">Fitment coverage</a>
+    <a href="/admin/fitment-gaps">Fitment gap-kö</a>
     <a href="/admin/supplier-fitment-review">Supplier fitment review</a>
     <a href="/admin/products/article-care">Artikelvårdskö</a>
     <a href="/admin/orders">Orders</a>

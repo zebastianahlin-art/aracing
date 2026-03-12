@@ -22,6 +22,7 @@ use App\Modules\Fitment\Controllers\FitmentSelectionController;
 use App\Modules\Fitment\Controllers\VehicleAdminController;
 use App\Modules\Fitment\Controllers\FitmentWorkflowAdminController;
 use App\Modules\Fitment\Controllers\FitmentCoverageAdminController;
+use App\Modules\Fitment\Controllers\FitmentGapAdminController;
 use App\Modules\Fitment\Controllers\SupplierFitmentReviewAdminController;
 use App\Modules\Fitment\Controllers\SavedVehicleController;
 use App\Modules\Fitment\Repositories\ProductFitmentRepository;
@@ -37,6 +38,7 @@ use App\Modules\Fitment\Services\FitmentWorkflowService;
 use App\Modules\Fitment\Services\FitmentStorefrontService;
 use App\Modules\Fitment\Services\VehicleNavigationService;
 use App\Modules\Fitment\Services\FitmentCoverageService;
+use App\Modules\Fitment\Services\FitmentGapService;
 use App\Modules\Fitment\Services\SupplierFitmentIntakeService;
 use App\Modules\Fitment\Services\SupplierFitmentReviewService;
 use App\Modules\Discount\Repositories\DiscountCodeRepository;
@@ -198,6 +200,7 @@ $supplierFitmentIntakeService = new SupplierFitmentIntakeService($supplierFitmen
 $supplierFitmentReviewService = new SupplierFitmentReviewService($app['pdo'], $supplierFitmentCandidateRepository, $supplierFitmentIntakeService, new ProductFitmentRepository($app['pdo']), new ProductRepository($app['pdo']), $vehicleRepository);
 $catalogRepository = new CatalogRepository($app['pdo']);
 $fitmentCoverageService = new FitmentCoverageService($catalogRepository);
+$fitmentGapService = new FitmentGapService(new ProductRepository($app['pdo']), new FitmentFlagRepository($app['pdo']), $supplierFitmentCandidateRepository, $catalogRepository);
 $productRecommendationService = new ProductRecommendationService(
     $productRelationService,
     $catalogRepository,
@@ -333,6 +336,7 @@ $productReviewAdmin = new ProductReviewAdminController($app['view'], $productRev
 $vehicleAdmin = new VehicleAdminController($app['view'], new VehicleService($vehicleRepository));
 $fitmentWorkflowAdmin = new FitmentWorkflowAdminController($app['view'], $fitmentWorkflowService, $brandService, $categoryService);
 $fitmentCoverageAdmin = new FitmentCoverageAdminController($app['view'], $fitmentCoverageService);
+$fitmentGapAdmin = new FitmentGapAdminController($app['view'], $fitmentGapService, $brandService, $categoryService);
 $supplierFitmentReviewAdmin = new SupplierFitmentReviewAdminController($app['view'], $supplierFitmentReviewService, $supplierService);
 $fitmentSelectionController = new FitmentSelectionController($fitmentService);
 $savedVehicleController = new SavedVehicleController($app['view'], $authService, $cmsPageService, $savedVehicleService);
@@ -426,6 +430,7 @@ $app['router']->get('/admin/vehicles/{id}/edit', [$vehicleAdmin, 'editForm']);
 $app['router']->post('/admin/vehicles/{id}', [$vehicleAdmin, 'update']);
 $app['router']->get('/admin/fitment-workflow', [$fitmentWorkflowAdmin, 'index']);
 $app['router']->get('/admin/fitment-coverage', [$fitmentCoverageAdmin, 'index']);
+$app['router']->get('/admin/fitment-gaps', [$fitmentGapAdmin, 'index']);
 $app['router']->post('/admin/fitment-workflow/{productId}/flag', [$fitmentWorkflowAdmin, 'updateFlag']);
 $app['router']->get('/admin/products', [$productAdmin, 'index']);
 $app['router']->post('/admin/products/operations', [$productAdmin, 'runBulkAction']);

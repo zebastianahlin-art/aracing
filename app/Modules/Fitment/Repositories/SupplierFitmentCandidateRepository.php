@@ -97,6 +97,36 @@ final class SupplierFitmentCandidateRepository
         return $stmt->fetchAll();
     }
 
+
+    /** @param array<int,int> $productIds
+     * @return array<int,int>
+     */
+    public function pendingCountByProductIds(array $productIds): array
+    {
+        $productIds = array_values(array_filter(array_map(static fn (int $id): int => max(0, $id), $productIds), static fn (int $id): bool => $id > 0));
+        if ($productIds === []) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($productIds), '?'));
+        $stmt = $this->pdo->prepare('SELECT product_id, COUNT(*) AS pending_count
+            FROM supplier_fitment_candidates
+            WHERE status = "pending"
+              AND product_id IN (' . $placeholders . ')
+            GROUP BY product_id');
+        foreach ($productIds as $index => $productId) {
+            $stmt->bindValue($index + 1, $productId, PDO::PARAM_INT);
+        }
+        $stmt->execute();
+
+        $result = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $result[(int) ($row['product_id'] ?? 0)] = (int) ($row['pending_count'] ?? 0);
+        }
+
+        return $result;
+    }
+
     /** @return array<string,mixed>|null */
     public function findById(int $id): ?array
     {

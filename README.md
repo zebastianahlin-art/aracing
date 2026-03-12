@@ -1155,3 +1155,36 @@ Lokal snabbtest:
 3. Öppna startsidan och verifiera att vehicle-first-kategorilänkar visar matchantal i aktiv bil-kontext.
 4. Öppna en kategori via vehicle-first-länk och verifiera hjälpsignalen "X produkter matchar vald bil...".
 5. Öppna `/admin/fitment-coverage` och verifiera coverage-tabell, sortering/filter och länk till fitment-kön.
+
+## Fitment gap queue / missing coverage worklist v1
+
+Detta steg lägger ett första operativt lager för att göra fitment-gap handlingsbara i admin utan att bygga dashboard- eller task management-plattform.
+
+Vad som ingår i v1:
+- ny adminvy `/admin/fitment-gaps` för konkret arbetskö på produktnivå.
+- central `FitmentGapService` som bygger kö-payload, filter, signaler, enkel prioritering och totalsiffror.
+- återanvändning av befintliga signaler från:
+  - `product_fitments`
+  - `fitment_flags`
+  - `supplier_fitment_candidates`
+  - kategori-coverage från befintlig coverage-logik.
+- varje produkt kan få flera gap-signaler samtidigt:
+  - `no_fitment_links`
+  - `universal_only`
+  - `pending_supplier_candidates`
+  - `needs_review_flag`
+  - `category_low_coverage`
+- filter i kön för signal, sök, brand och kategori.
+- enkel prioritering i vyn: flest gap-signaler först, sedan pending supplier-underlag, sedan lägst fitment count.
+- tydliga åtgärdslänkar per rad till produktadmin, fitment workflow och supplier fitment review.
+
+Skillnad mot coverage-vyn:
+- `/admin/fitment-coverage` visar coverage per kategori/segment.
+- `/admin/fitment-gaps` visar konkreta produkter att arbeta med, inklusive förklarade orsaker.
+
+Lokal snabbtest:
+1. Kör migrationer (`php scripts/migrate.php`) och säkerställ att fitment-tabeller från tidigare steg finns.
+2. Öppna `/admin/fitment-gaps`.
+3. Verifiera totalsiffror och att produkter med saknad fitment/universal-only/pending/needs review visas med tydliga orsaker.
+4. Testa filter för gap-signal, brand, kategori och sök.
+5. Verifiera åtgärdslänkar till produktadmin, `/admin/fitment-workflow` och `/admin/supplier-fitment-review`.

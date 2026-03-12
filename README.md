@@ -1313,3 +1313,35 @@ Lokal testning:
 4. Verifiera att förslaget syns som `pending` med jämförelse mellan nuvarande data och AI-förslag.
 5. Testa **Applicera förslag** och verifiera att produktfält uppdateras.
 6. Skapa ett nytt förslag och testa **Avvisa förslag**.
+
+## AI attribute extraction / normalization v1
+
+I produktadmin (`/admin/products/{id}/edit`) finns nu en separat sektion för **AI-assisterad attributextraktion / normalisering**.
+
+Flöde i v1 (review-first):
+1. Klicka `Skapa AI-attributförslag` för en produkt.
+2. Systemet bygger ett `input_snapshot` från produktens befintliga data:
+   - titel
+   - SKU
+   - beskrivning
+   - befintliga attribut
+   - AI URL-importunderlag (om produkten kommer från det flödet)
+3. Ett förslag (`suggestion_type = attribute_summary`) sparas med status `pending`.
+4. Admin granskar **nuvarande attribut** mot **AI-föreslagna attribut** i adminvyn.
+5. Admin väljer manuellt:
+   - `Applicera attributförslag` (skriver till produktens attributfält)
+   - `Avvisa attributförslag`
+
+Viktiga begränsningar i v1:
+- Ingen autopublicering till live-katalog.
+- Ingen AI-fitmenttolkning.
+- Ingen masskörning över hela katalogen.
+- Endast produktnivå (en produkt i taget).
+- Osäkra eller tomma attributförslag sparas inte som `pending`.
+
+Lokal testning:
+1. Öppna en produkt i admin edit-vyn.
+2. Skapa AI-attributförslag.
+3. Verifiera att förslag syns som nyckel/värde-lista och har status `pending`.
+4. Applicera förslag och verifiera att produktens attributfält uppdateras.
+5. Skapa nytt förslag och testa `Avvisa attributförslag`.

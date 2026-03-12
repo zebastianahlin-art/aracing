@@ -209,6 +209,97 @@ ob_start();
 <?php endif; ?>
 
 <?php if ($isEdit): ?>
+<section id="ai-attribute-suggestions" class="card" style="margin-top:.8rem;">
+  <h3>AI-assisterad attributextraktion / normalisering v1</h3>
+  <p class="muted">Skapar reviewbara attributförslag från produkttext/importunderlag. Ingen autopublicering sker.</p>
+
+  <form method="post" action="/admin/products/<?= (int) $product['id'] ?>/ai-attribute-suggestions" style="margin-bottom:.8rem;">
+    <button class="btn" type="submit">Skapa AI-attributförslag</button>
+  </form>
+
+  <?php
+    $currentAttributes = [];
+    foreach ((array) ($product['attributes'] ?? []) as $attr) {
+      if (!is_array($attr)) {
+        continue;
+      }
+      $k = trim((string) ($attr['attribute_key'] ?? ''));
+      $v = trim((string) ($attr['attribute_value'] ?? ''));
+      if ($k === '' || $v === '') {
+        continue;
+      }
+      $currentAttributes[$k] = $v;
+    }
+  ?>
+
+  <?php $aiAttributeSuggestions = $ai_attribute_suggestions ?? []; ?>
+  <?php if ($aiAttributeSuggestions === []): ?>
+    <p class="muted">Inga AI-attributförslag ännu.</p>
+  <?php else: ?>
+    <?php foreach ($aiAttributeSuggestions as $suggestion): ?>
+      <?php $suggestedMap = json_decode((string) ($suggestion['suggested_attributes'] ?? ''), true); ?>
+      <div class="card" style="margin-bottom:.7rem;">
+        <p><strong>Attributförslag #<?= (int) $suggestion['id'] ?></strong> · status: <?= htmlspecialchars((string) $suggestion['status'], ENT_QUOTES, 'UTF-8') ?></p>
+        <?php if (trim((string) ($suggestion['ai_summary'] ?? '')) !== ''): ?>
+          <p class="muted"><?= nl2br(htmlspecialchars((string) $suggestion['ai_summary'], ENT_QUOTES, 'UTF-8')) ?></p>
+        <?php endif; ?>
+
+        <div class="grid" style="grid-template-columns:1fr 1fr; gap:.6rem;">
+          <div>
+            <strong>Nuvarande attribut</strong>
+            <?php if ($currentAttributes === []): ?>
+              <p class="muted">Inga attribut sparade ännu.</p>
+            <?php else: ?>
+              <table class="table compact" style="margin-top:.4rem;">
+                <thead><tr><th>Nyckel</th><th>Värde</th></tr></thead>
+                <tbody>
+                <?php foreach ($currentAttributes as $key => $value): ?>
+                  <tr>
+                    <td><?= htmlspecialchars((string) $key, ENT_QUOTES, 'UTF-8') ?></td>
+                    <td><?= htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8') ?></td>
+                  </tr>
+                <?php endforeach; ?>
+                </tbody>
+              </table>
+            <?php endif; ?>
+          </div>
+          <div>
+            <strong>AI-föreslagna attribut</strong>
+            <?php if (!is_array($suggestedMap) || $suggestedMap === []): ?>
+              <p class="muted">Inga tolkbara attribut i förslaget.</p>
+            <?php else: ?>
+              <table class="table compact" style="margin-top:.4rem;">
+                <thead><tr><th>Nyckel</th><th>Värde</th></tr></thead>
+                <tbody>
+                <?php foreach ($suggestedMap as $key => $value): ?>
+                  <tr>
+                    <td><?= htmlspecialchars((string) $key, ENT_QUOTES, 'UTF-8') ?></td>
+                    <td><?= htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8') ?></td>
+                  </tr>
+                <?php endforeach; ?>
+                </tbody>
+              </table>
+            <?php endif; ?>
+          </div>
+        </div>
+
+        <?php if ((string) ($suggestion['status'] ?? '') === 'pending'): ?>
+          <div style="display:flex; gap:.5rem; margin-top:.6rem;">
+            <form method="post" action="/admin/products/<?= (int) $product['id'] ?>/ai-attribute-suggestions/<?= (int) $suggestion['id'] ?>/apply" onsubmit="return confirm('Applicera attributförslaget till produktens attributfält?');">
+              <button class="btn" type="submit">Applicera attributförslag</button>
+            </form>
+            <form method="post" action="/admin/products/<?= (int) $product['id'] ?>/ai-attribute-suggestions/<?= (int) $suggestion['id'] ?>/reject" onsubmit="return confirm('Avvisa attributförslaget?');">
+              <button class="btn" type="submit">Avvisa attributförslag</button>
+            </form>
+          </div>
+        <?php endif; ?>
+      </div>
+    <?php endforeach; ?>
+  <?php endif; ?>
+</section>
+<?php endif; ?>
+
+<?php if ($isEdit): ?>
 <section id="ai-enrichment" class="card" style="margin-top:.8rem;">
   <h3>AI-assisterad produktberikning v1</h3>
   <p class="muted">AI-förslag är assistans och kräver manuell review innan applicering till produktutkastet.</p>
@@ -219,7 +310,6 @@ ob_start();
       <select name="suggestion_type" required>
         <option value="title_description">title_description</option>
         <option value="content_cleanup">content_cleanup</option>
-        <option value="attribute_summary">attribute_summary</option>
       </select>
     </div>
     <button class="btn" type="submit">Skapa AI-förslag</button>

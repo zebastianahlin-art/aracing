@@ -146,10 +146,13 @@ use App\Modules\Storefront\Services\SeoService;
 use App\Modules\Storefront\Services\RecentViewedService;
 use App\Modules\Supplier\Controllers\SupplierAdminController;
 use App\Modules\Supplier\Controllers\SupplierMonitoringAdminController;
+use App\Modules\Supplier\Controllers\SupplierWatchlistAdminController;
 use App\Modules\Supplier\Repositories\SupplierRepository;
 use App\Modules\Supplier\Services\SupplierService;
 use App\Modules\Supplier\Services\SupplierMonitoringService;
+use App\Modules\Supplier\Services\SupplierWatchlistService;
 use App\Modules\Supplier\Repositories\SupplierMonitoringRepository;
+use App\Modules\Supplier\Repositories\MonitoredSupplierEntityRepository;
 use App\Modules\Returns\Controllers\ReturnRequestAdminController;
 use App\Modules\Returns\Controllers\ReturnRequestCustomerController;
 use App\Modules\Returns\Repositories\ReturnOrderRepository;
@@ -386,8 +389,14 @@ $categoryAdmin = new CategoryAdminController($app['view'], $categoryService);
 $redirectAdmin = new RedirectAdminController($app['view'], $redirectService);
 $productAdmin = new ProductAdminController($app['view'], $productService, $productMediaService, $productRelationService, $brandService, $categoryService, $supplierService, $productSupplierLinkService, $productFitmentService, $aiFitmentSuggestionService, $aiProductEnrichmentService, $aiProductAttributeSuggestionService, $aiProductCategorySuggestionService, $aiProductLocalizationService);
 $supplierAdmin = new SupplierAdminController($app['view'], $supplierService);
-$supplierMonitoringService = new SupplierMonitoringService(new SupplierMonitoringRepository($app['pdo']));
+$supplierWatchlistService = new SupplierWatchlistService(
+    new MonitoredSupplierEntityRepository($app['pdo']),
+    new SupplierRepository($app['pdo']),
+    new BrandRepository($app['pdo'])
+);
+$supplierMonitoringService = new SupplierMonitoringService(new SupplierMonitoringRepository($app['pdo']), $supplierWatchlistService);
 $supplierMonitoringAdmin = new SupplierMonitoringAdminController($app['view'], $supplierMonitoringService, $supplierService);
+$supplierWatchlistAdmin = new SupplierWatchlistAdminController($app['view'], $supplierWatchlistService, $supplierService, $brandService);
 $importProfileAdmin = new ImportProfileAdminController($app['view'], $importProfileService, $supplierService);
 $importRunAdmin = new ImportRunAdminController($app['view'], $importRunService, $importProfileService, $csvImportService);
 $supplierItemReviewService = new SupplierItemReviewService(
@@ -633,6 +642,9 @@ $app['router']->post('/admin/redirects/{id}', [$redirectAdmin, 'update']);
 
 $app['router']->get('/admin/suppliers', [$supplierAdmin, 'index']);
 $app['router']->get('/admin/supplier-monitoring', [$supplierMonitoringAdmin, 'index']);
+$app['router']->get('/admin/supplier-watchlist', [$supplierWatchlistAdmin, 'index']);
+$app['router']->post('/admin/supplier-watchlist', [$supplierWatchlistAdmin, 'store']);
+$app['router']->post('/admin/supplier-watchlist/{id}/update', [$supplierWatchlistAdmin, 'update']);
 $app['router']->get('/admin/suppliers/create', [$supplierAdmin, 'createForm']);
 $app['router']->post('/admin/suppliers', [$supplierAdmin, 'store']);
 $app['router']->get('/admin/suppliers/{id}/edit', [$supplierAdmin, 'editForm']);

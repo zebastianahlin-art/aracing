@@ -46,8 +46,13 @@ $thresholds = is_array($thresholds ?? null) ? $thresholds : [];
             </span>
           </td>
           <td>
-            <strong><?= htmlspecialchars((string) ($alert['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong><br>
+            <strong><?= htmlspecialchars((string) ($alert['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong>
+            <?php if ((bool) ($alert['watchlist_signal'] ?? false)): ?>
+              <span class="pill warn" style="margin-left:.3rem;">Watchlist-prioriterad</span>
+            <?php endif; ?>
+            <br>
             <small><?= htmlspecialchars((string) ($alert['alert_type'] ?? ''), ENT_QUOTES, 'UTF-8') ?></small>
+            <?php if ((int) ($alert['watchlist_count'] ?? 0) > 0): ?><br><small>Bevakade träffar: <?= (int) ($alert['watchlist_count'] ?? 0) ?></small><?php endif; ?>
           </td>
           <td><strong><?= (int) ($alert['count'] ?? 0) ?></strong></td>
           <td>

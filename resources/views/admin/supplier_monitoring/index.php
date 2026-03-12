@@ -31,9 +31,9 @@ ob_start();
 <?php $alertSummary = is_array($alertSummary ?? null) ? $alertSummary : []; ?>
 <div class="actions-inline" style="margin-bottom:.7rem;">
   <span class="pill">Alertdrivare:</span>
-  <a class="btn" href="/admin/supplier-monitoring?deviation_scope=price&linked_only=1">Prisändringstryck: <?= (int) ($alertSummary['price_change_pressure_count'] ?? 0) ?></a>
-  <a class="btn" href="/admin/supplier-monitoring?deviation_scope=stock&linked_only=1">Tillgänglighet tappad: <?= (int) ($alertSummary['availability_drop_count'] ?? 0) ?></a>
-  <a class="btn" href="/admin/supplier-monitoring?deviation_type=missing_in_recent_import&linked_only=1">Sortimentsgap: <?= (int) ($alertSummary['catalog_gap_count'] ?? 0) ?></a>
+  <a class="btn" href="/admin/supplier-monitoring?deviation_scope=price&linked_only=1">Prisändringstryck: <?= (int) ($alertSummary['price_change_pressure_count'] ?? 0) ?> (bevakade: <?= (int) ($alertSummary['watchlist_price_change_pressure_count'] ?? 0) ?>)</a>
+  <a class="btn" href="/admin/supplier-monitoring?deviation_scope=stock&linked_only=1">Tillgänglighet tappad: <?= (int) ($alertSummary['availability_drop_count'] ?? 0) ?> (bevakade: <?= (int) ($alertSummary['watchlist_availability_drop_count'] ?? 0) ?>)</a>
+  <a class="btn" href="/admin/supplier-monitoring?deviation_type=missing_in_recent_import&linked_only=1">Sortimentsgap: <?= (int) ($alertSummary['catalog_gap_count'] ?? 0) ?> (bevakade: <?= (int) ($alertSummary['watchlist_catalog_gap_count'] ?? 0) ?>)</a>
 </div>
 
   <form method="get" class="grid-4" style="margin-bottom:.9rem;">
@@ -75,6 +75,8 @@ ob_start();
     <span class="pill">Pris: <?= (int) ($counts['price'] ?? 0) ?></span>
     <span class="pill">Lager: <?= (int) ($counts['stock'] ?? 0) ?></span>
     <span class="pill">Sortiment: <?= (int) ($counts['assortment'] ?? 0) ?></span>
+    <span class="pill warn">Bevakade: <?= (int) ($counts['watched_total'] ?? 0) ?></span>
+    <span class="pill bad">Bevakade critical: <?= (int) ($counts['watched_critical'] ?? 0) ?></span>
   </div>
 </section>
 
@@ -82,7 +84,7 @@ ob_start();
   <table class="table compact">
     <thead>
       <tr>
-        <th>Leverantör</th><th>Artikel</th><th>Avvikelse</th><th>Tidigare</th><th>Nytt</th><th>Förändring</th><th>Tidpunkt</th><th>Action links</th>
+        <th>Leverantör</th><th>Artikel</th><th>Avvikelse</th><th>Watchlist</th><th>Tidigare</th><th>Nytt</th><th>Förändring</th><th>Tidpunkt</th><th>Action links</th>
       </tr>
     </thead>
     <tbody>
@@ -97,6 +99,15 @@ ob_start();
             <?php endif; ?>
           </td>
           <td><span class="pill"><?= htmlspecialchars($typeLabels[(string) ($row['type'] ?? '')] ?? (string) ($row['type'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></span></td>
+          <td>
+            <?php if ((bool) ($row['is_watched'] ?? false)): ?>
+              <?php $watchPriority = (string) ($row['watch_priority_level'] ?? 'normal'); ?>
+              <span class="pill <?= $watchPriority === 'critical' ? 'bad' : ($watchPriority === 'high' ? 'warn' : 'ok') ?>">Bevakad <?= htmlspecialchars($watchPriority, ENT_QUOTES, 'UTF-8') ?></span>
+              <?php if (((string) ($row['brand_name'] ?? '')) !== ''): ?><br><small>Brand: <?= htmlspecialchars((string) $row['brand_name'], ENT_QUOTES, 'UTF-8') ?></small><?php endif; ?>
+            <?php else: ?>
+              <small>-</small>
+            <?php endif; ?>
+          </td>
           <td><?= htmlspecialchars((string) ($row['previous_value'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></td>
           <td><?= htmlspecialchars((string) ($row['new_value'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></td>
           <td><?= htmlspecialchars((string) (($row['change_pct'] ?? null) ?? '-'), ENT_QUOTES, 'UTF-8') ?></td>

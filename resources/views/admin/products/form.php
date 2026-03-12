@@ -356,6 +356,57 @@ ob_start();
 <?php endif; ?>
 
 <?php if ($isEdit): ?>
+
+<section id="ai-localization-suggestions" class="card" style="margin-top:.8rem;">
+  <h3>AI svensk lokalisering</h3>
+  <p class="muted">Skapar reviewbara svenska textförslag för titel, kort beskrivning och lång beskrivning. Ingen autopublicering sker.</p>
+
+  <form method="post" action="/admin/products/<?= (int) $product['id'] ?>/ai-localization-suggestions" style="margin-bottom:.8rem;">
+    <button class="btn" type="submit">Skapa AI svensk text</button>
+  </form>
+
+  <?php $aiLocalizationSuggestions = $ai_localization_suggestions ?? []; ?>
+  <?php if ($aiLocalizationSuggestions === []): ?>
+    <p class="muted">Inga svenska lokaliseringsförslag ännu.</p>
+  <?php else: ?>
+    <?php foreach ($aiLocalizationSuggestions as $suggestion): ?>
+      <div class="card" style="margin-bottom:.7rem;">
+        <p><strong>Svensk lokalisering #<?= (int) $suggestion['id'] ?></strong> · status: <?= htmlspecialchars((string) ($suggestion['status'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+
+        <?php if (trim((string) ($suggestion['ai_summary'] ?? '')) !== ''): ?>
+          <p class="muted" style="margin-top:.5rem;">AI-sammanfattning: <?= nl2br(htmlspecialchars((string) $suggestion['ai_summary'], ENT_QUOTES, 'UTF-8')) ?></p>
+        <?php endif; ?>
+
+        <div class="grid" style="grid-template-columns:1fr 1fr; gap:.6rem;">
+          <div>
+            <strong>Nuvarande text</strong>
+            <p class="muted">Titel: <?= htmlspecialchars((string) ($product['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+            <p class="muted">Kort beskrivning: <?= nl2br(htmlspecialchars((string) (preg_split('/(?<=[.!?])\s+/u', trim((string) ($product['description'] ?? '')), 2)[0] ?? ''), ENT_QUOTES, 'UTF-8')) ?></p>
+            <p class="muted">Lång beskrivning: <?= nl2br(htmlspecialchars((string) ($product['description'] ?? ''), ENT_QUOTES, 'UTF-8')) ?></p>
+          </div>
+          <div>
+            <strong>Föreslagen svensk text</strong>
+            <p class="muted">Titel: <?= htmlspecialchars((string) ($suggestion['suggested_title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+            <p class="muted">Kort beskrivning: <?= nl2br(htmlspecialchars((string) ($suggestion['suggested_short_description'] ?? ''), ENT_QUOTES, 'UTF-8')) ?></p>
+            <p class="muted">Lång beskrivning: <?= nl2br(htmlspecialchars((string) ($suggestion['suggested_description'] ?? ''), ENT_QUOTES, 'UTF-8')) ?></p>
+          </div>
+        </div>
+
+        <?php if ((string) ($suggestion['status'] ?? '') === 'pending'): ?>
+          <div style="display:flex; gap:.5rem; margin-top:.6rem;">
+            <form method="post" action="/admin/products/<?= (int) $product['id'] ?>/ai-localization-suggestions/<?= (int) $suggestion['id'] ?>/apply" onsubmit="return confirm('Applicera svensk text till produktens titel/beskrivning?');">
+              <button class="btn" type="submit">Applicera förslag</button>
+            </form>
+            <form method="post" action="/admin/products/<?= (int) $product['id'] ?>/ai-localization-suggestions/<?= (int) $suggestion['id'] ?>/reject" onsubmit="return confirm('Avvisa svensk lokaliseringsförslag?');">
+              <button class="btn" type="submit">Avvisa förslag</button>
+            </form>
+          </div>
+        <?php endif; ?>
+      </div>
+    <?php endforeach; ?>
+  <?php endif; ?>
+</section>
+
 <section id="ai-enrichment" class="card" style="margin-top:.8rem;">
   <h3>AI-assisterad produktberikning v1</h3>
   <p class="muted">AI-förslag är assistans och kräver manuell review innan applicering till produktutkastet.</p>

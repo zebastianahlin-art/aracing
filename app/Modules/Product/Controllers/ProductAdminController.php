@@ -15,6 +15,7 @@ use App\Modules\Product\Services\ProductSupplierLinkService;
 use App\Modules\Product\Services\AiProductEnrichmentService;
 use App\Modules\Product\Services\AiProductAttributeSuggestionService;
 use App\Modules\Product\Services\AiProductCategorySuggestionService;
+use App\Modules\Product\Services\AiProductLocalizationService;
 use App\Modules\Supplier\Services\SupplierService;
 use App\Modules\Fitment\Services\ProductFitmentService;
 use InvalidArgumentException;
@@ -33,7 +34,8 @@ final class ProductAdminController
         private readonly ProductFitmentService $fitments,
         private readonly AiProductEnrichmentService $enrichment,
         private readonly AiProductAttributeSuggestionService $attributeSuggestions,
-        private readonly AiProductCategorySuggestionService $categorySuggestions
+        private readonly AiProductCategorySuggestionService $categorySuggestions,
+        private readonly AiProductLocalizationService $localizationSuggestions,
     ) {
     }
 
@@ -142,6 +144,7 @@ final class ProductAdminController
             'ai_attribute_suggestions' => [],
             'ai_seo_suggestions' => [],
             'ai_category_suggestions' => [],
+            'ai_localization_suggestions' => [],
         ]));
     }
 
@@ -198,6 +201,7 @@ final class ProductAdminController
             'ai_attribute_suggestions' => $productId > 0 ? $this->attributeSuggestions->listForProduct($productId) : [],
             'ai_seo_suggestions' => $productId > 0 ? $this->enrichment->listSeoSuggestionsForProduct($productId) : [],
             'ai_category_suggestions' => $productId > 0 ? $this->categorySuggestions->listForProduct($productId) : [],
+            'ai_localization_suggestions' => $productId > 0 ? $this->localizationSuggestions->listForProduct($productId) : [],
         ]));
     }
 
@@ -362,6 +366,45 @@ final class ProductAdminController
             return $this->redirect('/admin/products/' . $productId . '/edit?notice=' . urlencode('AI-kategoriförslaget avvisades.') . '#ai-category-suggestions');
         } catch (InvalidArgumentException $e) {
             return $this->redirect('/admin/products/' . $productId . '/edit?media_error=' . urlencode($e->getMessage()) . '#ai-category-suggestions');
+        }
+    }
+
+    public function createLocalizationSuggestion(string $id): Response
+    {
+        $productId = (int) $id;
+
+        try {
+            $suggestionId = $this->localizationSuggestions->createSuggestionForProduct($productId, null);
+
+            return $this->redirect('/admin/products/' . $productId . '/edit?notice=' . urlencode('AI svensk lokalisering #' . $suggestionId . ' skapades och väntar på granskning.') . '#ai-localization-suggestions');
+        } catch (InvalidArgumentException $e) {
+            return $this->redirect('/admin/products/' . $productId . '/edit?media_error=' . urlencode($e->getMessage()) . '#ai-localization-suggestions');
+        }
+    }
+
+    public function applyLocalizationSuggestion(string $id, string $suggestionId): Response
+    {
+        $productId = (int) $id;
+
+        try {
+            $this->localizationSuggestions->applySuggestion((int) $suggestionId, null);
+
+            return $this->redirect('/admin/products/' . $productId . '/edit?notice=' . urlencode('AI svensk lokalisering applicerades på produktens textfält.') . '#ai-localization-suggestions');
+        } catch (InvalidArgumentException $e) {
+            return $this->redirect('/admin/products/' . $productId . '/edit?media_error=' . urlencode($e->getMessage()) . '#ai-localization-suggestions');
+        }
+    }
+
+    public function rejectLocalizationSuggestion(string $id, string $suggestionId): Response
+    {
+        $productId = (int) $id;
+
+        try {
+            $this->localizationSuggestions->rejectSuggestion((int) $suggestionId, null);
+
+            return $this->redirect('/admin/products/' . $productId . '/edit?notice=' . urlencode('AI svensk lokalisering avvisades.') . '#ai-localization-suggestions');
+        } catch (InvalidArgumentException $e) {
+            return $this->redirect('/admin/products/' . $productId . '/edit?media_error=' . urlencode($e->getMessage()) . '#ai-localization-suggestions');
         }
     }
 

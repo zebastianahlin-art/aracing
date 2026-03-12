@@ -1126,3 +1126,32 @@ Lokal snabbtest:
 3. Klicka in i en kategori från sidan och verifiera att befintlig fitmentfilter-UI fortsätter fungera.
 4. Rensa vald bil och verifiera att `/shop-by-vehicle` visar mjuk prompt istället för blockerande flöde.
 5. Logga in, gå till `/account/vehicles`, klicka `Handla till denna bil` och verifiera att bil kontext sätts och att du hamnar i vehicle-first-ingången.
+
+## Fitment coverage visibility / category coverage signals v1
+
+Detta steg lägger ett första, lättviktigt lager för coverage-synlighet i både storefront och admin utan ny tung datamodell eller analyticsplattform.
+
+Vad som ingår i v1:
+- central `FitmentCoverageService` för coverage-beräkning och payloadbygge.
+- vehicle-first-ingångar (`/shop-by-vehicle` och startsidans fordonssektion) visar kategori-signaler med antal matchande produkter för aktiv bil.
+- kategorisida i aktiv bil-kontext (med `fitment_only=1`) visar enkel hjälpsignal med antal matchande produkter i kategorin.
+- ny adminyta `/admin/fitment-coverage` med enkel översikt per kategori:
+  - antal publika produkter
+  - antal med minst en `confirmed`/`universal` fitmentkoppling
+  - antal utan sådan fitmentkoppling
+  - enkel coverage-procent/signal
+- admin kan sortera (sämst/bäst coverage), filtrera på kategorier med saknad fitment och hoppa vidare till fitment-arbetskön.
+
+Coverage-definition i v1:
+- Storefront coverage (aktiv bil): antal **publika/synliga** produkter i kategori som matchar
+  - `confirmed` mot vald bil, eller
+  - `universal`.
+- Admin coverage per kategori: antal **publika/synliga** produkter med minst en `confirmed`/`universal`-koppling kontra antal utan sådan koppling.
+- Coverage visas som vägledning och lovar inte fullständig fordonskompatibilitet i absolut mening.
+
+Lokal snabbtest:
+1. Välj en aktiv bil i YMM.
+2. Öppna `/shop-by-vehicle` och verifiera kategori-signaler med matchande produktantal.
+3. Öppna startsidan och verifiera att vehicle-first-kategorilänkar visar matchantal i aktiv bil-kontext.
+4. Öppna en kategori via vehicle-first-länk och verifiera hjälpsignalen "X produkter matchar vald bil...".
+5. Öppna `/admin/fitment-coverage` och verifiera coverage-tabell, sortering/filter och länk till fitment-kön.

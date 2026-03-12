@@ -26,7 +26,12 @@ ob_start();
     <p><a class="btn-primary" href="<?= htmlspecialchars((string) ($vehicleNavigation['entry_url'] ?? '/shop-by-vehicle'), ENT_QUOTES, 'UTF-8') ?>">Gå till fordonsanpassad kategoriingång</a></p>
     <div class="top-links">
       <?php foreach (($vehicleNavigation['entry_categories'] ?? []) as $entryCategory): ?>
-        <a href="<?= htmlspecialchars((string) ($entryCategory['url'] ?? '#'), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) ($entryCategory['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></a>
+        <a href="<?= htmlspecialchars((string) ($entryCategory['url'] ?? '#'), ENT_QUOTES, 'UTF-8') ?>">
+          <?= htmlspecialchars((string) ($entryCategory['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+          <?php if (is_array($entryCategory['coverage'] ?? null)): ?>
+            <small class="muted">(<?= (int) ($entryCategory['coverage']['matched_products'] ?? 0) ?>)</small>
+          <?php endif; ?>
+        </a>
       <?php endforeach; ?>
     </div>
   <?php else: ?>

@@ -16,6 +16,13 @@ ob_start();
   <article class="trust-item"><strong>Trygg retur</strong><p class="muted">Läs <a href="/pages/retur-reklamation">retur/reklamation</a> för villkor.</p></article>
 </section>
 
+<?php if (is_array($coverageSignal ?? null)): ?>
+  <section class="panel" style="margin-top:.8rem; border-color:#2f7046;">
+    <p style="margin:0;"><strong><?= htmlspecialchars((string) ($coverageSignal['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong></p>
+    <p class="muted" style="margin:.35rem 0 0;"><?= htmlspecialchars((string) ($coverageSignal['disclaimer'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+  </section>
+<?php endif; ?>
+
 <?php if ($category !== null): ?>
   <?php
   $action = '/category/' . urlencode((string) $category['slug']);

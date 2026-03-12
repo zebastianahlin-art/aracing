@@ -97,6 +97,150 @@ final class CatalogRepository
             ORDER BY c.name ASC')->fetchAll();
     }
 
+    /** @param array<int,int> $categoryIds
+     * @return array<int,int>
+     */
+    public function publicProductCountsByCategoryIds(array $categoryIds): array
+    {
+        $categoryIds = array_values(array_filter(array_map(static fn (int $id): int => max(0, $id), $categoryIds), static fn (int $id): bool => $id > 0));
+        if ($categoryIds === []) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($categoryIds), '?'));
+        $sql = 'SELECT p.category_id, COUNT(*) AS product_count
+                FROM products p
+                WHERE ' . $this->publicVisibilityWhereSql('p') . '
+                  AND p.category_id IN (' . $placeholders . ')
+                GROUP BY p.category_id';
+
+        $stmt = $this->pdo->prepare($sql);
+        foreach ($categoryIds as $index => $categoryId) {
+            $stmt->bindValue($index + 1, $categoryId, PDO::PARAM_INT);
+        }
+        $stmt->execute();
+
+        $result = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $result[(int) $row['category_id']] = (int) $row['product_count'];
+        }
+
+        return $result;
+    }
+
+    /** @param array<int,int> $categoryIds
+     * @return array<int,int>
+     */
+    public function publicFitmentMatchedCountsByCategoryIds(int $vehicleId, array $categoryIds): array
+    {
+        if ($vehicleId <= 0) {
+            return [];
+        }
+
+        $categoryIds = array_values(array_filter(array_map(static fn (int $id): int => max(0, $id), $categoryIds), static fn (int $id): bool => $id > 0));
+        if ($categoryIds === []) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($categoryIds), '?'));
+        $sql = 'SELECT p.category_id, COUNT(DISTINCT p.id) AS product_count
+                FROM products p
+                INNER JOIN product_fitments pf ON pf.product_id = p.id
+                WHERE ' . $this->publicVisibilityWhereSql('p') . '
+                  AND p.category_id IN (' . $placeholders . ')
+                  AND ((pf.vehicle_id = ? AND pf.fitment_type = "confirmed") OR pf.fitment_type = "universal")
+                GROUP BY p.category_id';
+
+        $stmt = $this->pdo->prepare($sql);
+        $bindIndex = 1;
+        foreach ($categoryIds as $categoryId) {
+            $stmt->bindValue($bindIndex, $categoryId, PDO::PARAM_INT);
+            $bindIndex++;
+        }
+        $stmt->bindValue($bindIndex, $vehicleId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $result = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $result[(int) $row['category_id']] = (int) $row['product_count'];
+        }
+
+        return $result;
+    }
+
+    /** @param array<string,mixed> $filters
+     * @return array<int,array<string,mixed>>
+     */
+    public function adminFitmentCoverageByCategory(array $filters = []): array
+    {
+        $having = [];
+        $orderBy = 'coverage_ratio ASC, without_fitment_count DESC, category_name ASC';
+        $params = [];
+
+        $onlyMissing = ((string) ($filters['only_missing'] ?? '0')) === '1';
+        if ($onlyMissing) {
+            $having[] = 'without_fitment_count > 0';
+        }
+
+        $sort = trim((string) ($filters['sort'] ?? 'worst'));
+        if ($sort === 'best') {
+            $orderBy = 'coverage_ratio DESC, with_fitment_count DESC, category_name ASC';
+        }
+
+        $categoryQuery = trim((string) ($filters['query'] ?? ''));
+        $where = [];
+        if ($categoryQuery !== '') {
+            $where[] = 'c.name LIKE :query';
+            $params['query'] = '%' . $categoryQuery . '%';
+        }
+
+        $sql = 'SELECT c.id AS category_id,
+                       c.name AS category_name,
+                       COUNT(p.id) AS public_product_count,
+                       SUM(CASE WHEN EXISTS (
+                           SELECT 1
+                           FROM product_fitments pf
+                           WHERE pf.product_id = p.id
+                             AND pf.fitment_type IN ("confirmed", "universal")
+                       ) THEN 1 ELSE 0 END) AS with_fitment_count,
+                       SUM(CASE WHEN p.id IS NOT NULL AND NOT EXISTS (
+                           SELECT 1
+                           FROM product_fitments pf_missing
+                           WHERE pf_missing.product_id = p.id
+                             AND pf_missing.fitment_type IN ("confirmed", "universal")
+                       ) THEN 1 ELSE 0 END) AS without_fitment_count,
+                       COALESCE(ROUND(
+                           (SUM(CASE WHEN EXISTS (
+                               SELECT 1
+                               FROM product_fitments pf_ratio
+                               WHERE pf_ratio.product_id = p.id
+                                 AND pf_ratio.fitment_type IN ("confirmed", "universal")
+                           ) THEN 1 ELSE 0 END) / NULLIF(COUNT(p.id), 0)) * 100,
+                           1
+                       ), 0) AS coverage_ratio
+                FROM categories c
+                LEFT JOIN products p ON p.category_id = c.id AND ' . $this->publicVisibilityWhereSql('p');
+
+        if ($where !== []) {
+            $sql .= ' WHERE ' . implode(' AND ', $where);
+        }
+
+        $sql .= ' GROUP BY c.id, c.name HAVING COUNT(p.id) > 0';
+        if ($having !== []) {
+            $sql .= ' AND ' . implode(' AND ', $having);
+        }
+
+        $sql .= ' ORDER BY ' . $orderBy;
+
+        $stmt = $this->pdo->prepare($sql);
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value, PDO::PARAM_STR);
+        }
+        $stmt->execute();
+
+        return $stmt->fetchAll();
+    }
+
     /** @return array<int, array{id:int,name:string,slug:string}> */
     public function filterBrands(): array
     {

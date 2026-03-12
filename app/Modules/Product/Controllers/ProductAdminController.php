@@ -134,7 +134,8 @@ final class ProductAdminController
             'fitment_vehicles' => $this->fitments->activeVehicles(trim((string) ($_GET['fitment_vehicle_query'] ?? ''))),
             'fitment_types' => $this->fitments->allowedTypes(),
             'fitment_vehicle_query' => trim((string) ($_GET['fitment_vehicle_query'] ?? '')),
-            'ai_suggestions' => $productId > 0 ? $this->enrichment->listForProduct($productId) : [],
+            'ai_suggestions' => [],
+            'ai_seo_suggestions' => [],
         ]));
     }
 
@@ -167,6 +168,8 @@ final class ProductAdminController
         $selectedSupplierId = $this->toNullableInt($_GET['supplier_id'] ?? ($product['primary_supplier_link']['supplier_id'] ?? null));
         $supplierItemQuery = trim((string) ($_GET['supplier_item_query'] ?? ''));
         $relationQuery = trim((string) ($_GET['relation_query'] ?? ''));
+        $allSuggestions = $productId > 0 ? $this->enrichment->listForProduct($productId) : [];
+        $aiSuggestions = array_values(array_filter($allSuggestions, static fn (array $suggestion): bool => (string) ($suggestion['suggestion_type'] ?? '') !== 'seo_metadata'));
 
         return new Response($this->views->render('admin.products.form', [
             'product' => $product,
@@ -185,7 +188,8 @@ final class ProductAdminController
             'fitment_vehicles' => $this->fitments->activeVehicles(trim((string) ($_GET['fitment_vehicle_query'] ?? ''))),
             'fitment_types' => $this->fitments->allowedTypes(),
             'fitment_vehicle_query' => trim((string) ($_GET['fitment_vehicle_query'] ?? '')),
-            'ai_suggestions' => $productId > 0 ? $this->enrichment->listForProduct($productId) : [],
+            'ai_suggestions' => $aiSuggestions,
+            'ai_seo_suggestions' => $productId > 0 ? $this->enrichment->listSeoSuggestionsForProduct($productId) : [],
         ]));
     }
 
@@ -232,6 +236,45 @@ final class ProductAdminController
             return $this->redirect('/admin/products/' . $productId . '/edit?notice=' . urlencode('AI-förslaget avvisades.') . '#ai-enrichment');
         } catch (InvalidArgumentException $e) {
             return $this->redirect('/admin/products/' . $productId . '/edit?media_error=' . urlencode($e->getMessage()) . '#ai-enrichment');
+        }
+    }
+
+    public function createSeoSuggestion(string $id): Response
+    {
+        $productId = (int) $id;
+
+        try {
+            $suggestionId = $this->enrichment->createSuggestionForProduct($productId, 'seo_metadata', null);
+
+            return $this->redirect('/admin/products/' . $productId . '/edit?notice=' . urlencode('AI SEO-förslag #' . $suggestionId . ' skapades och väntar på granskning.') . '#ai-seo-suggestions');
+        } catch (InvalidArgumentException $e) {
+            return $this->redirect('/admin/products/' . $productId . '/edit?media_error=' . urlencode($e->getMessage()) . '#ai-seo-suggestions');
+        }
+    }
+
+    public function applySeoSuggestion(string $id, string $suggestionId): Response
+    {
+        $productId = (int) $id;
+
+        try {
+            $this->enrichment->applySuggestion((int) $suggestionId, null);
+
+            return $this->redirect('/admin/products/' . $productId . '/edit?notice=' . urlencode('AI SEO-förslaget applicerades på SEO-fälten.') . '#ai-seo-suggestions');
+        } catch (InvalidArgumentException $e) {
+            return $this->redirect('/admin/products/' . $productId . '/edit?media_error=' . urlencode($e->getMessage()) . '#ai-seo-suggestions');
+        }
+    }
+
+    public function rejectSeoSuggestion(string $id, string $suggestionId): Response
+    {
+        $productId = (int) $id;
+
+        try {
+            $this->enrichment->rejectSuggestion((int) $suggestionId, null);
+
+            return $this->redirect('/admin/products/' . $productId . '/edit?notice=' . urlencode('AI SEO-förslaget avvisades.') . '#ai-seo-suggestions');
+        } catch (InvalidArgumentException $e) {
+            return $this->redirect('/admin/products/' . $productId . '/edit?media_error=' . urlencode($e->getMessage()) . '#ai-seo-suggestions');
         }
     }
 

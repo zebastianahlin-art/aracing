@@ -116,6 +116,7 @@ Testet är ett **första blockeringsfilter**: routes ska svara utan 5xx/4xx bloc
 - Verifiera att tabellen `schema_migrations` finns.
 - Kontrollera SQL-fel i stdout/stderr och åtgärda rotorsaken i migrationsfil/DB-konfiguration.
 
+Notering: `scripts/migrate.php` kör SQL-migrationer filvis utan att wrappa hela `.sql`-filer i en PDO-transaktion (MariaDB DDL kan göra implicit commit). En migration markeras i `schema_migrations` först efter att hela SQL-filen körts utan fel.
+
 ### Uppladdning/import fungerar inte
 - Kontrollera skrivrättigheter på `storage/imports` och `public/uploads/product-images`.
-

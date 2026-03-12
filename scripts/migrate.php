@@ -82,11 +82,11 @@ foreach ($pending as $file) {
     }
 
     try {
-        $pdo->beginTransaction();
+        // SQL-migrationsfiler för MariaDB kan innehålla DDL som triggar implicit COMMIT.
+        // Kör därför inte hela filen i en explicit PDO-transaktion.
         $pdo->exec($sql);
         $stmt = $pdo->prepare('INSERT INTO schema_migrations (migration) VALUES (:migration)');
         $stmt->execute(['migration' => $name]);
-        $pdo->commit();
         echo '✔ ' . $name . PHP_EOL;
     } catch (Throwable $exception) {
         if ($pdo->inTransaction()) {

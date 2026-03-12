@@ -22,6 +22,8 @@ final class SupplierMonitoringRepository
                        s.name AS supplier_name,
                        psl.product_id,
                        p.name AS product_name,
+                       p.brand_id,
+                       b.name AS brand_name,
                        l.id AS latest_snapshot_id,
                        l.import_run_id AS latest_import_run_id,
                        l.supplier_price AS latest_price,
@@ -59,6 +61,7 @@ final class SupplierMonitoringRepository
                 LEFT JOIN suppliers s ON s.id = si.supplier_id
                 LEFT JOIN product_supplier_links psl ON psl.supplier_item_id = si.id AND psl.is_primary = 1
                 LEFT JOIN products p ON p.id = psl.product_id
+                LEFT JOIN brands b ON b.id = p.brand_id
                 WHERE 1=1';
 
         $params = [];
@@ -116,6 +119,8 @@ final class SupplierMonitoringRepository
                        s.name AS supplier_name,
                        psl.product_id,
                        p.name AS product_name,
+                       p.brand_id,
+                       b.name AS brand_name,
                        l.supplier_price AS latest_price,
                        l.currency AS latest_currency,
                        l.stock_quantity AS latest_stock_quantity,
@@ -128,6 +133,7 @@ final class SupplierMonitoringRepository
                 LEFT JOIN suppliers s ON s.id = si.supplier_id
                 LEFT JOIN product_supplier_links psl ON psl.supplier_item_id = si.id AND psl.is_primary = 1
                 LEFT JOIN products p ON p.id = psl.product_id
+                LEFT JOIN brands b ON b.id = p.brand_id
                 WHERE si.supplier_id = :supplier_id
                   AND l.import_run_id = :run_id
                   AND NOT EXISTS (
@@ -161,6 +167,8 @@ final class SupplierMonitoringRepository
                        s.name AS supplier_name,
                        psl.product_id,
                        p.name AS product_name,
+                       p.brand_id,
+                       b.name AS brand_name,
                        prev.supplier_price AS previous_price,
                        prev.currency AS previous_currency,
                        prev.stock_quantity AS previous_stock_quantity,
@@ -180,6 +188,7 @@ final class SupplierMonitoringRepository
                 LEFT JOIN suppliers s ON s.id = si.supplier_id
                 LEFT JOIN product_supplier_links psl ON psl.supplier_item_id = si.id AND psl.is_primary = 1
                 LEFT JOIN products p ON p.id = psl.product_id
+                LEFT JOIN brands b ON b.id = p.brand_id
                 WHERE si.supplier_id = :supplier_id
                   AND NOT EXISTS (
                       SELECT 1

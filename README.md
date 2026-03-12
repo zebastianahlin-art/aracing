@@ -1556,6 +1556,7 @@ Viktigt:
 
 Databas:
 - kör även `database/migrations/047_supplier_monitoring_v1.sql`
+- kör även `database/migrations/048_supplier_watchlist_v1.sql`
 
 Admin:
 - `/admin/supplier-monitoring`
@@ -1582,3 +1583,35 @@ Lokal test:
 4. Verifiera att `tidigare` vs `nytt` visas och att action links fungerar.
 5. Öppna `/admin/ai-alerts` och verifiera att supplier-alerts syns med severity, count och länk till filtrerad supplier monitoring-vy.
 6. Öppna `/admin` och verifiera att supplier-alerts påverkar total alert count samt topp 3-listan.
+
+
+## Supplier watchlist / monitored suppliers and brands v1
+
+Databas:
+- `database/migrations/048_supplier_watchlist_v1.sql`
+
+Admin:
+- `/admin/supplier-watchlist`
+
+V1-stöd:
+- `entity_type`: `supplier`, `brand`
+- `priority_level`: `normal`, `high`, `critical`
+- intern `note` för varför objektet är bevakat
+- aktiv/inaktiv-flagga för att tillfälligt pausa bevakning utan att radera posten
+
+Watchlist i v1 är ett litet prioriteringslager:
+- ingen notifieringsmotor (ingen e-post/slack/push)
+- ingen per-supplier regelmotor med tröskelmatris
+- ingen automatisk repricing eller automatisk katalogändring
+
+Integrationer:
+- Supplier monitoring markerar rader som träffar bevakad supplier/brand med badge + prioritet.
+- Operational alerts får watchlist-signal för supplier-relaterade alerttyper och gör en enkel severity bump (+1 steg) när bevakad träff finns.
+- Beteendet är transparent i alertens förklaring.
+
+Lokal testning:
+1. Starta appen (`composer serve`).
+2. Öppna `/admin/supplier-watchlist` och skapa minst en bevakad supplier och/eller brand med `high` eller `critical` prioritet.
+3. Kör eller återanvänd importer så att supplier deviations finns i `/admin/supplier-monitoring`.
+4. Verifiera att monitoring visar `Bevakad`-signal och prioritet i listan.
+5. Öppna `/admin/ai-alerts` och verifiera att supplier-relaterade alerts visar `Watchlist-prioriterad` och att severity kan bumpas ett steg när bevakade träffar finns.

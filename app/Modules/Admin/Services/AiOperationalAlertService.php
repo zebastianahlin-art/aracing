@@ -108,9 +108,10 @@ final class AiOperationalAlertService
     {
         $count = (int) ($supplierSignals['price_change_pressure_count'] ?? 0);
 
-        return $this->buildAlert(
+        return $this->buildSupplierWatchlistAwareAlert(
             'supplier_price_change_pressure',
             $count,
+            (int) ($supplierSignals['watchlist_price_change_pressure_count'] ?? 0),
             sprintf('%d leverantörsartiklar har prisändrats kraftigt', $count),
             sprintf('Supplier monitoring har identifierat %d prisavvikelser (ökning/minskning) i senaste underlaget för kopplade artiklar.', $count),
             '/admin/supplier-monitoring?deviation_scope=price&linked_only=1'
@@ -122,9 +123,10 @@ final class AiOperationalAlertService
     {
         $count = (int) ($supplierSignals['availability_drop_count'] ?? 0);
 
-        return $this->buildAlert(
+        return $this->buildSupplierWatchlistAwareAlert(
             'supplier_availability_drop',
             $count,
+            (int) ($supplierSignals['watchlist_availability_drop_count'] ?? 0),
             sprintf('%d leverantörsartiklar har tappat tillgänglighet', $count),
             sprintf('Supplier monitoring har identifierat %d availability/stock-avvikelser som indikerar tappad leveransförmåga.', $count),
             '/admin/supplier-monitoring?deviation_scope=stock&linked_only=1'
@@ -136,9 +138,10 @@ final class AiOperationalAlertService
     {
         $count = (int) ($supplierSignals['catalog_gap_count'] ?? 0);
 
-        return $this->buildAlert(
+        return $this->buildSupplierWatchlistAwareAlert(
             'supplier_catalog_gap',
             $count,
+            (int) ($supplierSignals['watchlist_catalog_gap_count'] ?? 0),
             sprintf('%d artiklar saknas i senaste importen', $count),
             sprintf('Supplier monitoring har identifierat %d artiklar som saknas i senaste import, vilket kan signalera sortimentsgap.', $count),
             '/admin/supplier-monitoring?deviation_type=missing_in_recent_import&linked_only=1'
@@ -154,6 +157,12 @@ final class AiOperationalAlertService
                 'price_change_pressure_count' => 0,
                 'availability_drop_count' => 0,
                 'catalog_gap_count' => 0,
+                'watchlist_price_change_pressure_count' => 0,
+                'watchlist_availability_drop_count' => 0,
+                'watchlist_catalog_gap_count' => 0,
+                'watchlist_critical_count' => 0,
+                'watchlist_high_count' => 0,
+                'watchlist_normal_count' => 0,
             ]
         );
     }
@@ -241,6 +250,46 @@ final class AiOperationalAlertService
             sprintf('%d aktiva stock alerts signalerar efterfrågan utan leverans.', $count),
             '/admin/purchasing'
         );
+    }
+
+    /** @return array<string,mixed>|null */
+    private function buildSupplierWatchlistAwareAlert(
+        string $type,
+        int $count,
+        int $watchlistCount,
+        string $title,
+        string $message,
+        string $targetUrl
+    ): ?array {
+        $alert = $this->buildAlert($type, $count, $title, $message, $targetUrl);
+        if ($alert === null) {
+            return null;
+        }
+
+        if ($watchlistCount > 0) {
+            $current = (string) ($alert['severity'] ?? 'info');
+            $alert['severity'] = $this->bumpSeverity($current);
+            $alert['watchlist_signal'] = true;
+            $alert['watchlist_count'] = $watchlistCount;
+            $alert['watchlist_label'] = 'Watchlist-prioriterad';
+            $alert['message'] = (string) $alert['message'] . ' ' . sprintf('%d av dessa gäller bevakade leverantörer/brands.', $watchlistCount);
+            $alert['explanation'] = (string) $alert['explanation'] . ' Watchlist-regel: severity bump +1 steg när bevakade objekt påverkas.';
+        } else {
+            $alert['watchlist_signal'] = false;
+            $alert['watchlist_count'] = 0;
+            $alert['watchlist_label'] = '';
+        }
+
+        return $alert;
+    }
+
+    private function bumpSeverity(string $severity): string
+    {
+        return match ($severity) {
+            'info' => 'warning',
+            'warning' => 'critical',
+            default => 'critical',
+        };
     }
 
     /** @return array<string,mixed>|null */

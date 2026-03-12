@@ -8,8 +8,10 @@ use App\Modules\Supplier\Repositories\SupplierMonitoringRepository;
 
 final class SupplierMonitoringService
 {
-    public function __construct(private readonly SupplierMonitoringRepository $monitoring)
-    {
+    public function __construct(
+        private readonly SupplierMonitoringRepository $monitoring,
+        private readonly SupplierWatchlistService $watchlist,
+    ) {
     }
 
     /** @param array<string, mixed> $input
@@ -41,6 +43,7 @@ final class SupplierMonitoringService
         }
 
         $rows = array_values(array_filter($rows, fn (array $row): bool => $this->matchesFilter($row, $filters)));
+        $rows = $this->watchlist->attachWatchSignalsToMonitoringRows($rows);
         usort($rows, static fn (array $a, array $b): int => strcmp((string) $b['detected_at'], (string) $a['detected_at']));
 
         $counts = $this->counts($rows);
@@ -66,24 +69,56 @@ final class SupplierMonitoringService
             'catalog_gap_count' => 0,
         ];
 
+        $watchSummary = [
+            'watchlist_price_change_pressure_count' => 0,
+            'watchlist_availability_drop_count' => 0,
+            'watchlist_catalog_gap_count' => 0,
+            'watchlist_critical_count' => 0,
+            'watchlist_high_count' => 0,
+            'watchlist_normal_count' => 0,
+        ];
+
         foreach ($rows as $row) {
             $type = (string) ($row['type'] ?? '');
             if (in_array($type, ['price_increase', 'price_decrease'], true)) {
                 $summary['price_change_pressure_count']++;
-                continue;
             }
 
             if (in_array($type, ['availability_lost', 'stock_dropped'], true)) {
                 $summary['availability_drop_count']++;
-                continue;
             }
 
             if ($type === 'missing_in_recent_import') {
                 $summary['catalog_gap_count']++;
             }
+
+            if (((bool) ($row['is_watched'] ?? false)) === false) {
+                continue;
+            }
+
+            if (in_array($type, ['price_increase', 'price_decrease'], true)) {
+                $watchSummary['watchlist_price_change_pressure_count']++;
+            }
+
+            if (in_array($type, ['availability_lost', 'stock_dropped'], true)) {
+                $watchSummary['watchlist_availability_drop_count']++;
+            }
+
+            if ($type === 'missing_in_recent_import') {
+                $watchSummary['watchlist_catalog_gap_count']++;
+            }
+
+            $priority = (string) ($row['watch_priority_level'] ?? 'normal');
+            if ($priority === 'critical') {
+                $watchSummary['watchlist_critical_count']++;
+            } elseif ($priority === 'high') {
+                $watchSummary['watchlist_high_count']++;
+            } else {
+                $watchSummary['watchlist_normal_count']++;
+            }
         }
 
-        return $summary;
+        return [...$summary, ...$watchSummary];
     }
 
     /** @param array<string, mixed> $state
@@ -150,6 +185,8 @@ final class SupplierMonitoringService
             'supplier_title' => (string) ($state['supplier_title'] ?? ''),
             'product_id' => $state['product_id'] !== null ? (int) $state['product_id'] : null,
             'product_name' => (string) ($state['product_name'] ?? ''),
+            'brand_id' => $state['brand_id'] !== null ? (int) $state['brand_id'] : null,
+            'brand_name' => (string) ($state['brand_name'] ?? ''),
             'type' => $type,
             'group' => $this->groupFor($type),
             'detected_at' => (string) ($state['latest_captured_at'] ?? $state['previous_captured_at'] ?? ''),
@@ -266,6 +303,7 @@ final class SupplierMonitoringService
             'price' => 0,
             'stock' => 0,
             'assortment' => 0,
+            ...$this->watchlist->summarizeMonitoringRows($rows),
         ];
 
         foreach ($rows as $row) {

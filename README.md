@@ -1711,3 +1711,44 @@ Lokal testning:
 3. Öppna `/admin/ai-search-insights` och verifiera att problematiska queries visas.
 4. Klicka `Generera förslag` och verifiera pending-förslag.
 5. Godkänn ett förslag och verifiera att alias används i kommande sökningar.
+
+## AI pricing insights / margin pressure signals v1
+
+Adminvy:
+- `/admin/ai-pricing-insights`
+
+Syfte i v1:
+- ge operativt beslutsstöd för prisrisk och marginalpress
+- återanvända produktpris, supplier item-koppling och supplier snapshots
+- visa tydliga, förklarbara signaler med action links till befintliga arbetsflöden
+
+Insight-typer (förklarbar regelbaserad logik):
+- `margin_pressure`: enkel bruttomarginal (`retail - supplier`) under 18% eller under 120 SEK
+- `supplier_price_moved`: supplierpris ändrat tydligt (>= 8% eller >= 50 SEK) mot föregående snapshot
+- `price_gap_check`: retailpris ligger nära supplierpris (<= 10% gap) eller under supplierpris
+- `discount_margin_risk`: aktiv procent-rabattkod pressar enkel marginal under 12%
+
+Regel för relevant supplierpris i v1:
+1. använd primär produktkoppling (`product_supplier_links.is_primary = 1`) om den finns
+2. annars välj lägsta giltiga supplierpris bland kopplade supplier items
+3. fallback: första tillgängliga koppling
+
+Datakällor som återanvänds:
+- `products`
+- `product_supplier_links`
+- `supplier_items`
+- `supplier_item_snapshots`
+- `discount_codes` (endast aktiv procent-rabatt som enkel risksignal)
+
+Viktigt:
+- detta är AI-assisterat beslutsstöd i v1
+- ingen automatisk repricing
+- ingen automatisk katalogändring
+- ingen black-box pricing score
+
+Lokal testning:
+1. Starta appen (`composer serve`).
+2. Öppna `/admin/ai-pricing-insights`.
+3. Testa filter för insight-typ, leverantör, brand, kategori och "endast kopplade produkter".
+4. Verifiera att varje rad visar retailpris, supplierpris, enkel marginal, supplierprisförändring, reason och action links.
+5. Verifiera dashboard-kortet för "AI Pricing Insights (v1)" i `/admin`.

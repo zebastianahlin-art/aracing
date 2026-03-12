@@ -3,6 +3,7 @@ ob_start();
 $alertsSummary = is_array($alertsSummary ?? null) ? $alertsSummary : [];
 $topAlerts = is_array($alertsSummary['top_alerts'] ?? null) ? $alertsSummary['top_alerts'] : [];
 $inventoryInsightCounts = is_array($inventoryInsightCounts ?? null) ? $inventoryInsightCounts : [];
+$pricingInsightCounts = is_array($pricingInsightCounts ?? null) ? $pricingInsightCounts : [];
 ?>
 <section class="card">
   <h1>A-<span style="color:#e10600;">Racing</span> Admin</h1>
@@ -55,6 +56,15 @@ $inventoryInsightCounts = is_array($inventoryInsightCounts ?? null) ? $inventory
   </div>
   <p>Totalt: <strong><?= (int) ($inventoryInsightCounts['total'] ?? 0) ?></strong> | Slow movers: <strong><?= (int) ($inventoryInsightCounts['slow_mover'] ?? 0) ?></strong> | Stockout-risk: <strong><?= (int) ($inventoryInsightCounts['stockout_risk'] ?? 0) ?></strong></p>
   <p><small>Signalen är regelbaserad och reviewbar. Ingen automatisk inköpsorder eller automatisk lagerstyrning utförs.</small></p>
+</section>
+
+<section class="card" style="margin-top:12px;">
+  <div class="topline">
+    <h2 style="margin:0;">AI Pricing Insights (v1)</h2>
+    <a class="btn" href="/admin/ai-pricing-insights">Öppna pricing insights</a>
+  </div>
+  <p>Totalt: <strong><?= (int) ($pricingInsightCounts['total'] ?? 0) ?></strong> | Margin pressure: <strong><?= (int) ($pricingInsightCounts['margin_pressure'] ?? 0) ?></strong> | Supplierpris ändrat: <strong><?= (int) ($pricingInsightCounts['supplier_price_moved'] ?? 0) ?></strong></p>
+  <p><small>Signalen är regelbaserad och förklarbar. Ingen automatisk repricing eller automatisk prispublicering utförs.</small></p>
 </section>
 
 <?php

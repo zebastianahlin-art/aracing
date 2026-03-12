@@ -8,6 +8,7 @@ use App\Core\Http\Response;
 use App\Core\View\ViewFactory;
 use App\Modules\Admin\Services\AiInventoryInsightService;
 use App\Modules\Admin\Services\AiOperationalAlertService;
+use App\Modules\Admin\Services\AiPricingInsightService;
 
 final class AdminController
 {
@@ -15,6 +16,7 @@ final class AdminController
         private readonly ViewFactory $views,
         private readonly AiOperationalAlertService $alerts,
         private readonly AiInventoryInsightService $inventoryInsights,
+        private readonly AiPricingInsightService $pricingInsights,
     ) {
     }
 
@@ -22,10 +24,13 @@ final class AdminController
     {
         $inventoryPayload = $this->inventoryInsights->listInsights(['insight_type' => 'all']);
         $inventoryCounts = is_array($inventoryPayload['counts'] ?? null) ? $inventoryPayload['counts'] : [];
+        $pricingPayload = $this->pricingInsights->listInsights(['insight_type' => 'all', 'linked_only' => '1']);
+        $pricingCounts = is_array($pricingPayload['counts'] ?? null) ? $pricingPayload['counts'] : [];
 
         return new Response($this->views->render('admin.dashboard', [
             'alertsSummary' => $this->alerts->buildDashboardSummary(3),
             'inventoryInsightCounts' => $inventoryCounts,
+            'pricingInsightCounts' => $pricingCounts,
         ]));
     }
 }

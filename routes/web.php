@@ -9,13 +9,16 @@ use App\Modules\Admin\Controllers\AiMerchandisingSuggestionAdminController;
 use App\Modules\Admin\Controllers\AiInventoryInsightAdminController;
 use App\Modules\Admin\Controllers\AiSearchInsightAdminController;
 use App\Modules\Admin\Controllers\AiOperationalReportController;
+use App\Modules\Admin\Controllers\AiPricingInsightAdminController;
 use App\Modules\Admin\Repositories\AiInventoryInsightRepository;
 use App\Modules\Admin\Repositories\AiMerchandisingSuggestionRepository;
+use App\Modules\Admin\Repositories\AiPricingInsightRepository;
 use App\Modules\Admin\Services\AiOperationalAlertService;
 use App\Modules\Admin\Services\AiInventoryInsightService;
 use App\Modules\Admin\Services\AiMerchandisingSuggestionService;
 use App\Modules\Admin\Services\AiOperationalInsightsService;
 use App\Modules\Admin\Services\AiSearchInsightService;
+use App\Modules\Admin\Services\AiPricingInsightService;
 use App\Modules\Brand\Controllers\BrandAdminController;
 use App\Modules\Brand\Repositories\BrandRepository;
 use App\Modules\Brand\Services\BrandService;
@@ -449,6 +452,13 @@ $aiInventoryInsightAdmin = new AiInventoryInsightAdminController(
     $brandService,
     $categoryService
 );
+$aiPricingInsightService = new AiPricingInsightService(new AiPricingInsightRepository($app['pdo']));
+$aiPricingInsightAdmin = new AiPricingInsightAdminController(
+    $app['view'],
+    $aiPricingInsightService,
+    $brandService,
+    $categoryService
+);
 $aiSearchInsightAdmin = new AiSearchInsightAdminController($app['view'], new AiSearchInsightService($searchQueryLogRepository, $searchQuerySuggestionRepository, $searchQueryAliasRepository, $catalogRepository));
 $aiMerchandisingSuggestionAdmin = new AiMerchandisingSuggestionAdminController(
     $app['view'],
@@ -459,7 +469,7 @@ $aiMerchandisingSuggestionAdmin = new AiMerchandisingSuggestionAdminController(
         new HomepageSectionItemRepository($app['pdo'])
     )
 );
-$admin = new AdminController($app['view'], $aiOperationalAlertService, $aiInventoryInsightService);
+$admin = new AdminController($app['view'], $aiOperationalAlertService, $aiInventoryInsightService, $aiPricingInsightService);
 $supportCaseStorefront = new SupportCaseStorefrontController($app['view'], $supportCaseService, $authService, $cmsPageService);
 $supportCaseAdmin = new SupportCaseAdminController($app['view'], $supportCaseService);
 $orderAdmin = new OrderAdminController($app['view'], $orderService, $paymentEventRepository, $returnRequestService, $supportCaseService);
@@ -558,6 +568,7 @@ $app['router']->get('/admin', [$admin, 'dashboard']);
 $app['router']->get('/admin/ai-alerts', [$aiOperationalAlertAdmin, 'index']);
 $app['router']->get('/admin/ai-ops-report', [$aiOperationalReportAdmin, 'index']);
 $app['router']->get('/admin/ai-inventory-insights', [$aiInventoryInsightAdmin, 'index']);
+$app['router']->get('/admin/ai-pricing-insights', [$aiPricingInsightAdmin, 'index']);
 $app['router']->get('/admin/ai-search-insights', [$aiSearchInsightAdmin, 'index']);
 $app['router']->post('/admin/ai-search-insights/generate', [$aiSearchInsightAdmin, 'generate']);
 $app['router']->post('/admin/ai-search-insights/suggestions/{id}/approve', [$aiSearchInsightAdmin, 'approve']);

@@ -73,6 +73,7 @@ use App\Modules\Import\Repositories\ImportRowRepository;
 use App\Modules\Import\Repositories\ImportRunRepository;
 use App\Modules\Import\Repositories\SupplierItemRepository;
 use App\Modules\Import\Repositories\SupplierItemReviewRepository;
+use App\Modules\Import\Repositories\SupplierItemSnapshotRepository;
 use App\Modules\Import\Repositories\AiProductImportDraftRepository;
 use App\Modules\Import\Services\CsvImportService;
 use App\Modules\Import\Services\ImportProfileService;
@@ -144,8 +145,11 @@ use App\Modules\Storefront\Services\SitemapService;
 use App\Modules\Storefront\Services\SeoService;
 use App\Modules\Storefront\Services\RecentViewedService;
 use App\Modules\Supplier\Controllers\SupplierAdminController;
+use App\Modules\Supplier\Controllers\SupplierMonitoringAdminController;
 use App\Modules\Supplier\Repositories\SupplierRepository;
 use App\Modules\Supplier\Services\SupplierService;
+use App\Modules\Supplier\Services\SupplierMonitoringService;
+use App\Modules\Supplier\Repositories\SupplierMonitoringRepository;
 use App\Modules\Returns\Controllers\ReturnRequestAdminController;
 use App\Modules\Returns\Controllers\ReturnRequestCustomerController;
 use App\Modules\Returns\Repositories\ReturnOrderRepository;
@@ -252,10 +256,12 @@ $importProfileService = new ImportProfileService(new ImportProfileRepository($ap
 $importRowRepository = new ImportRowRepository($app['pdo']);
 $importRunRepository = new ImportRunRepository($app['pdo']);
 $importRunService = new ImportRunService($importRunRepository, $importRowRepository);
+$snapshotRepository = new SupplierItemSnapshotRepository($app['pdo']);
 $csvImportService = new CsvImportService(
     $importRunRepository,
     $importRowRepository,
     $supplierItemRepository,
+    $snapshotRepository,
     $importProfileService
 );
 $aiProductImportService = new AiProductImportService(
@@ -380,6 +386,8 @@ $categoryAdmin = new CategoryAdminController($app['view'], $categoryService);
 $redirectAdmin = new RedirectAdminController($app['view'], $redirectService);
 $productAdmin = new ProductAdminController($app['view'], $productService, $productMediaService, $productRelationService, $brandService, $categoryService, $supplierService, $productSupplierLinkService, $productFitmentService, $aiFitmentSuggestionService, $aiProductEnrichmentService, $aiProductAttributeSuggestionService, $aiProductCategorySuggestionService, $aiProductLocalizationService);
 $supplierAdmin = new SupplierAdminController($app['view'], $supplierService);
+$supplierMonitoringService = new SupplierMonitoringService(new SupplierMonitoringRepository($app['pdo']));
+$supplierMonitoringAdmin = new SupplierMonitoringAdminController($app['view'], $supplierMonitoringService, $supplierService);
 $importProfileAdmin = new ImportProfileAdminController($app['view'], $importProfileService, $supplierService);
 $importRunAdmin = new ImportRunAdminController($app['view'], $importRunService, $importProfileService, $csvImportService);
 $supplierItemReviewService = new SupplierItemReviewService(
@@ -624,6 +632,7 @@ $app['router']->get('/admin/redirects/{id}/edit', [$redirectAdmin, 'editForm']);
 $app['router']->post('/admin/redirects/{id}', [$redirectAdmin, 'update']);
 
 $app['router']->get('/admin/suppliers', [$supplierAdmin, 'index']);
+$app['router']->get('/admin/supplier-monitoring', [$supplierMonitoringAdmin, 'index']);
 $app['router']->get('/admin/suppliers/create', [$supplierAdmin, 'createForm']);
 $app['router']->post('/admin/suppliers', [$supplierAdmin, 'store']);
 $app['router']->get('/admin/suppliers/{id}/edit', [$supplierAdmin, 'editForm']);

@@ -64,6 +64,7 @@
     <a href="/admin/import-profiles">Importprofiler</a>
     <a href="/admin/import-runs">Importkörningar</a>
     <a href="/admin/supplier-item-review">Importgranskning</a>
+    <a href="/admin/supplier-monitoring">Supplier monitoring</a>
     <a href="/admin/ai-product-import">AI URL-import</a>
     <a href="/admin/cms/pages">CMS-sidor</a>
     <a href="/admin/homepage-sections">Startsidessektioner</a>

@@ -58,6 +58,7 @@
     .ymm-box { margin-top:.8rem; border:1px solid var(--line); border-radius:8px; padding:.7rem; background:#131722; }
     .ymm-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:.5rem; align-items:end; }
     .fitment-banner { margin-top:.55rem; padding:.55rem .65rem; border-radius:8px; border:1px solid #2a3d31; background:#111c15; }
+    .fitment-actions { margin-top:.45rem; display:flex; gap:.45rem; flex-wrap:wrap; }
     @media (max-width: 800px) { .grid-2 { grid-template-columns:1fr; } }
   </style>
 </head>
@@ -68,6 +69,7 @@
   <nav>
     <a href="/">Start</a>
     <a href="/search">Sök</a>
+    <a href="/shop-by-vehicle">Handla till bil</a>
     <a href="/compare">Jämför</a>
     <a href="/cart">Kundvagn</a>
     <a href="/checkout">Checkout</a>
@@ -88,7 +90,8 @@
   <?php $fitment = is_array($fitment ?? null) ? $fitment : []; ?>
   <?php $selectedVehicle = is_array($fitment['selected_vehicle'] ?? null) ? $fitment['selected_vehicle'] : null; ?>
   <?php $fitmentStorefront = is_array($fitmentStorefront ?? null) ? $fitmentStorefront : []; ?>
-  <section class="ymm-box">
+  <?php $vehicleNavigation = is_array($vehicleNavigation ?? null) ? $vehicleNavigation : []; ?>
+  <section id="ymm-selector" class="ymm-box">
     <form method="post" action="/fitment/select" class="ymm-grid">
       <input type="hidden" name="return_to" value="<?= htmlspecialchars((string) ($_SERVER['REQUEST_URI'] ?? '/search'), ENT_QUOTES, 'UTF-8') ?>">
       <div>
@@ -117,6 +120,11 @@
       <div class="fitment-banner">
         <strong>Du handlar för <?= htmlspecialchars((string) ($fitmentStorefront['active_vehicle_label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong>
         <span class="muted" style="margin-left:.35rem;">Byt bil i fälten ovan eller rensa för att visa hela katalogen.</span>
+        <?php if (!empty($vehicleNavigation['entry_url'])): ?>
+          <div class="fitment-actions">
+            <a class="btn-primary" href="<?= htmlspecialchars((string) $vehicleNavigation['entry_url'], ENT_QUOTES, 'UTF-8') ?>">Handla till vald bil</a>
+          </div>
+        <?php endif; ?>
       </div>
     <?php endif; ?>
     <?php if ($selectedVehicle !== null): ?>

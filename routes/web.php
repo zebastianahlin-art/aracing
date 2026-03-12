@@ -34,6 +34,7 @@ use App\Modules\Fitment\Services\VehicleService;
 use App\Modules\Fitment\Services\SavedVehicleService;
 use App\Modules\Fitment\Services\FitmentWorkflowService;
 use App\Modules\Fitment\Services\FitmentStorefrontService;
+use App\Modules\Fitment\Services\VehicleNavigationService;
 use App\Modules\Fitment\Services\SupplierFitmentIntakeService;
 use App\Modules\Fitment\Services\SupplierFitmentReviewService;
 use App\Modules\Discount\Repositories\DiscountCodeRepository;
@@ -200,6 +201,7 @@ $productRecommendationService = new ProductRecommendationService(
     $inventoryService
 );
 $fitmentStorefrontService = new FitmentStorefrontService($fitmentService, $savedVehicleService, new ProductFitmentRepository($app['pdo']));
+$vehicleNavigationService = new VehicleNavigationService($fitmentService, $fitmentStorefrontService, $catalogRepository);
 $catalogService = new CatalogService($catalogRepository, $inventoryService, $productRecommendationService, $fitmentService, $fitmentStorefrontService);
 $shippingService = new ShippingService(new ShippingMethodRepository($app['pdo']));
 $checkoutTotalsService = new CheckoutTotalsService();
@@ -284,8 +286,8 @@ $robotsService = new RobotsService();
 $sitemapController = new SitemapController($sitemapService, $robotsService);
 $recentViewedService = new RecentViewedService($catalogRepository, $inventoryService);
 $compareService = new CompareService($catalogRepository, $inventoryService);
-$storefront = new StorefrontController($app['view'], $catalogService, $cmsPageService, $authService, $productReviewService, $seoService, $wishlistService, $stockAlertService, $recentViewedService, $compareService, $fitmentService, $savedVehicleService, $fitmentStorefrontService);
-$cmsStorefront = new CmsStorefrontController($app['view'], $homepageService, $cmsPageService, $seoService);
+$storefront = new StorefrontController($app['view'], $catalogService, $cmsPageService, $authService, $productReviewService, $seoService, $wishlistService, $stockAlertService, $recentViewedService, $compareService, $fitmentService, $savedVehicleService, $fitmentStorefrontService, $vehicleNavigationService);
+$cmsStorefront = new CmsStorefrontController($app['view'], $homepageService, $cmsPageService, $seoService, $authService, $fitmentService, $savedVehicleService, $fitmentStorefrontService, $vehicleNavigationService);
 $cartController = new CartController($app['view'], $cartService, $cmsPageService);
 $checkoutController = new CheckoutController($app['view'], $cartService, new CheckoutService(), $orderService, $shippingService, $checkoutTotalsService, $cmsPageService, $paymentService, $authService);
 $admin = new AdminController($app['view']);
@@ -340,6 +342,7 @@ $app['router']->post('/fitment/select', [$fitmentSelectionController, 'select'])
 $app['router']->post('/fitment/clear', [$fitmentSelectionController, 'clear']);
 $app['router']->post('/account/vehicles/save-current', [$savedVehicleController, 'saveCurrent']);
 $app['router']->get('/search', [$storefront, 'search']);
+$app['router']->get('/shop-by-vehicle', [$storefront, 'shopByVehicle']);
 $app['router']->get('/compare', [$compareController, 'index']);
 $app['router']->post('/compare/add', [$compareController, 'add']);
 $app['router']->post('/compare/remove', [$compareController, 'remove']);

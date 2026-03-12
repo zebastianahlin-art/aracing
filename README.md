@@ -1102,3 +1102,27 @@ Lokal snabbtest:
 4. Klicka `Sätt som primär` och ladda om en storefront-sida med tom YMM-session för att verifiera defaultval.
 5. Klicka `Använd denna bil` för att sätta aktiv bil i session.
 6. Klicka `Ta bort` och verifiera att bilen försvinner från listan (utan att fordonet tas bort ur `vehicles`).
+
+## Fitment-driven category entry / vehicle-first navigation v1
+
+Detta steg gör storefronten tydligare för kunder som vill börja handla utifrån vald bil, utan ny tung frontend eller separat navigationsmotor.
+
+Vad som ingår i v1:
+- ny serverrenderad sida `/shop-by-vehicle` som listar publika kategorier med aktiv bil i kontext.
+- central `VehicleNavigationService` som bygger navigation-payload, kategorilänkar och fallback när ingen bil är vald.
+- tydlig CTA `Handla till vald bil` i YMM/header när aktiv bil finns.
+- startsidan visar en lätt vehicle-first-entry med kategorigenvägar eller mjuk uppmaning att välja bil.
+- `Mina bilar` har genväg för att direkt gå till shoppingflöde för vald/sparad bil.
+- kategoriingång återanvänder befintliga query params (`fitment_only`, `fitment_vehicle_id`) och befintlig katalog-/fitmentlogik.
+
+Regler i v1:
+- ingen bil vald => storefront fungerar som vanligt och visar endast mjuk prompt.
+- endast publika/synliga kategorier och produkter används i entry-listor.
+- inga påståenden om bekräftad passform görs utan befintlig fitmentdata.
+
+Lokal snabbtest:
+1. Välj bil i YMM och verifiera CTA `Handla till vald bil` i header.
+2. Öppna `/shop-by-vehicle` och verifiera att kategorilänkar inkluderar fitmentkontext.
+3. Klicka in i en kategori från sidan och verifiera att befintlig fitmentfilter-UI fortsätter fungera.
+4. Rensa vald bil och verifiera att `/shop-by-vehicle` visar mjuk prompt istället för blockerande flöde.
+5. Logga in, gå till `/account/vehicles`, klicka `Handla till denna bil` och verifiera att bil kontext sätts och att du hamnar i vehicle-first-ingången.

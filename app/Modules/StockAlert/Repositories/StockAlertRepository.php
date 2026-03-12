@@ -100,4 +100,13 @@ final class StockAlertRepository
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
+    public function countActiveSubscriptions(): int
+    {
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) AS total FROM stock_alert_subscriptions WHERE status = :status');
+        $stmt->execute(['status' => 'active']);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return (int) ($row['total'] ?? 0);
+    }
+
 }

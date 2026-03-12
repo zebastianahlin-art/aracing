@@ -1457,3 +1457,43 @@ Lokal testning:
 3. Skapa AI-fitmentförslag i produktadmin och verifiera pending-listan.
 4. Godkänn ett förslag och verifiera att ny rad syns i sektionen `Fitment / Fordonskopplingar`.
 5. Avvisa ett förslag och verifiera att inga nya publika fitments skapas.
+
+## AI operational insights / daily report v1
+
+Admin har nu en enkel operativ daglig översikt på:
+- `/admin/ai-ops-report`
+
+Rapporten byggs **on-demand** vid sidvisning (ingen tung BI-/dashboardplattform och ingen schemalagd rapportmotor i v1).
+
+Ingående sektioner i v1:
+- Orders / fulfillment
+- Restock / purchasing
+- AI import queue
+- Fitment review / fitment gaps
+- Support / returns (inkl. aktiv stock alert-signal)
+
+Rapporten visar:
+- strukturerade counts per sektion
+- svensk sammanfattningstext (regelbaserad, förklarbar och reviewbar)
+- tydliga åtgärdslänkar till befintliga adminvyer
+
+Viktigt:
+- beslutsstöd, inte automatisk exekvering
+- inga black-box-prioriteringar
+- ingen tidsserie-/grafplattform i denna v1
+
+### Lokal testning (snabbtest)
+
+1. Starta appen:
+   ```bash
+   composer serve
+   ```
+2. Öppna adminrapporten:
+   - `http://127.0.0.1:8000/admin/ai-ops-report`
+3. Verifiera att counts och åtgärdslänkar visas för varje sektion.
+4. Jämför counts mot respektive källa:
+   - orders: `/admin/orders`
+   - restock/purchasing: `/admin/purchasing`, `/admin/purchase-order-drafts`
+   - AI import: `/admin/ai-product-import`
+   - fitment: `/admin/fitment-gaps`, `/admin/supplier-fitment-review`
+   - support/returns: `/admin/support-cases`, `/admin/returns`

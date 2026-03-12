@@ -4,6 +4,7 @@ $alertsSummary = is_array($alertsSummary ?? null) ? $alertsSummary : [];
 $topAlerts = is_array($alertsSummary['top_alerts'] ?? null) ? $alertsSummary['top_alerts'] : [];
 $inventoryInsightCounts = is_array($inventoryInsightCounts ?? null) ? $inventoryInsightCounts : [];
 $pricingInsightCounts = is_array($pricingInsightCounts ?? null) ? $pricingInsightCounts : [];
+$assortmentGapCounts = is_array($assortmentGapCounts ?? null) ? $assortmentGapCounts : [];
 ?>
 <section class="card">
   <h1>A-<span style="color:#e10600;">Racing</span> Admin</h1>
@@ -65,6 +66,16 @@ $pricingInsightCounts = is_array($pricingInsightCounts ?? null) ? $pricingInsigh
   </div>
   <p>Totalt: <strong><?= (int) ($pricingInsightCounts['total'] ?? 0) ?></strong> | Margin pressure: <strong><?= (int) ($pricingInsightCounts['margin_pressure'] ?? 0) ?></strong> | Supplierpris ändrat: <strong><?= (int) ($pricingInsightCounts['supplier_price_moved'] ?? 0) ?></strong></p>
   <p><small>Signalen är regelbaserad och förklarbar. Ingen automatisk repricing eller automatisk prispublicering utförs.</small></p>
+</section>
+
+
+<section class="card" style="margin-top:12px;">
+  <div class="topline">
+    <h2 style="margin:0;">AI Assortment Gap Insights (v1)</h2>
+    <a class="btn" href="/admin/ai-assortment-gaps">Öppna assortment gaps</a>
+  </div>
+  <p>Totalt: <strong><?= (int) ($assortmentGapCounts['total'] ?? 0) ?></strong> | Search: <strong><?= (int) ($assortmentGapCounts['search_gap'] ?? 0) ?></strong> | Supplier: <strong><?= (int) ($assortmentGapCounts['supplier_gap'] ?? 0) ?></strong> | Fitment: <strong><?= (int) ($assortmentGapCounts['fitment_gap'] ?? 0) ?></strong> | Watchlist: <strong><?= (int) ($assortmentGapCounts['watchlist_gap'] ?? 0) ?></strong> | Demand: <strong><?= (int) ($assortmentGapCounts['demand_gap'] ?? 0) ?></strong></p>
+  <p><small>Signalen är regelbaserad och förklarbar. Inga automatiska inköpsordrar, importer eller autopublicering sker.</small></p>
 </section>
 
 <?php

@@ -6,14 +6,17 @@ use App\Core\Routing\Router;
 use App\Modules\Admin\Controllers\AdminController;
 use App\Modules\Admin\Controllers\AiOperationalAlertController;
 use App\Modules\Admin\Controllers\AiMerchandisingSuggestionAdminController;
+use App\Modules\Admin\Controllers\AiAssortmentGapInsightAdminController;
 use App\Modules\Admin\Controllers\AiInventoryInsightAdminController;
 use App\Modules\Admin\Controllers\AiSearchInsightAdminController;
 use App\Modules\Admin\Controllers\AiOperationalReportController;
 use App\Modules\Admin\Controllers\AiPricingInsightAdminController;
 use App\Modules\Admin\Repositories\AiInventoryInsightRepository;
+use App\Modules\Admin\Repositories\AiAssortmentGapInsightRepository;
 use App\Modules\Admin\Repositories\AiMerchandisingSuggestionRepository;
 use App\Modules\Admin\Repositories\AiPricingInsightRepository;
 use App\Modules\Admin\Services\AiOperationalAlertService;
+use App\Modules\Admin\Services\AiAssortmentGapInsightService;
 use App\Modules\Admin\Services\AiInventoryInsightService;
 use App\Modules\Admin\Services\AiMerchandisingSuggestionService;
 use App\Modules\Admin\Services\AiOperationalInsightsService;
@@ -460,6 +463,13 @@ $aiPricingInsightAdmin = new AiPricingInsightAdminController(
     $categoryService
 );
 $aiSearchInsightAdmin = new AiSearchInsightAdminController($app['view'], new AiSearchInsightService($searchQueryLogRepository, $searchQuerySuggestionRepository, $searchQueryAliasRepository, $catalogRepository));
+$aiAssortmentGapInsightService = new AiAssortmentGapInsightService(
+    new AiAssortmentGapInsightRepository($app['pdo']),
+    new AiSearchInsightService($searchQueryLogRepository, $searchQuerySuggestionRepository, $searchQueryAliasRepository, $catalogRepository),
+    $supplierMonitoringService,
+    $fitmentGapService
+);
+$aiAssortmentGapInsightAdmin = new AiAssortmentGapInsightAdminController($app['view'], $aiAssortmentGapInsightService);
 $aiMerchandisingSuggestionAdmin = new AiMerchandisingSuggestionAdminController(
     $app['view'],
     new AiMerchandisingSuggestionService(
@@ -469,7 +479,7 @@ $aiMerchandisingSuggestionAdmin = new AiMerchandisingSuggestionAdminController(
         new HomepageSectionItemRepository($app['pdo'])
     )
 );
-$admin = new AdminController($app['view'], $aiOperationalAlertService, $aiInventoryInsightService, $aiPricingInsightService);
+$admin = new AdminController($app['view'], $aiOperationalAlertService, $aiInventoryInsightService, $aiPricingInsightService, $aiAssortmentGapInsightService);
 $supportCaseStorefront = new SupportCaseStorefrontController($app['view'], $supportCaseService, $authService, $cmsPageService);
 $supportCaseAdmin = new SupportCaseAdminController($app['view'], $supportCaseService);
 $orderAdmin = new OrderAdminController($app['view'], $orderService, $paymentEventRepository, $returnRequestService, $supportCaseService);
@@ -570,6 +580,7 @@ $app['router']->get('/admin/ai-ops-report', [$aiOperationalReportAdmin, 'index']
 $app['router']->get('/admin/ai-inventory-insights', [$aiInventoryInsightAdmin, 'index']);
 $app['router']->get('/admin/ai-pricing-insights', [$aiPricingInsightAdmin, 'index']);
 $app['router']->get('/admin/ai-search-insights', [$aiSearchInsightAdmin, 'index']);
+$app['router']->get('/admin/ai-assortment-gaps', [$aiAssortmentGapInsightAdmin, 'index']);
 $app['router']->post('/admin/ai-search-insights/generate', [$aiSearchInsightAdmin, 'generate']);
 $app['router']->post('/admin/ai-search-insights/suggestions/{id}/approve', [$aiSearchInsightAdmin, 'approve']);
 $app['router']->post('/admin/ai-search-insights/suggestions/{id}/reject', [$aiSearchInsightAdmin, 'reject']);

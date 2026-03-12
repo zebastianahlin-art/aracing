@@ -1790,3 +1790,43 @@ Lokal testning:
 3. Testa filter för insight-typ, leverantör, brand, kategori och "endast kopplade produkter".
 4. Verifiera att varje rad visar retailpris, supplierpris, enkel marginal, supplierprisförändring, reason och action links.
 5. Verifiera dashboard-kortet för "AI Pricing Insights (v1)" i `/admin`.
+
+## AI demand signals / interest without conversion v1
+
+Adminvy:
+- `/admin/ai-demand-signals`
+
+Syfte i v1:
+- synliggöra produkter med tydligt intresse men svag försäljning
+- återanvända befintliga signaler utan ny tung analytics-/trackingplattform
+- ge förklarbara insights med action links till befintliga arbetsflöden
+
+Insight-typer i v1:
+- `high_interest_low_conversion`: hög intressesignal men låg orderrörelse
+- `repeated_interest_no_stock`: upprepad intressesignal men låg/ingen tillgänglighet
+- `compare_interest_signal`: compare-signal med svag konvertering (degraderad i v1 om compare inte är querybar)
+- `viewed_not_bought`: visnings-/intressesignal utan köp (degraderad i v1 om recently viewed inte är querybar)
+
+Datakällor som används i denna etapp:
+- `wishlist_items`
+- `stock_alert_subscriptions`
+- `orders` + `order_items`
+- `products`
+- valfria kontextlänkar till pricing/inventory insights
+
+Notering om compare/recently viewed i nuvarande plattform:
+- compare och recently viewed är sessionbaserade i v1
+- ingen ny trackingmodell byggs i denna task
+- signalerna exponeras därför transparent som "ej querybar i v1" i adminvyn
+
+Viktigt:
+- detta är beslutsstöd i v1
+- ingen automatisk ändring av pris, produktdata, lager eller merchandising
+- ingen black-box conversion engine
+
+Lokal testning:
+1. Starta appen (`composer serve`).
+2. Öppna `/admin/ai-demand-signals`.
+3. Testa filter för insight-typ, leverantör, brand, kategori och sök.
+4. Verifiera att rader visar signalsiffror (wishlist, compare, stock alerts, recent interest, sold 30/60), reason och action links.
+5. Verifiera att dashboard-kortet för "AI Demand Signals (v1)" visas i `/admin`.

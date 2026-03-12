@@ -5,11 +5,12 @@ $topAlerts = is_array($alertsSummary['top_alerts'] ?? null) ? $alertsSummary['to
 $inventoryInsightCounts = is_array($inventoryInsightCounts ?? null) ? $inventoryInsightCounts : [];
 $pricingInsightCounts = is_array($pricingInsightCounts ?? null) ? $pricingInsightCounts : [];
 $assortmentGapCounts = is_array($assortmentGapCounts ?? null) ? $assortmentGapCounts : [];
+$demandSignalCounts = is_array($demandSignalCounts ?? null) ? $demandSignalCounts : [];
 ?>
 <section class="card">
   <h1>A-<span style="color:#e10600;">Racing</span> Admin</h1>
   <p>Katalogblocket är aktivt och leverantör/import v1 finns nu i admin för spårbar CSV-hantering.</p>
-  <p>Snabbval: <a class="btn" href="/admin/ai-alerts">AI Alerts</a> <a class="btn" href="/admin/ai-ops-report">AI Ops-rapport</a> <a class="btn" href="/admin/suppliers">Leverantörer</a> <a class="btn" href="/admin/supplier-watchlist">Supplier watchlist</a> <a class="btn" href="/admin/import-profiles">Importprofiler</a> <a class="btn" href="/admin/import-runs">Importkörningar</a> <a class="btn" href="/admin/purchasing">Inköpsöversikt</a></p>
+  <p>Snabbval: <a class="btn" href="/admin/ai-alerts">AI Alerts</a> <a class="btn" href="/admin/ai-ops-report">AI Ops-rapport</a> <a class="btn" href="/admin/ai-demand-signals">AI Demand Signals</a> <a class="btn" href="/admin/suppliers">Leverantörer</a> <a class="btn" href="/admin/supplier-watchlist">Supplier watchlist</a> <a class="btn" href="/admin/import-profiles">Importprofiler</a> <a class="btn" href="/admin/import-runs">Importkörningar</a> <a class="btn" href="/admin/purchasing">Inköpsöversikt</a></p>
 </section>
 
 <section class="card" style="margin-top:12px;">
@@ -68,6 +69,16 @@ $assortmentGapCounts = is_array($assortmentGapCounts ?? null) ? $assortmentGapCo
   <p><small>Signalen är regelbaserad och förklarbar. Ingen automatisk repricing eller automatisk prispublicering utförs.</small></p>
 </section>
 
+
+
+<section class="card" style="margin-top:12px;">
+  <div class="topline">
+    <h2 style="margin:0;">AI Demand Signals (v1)</h2>
+    <a class="btn" href="/admin/ai-demand-signals">Öppna demand signals</a>
+  </div>
+  <p>Totalt: <strong><?= (int) ($demandSignalCounts['total'] ?? 0) ?></strong> | High interest/low conversion: <strong><?= (int) ($demandSignalCounts['high_interest_low_conversion'] ?? 0) ?></strong> | Repeated interest/no stock: <strong><?= (int) ($demandSignalCounts['repeated_interest_no_stock'] ?? 0) ?></strong></p>
+  <p><small>Signalen är regelbaserad och förklarbar. Detta är beslutsstöd, inte automatisk exekvering av pris, lager eller merchandising.</small></p>
+</section>
 
 <section class="card" style="margin-top:12px;">
   <div class="topline">

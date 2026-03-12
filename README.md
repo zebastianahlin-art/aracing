@@ -110,6 +110,21 @@ För att se migrationer som ska köras manuellt i MariaDB:
 php scripts/migrate.php
 ```
 
+## Staging deployment (v1)
+
+För komplett staging-runbook (serverkrav, .env, migrationer, smoke test och felsökning), se:
+
+- `docs/deploy/staging-v1.md`
+
+Snabbkommandon:
+
+```bash
+php scripts/staging_doctor.php
+php scripts/migrate.php
+php scripts/migrate.php --status
+SMOKE_BASE_URL=http://81.88.25.152:8088 php scripts/staging_smoke_test.php
+```
+
 
 ## Katalogblock (nuvarande status)
 

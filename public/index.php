@@ -8,6 +8,18 @@ use App\Modules\Redirect\Services\RedirectService;
 
 $app = require dirname(__DIR__) . '/bootstrap/app.php';
 
+
+$timezone = getenv('APP_TIMEZONE') ?: 'Europe/Stockholm';
+date_default_timezone_set($timezone);
+
+$sessionPath = getenv('SESSION_SAVE_PATH') ?: dirname(__DIR__) . '/storage/sessions';
+if (!is_dir($sessionPath)) {
+    mkdir($sessionPath, 0775, true);
+}
+if (is_dir($sessionPath) && is_writable($sessionPath)) {
+    session_save_path($sessionPath);
+}
+
 if (session_status() != PHP_SESSION_ACTIVE) {
     session_start();
 }

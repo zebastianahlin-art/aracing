@@ -2,6 +2,7 @@
 ob_start();
 $alertsSummary = is_array($alertsSummary ?? null) ? $alertsSummary : [];
 $topAlerts = is_array($alertsSummary['top_alerts'] ?? null) ? $alertsSummary['top_alerts'] : [];
+$inventoryInsightCounts = is_array($inventoryInsightCounts ?? null) ? $inventoryInsightCounts : [];
 ?>
 <section class="card">
   <h1>A-<span style="color:#e10600;">Racing</span> Admin</h1>
@@ -46,6 +47,16 @@ $topAlerts = is_array($alertsSummary['top_alerts'] ?? null) ? $alertsSummary['to
     <p><small>Inga aktiva operativa alerts just nu.</small></p>
   <?php endif; ?>
 </section>
+
+<section class="card" style="margin-top:12px;">
+  <div class="topline">
+    <h2 style="margin:0;">AI Inventory Insights (v1)</h2>
+    <a class="btn" href="/admin/ai-inventory-insights">Öppna inventory insights</a>
+  </div>
+  <p>Totalt: <strong><?= (int) ($inventoryInsightCounts['total'] ?? 0) ?></strong> | Slow movers: <strong><?= (int) ($inventoryInsightCounts['slow_mover'] ?? 0) ?></strong> | Stockout-risk: <strong><?= (int) ($inventoryInsightCounts['stockout_risk'] ?? 0) ?></strong></p>
+  <p><small>Signalen är regelbaserad och reviewbar. Ingen automatisk inköpsorder eller automatisk lagerstyrning utförs.</small></p>
+</section>
+
 <?php
 $content = (string) ob_get_clean();
 $title = 'Admin Dashboard | A-Racing';

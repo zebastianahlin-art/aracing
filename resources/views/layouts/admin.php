@@ -43,6 +43,7 @@
     <a href="/admin">Dashboard</a>
     <a href="/admin/ai-alerts">AI Alerts</a>
     <a href="/admin/ai-ops-report">AI Ops-rapport</a>
+    <a href="/admin/ai-inventory-insights">AI Inventory Insights</a>
     <a href="/admin/ai-merch-suggestions">AI Merchandising</a>
     <a href="/admin/brands">Brands</a>
     <a href="/admin/categories">Categories</a>

@@ -1646,3 +1646,40 @@ Lokal testning:
 3. Klicka `Generera förslag (max 2)`
 4. Öppna ett pending-förslag och testa `Approve` respektive `Reject`
 5. Verifiera vid approve att ny sektion skapats i `/admin/homepage-sections` (inaktiv som standard)
+
+## AI inventory insights / slow movers & stock risk v1
+
+Adminvy:
+- `/admin/ai-inventory-insights`
+
+Syfte i v1:
+- ge operativt beslutsstöd för lagerarbete
+- lyfta produkter som binder kapital eller riskerar stockout
+- länka vidare till befintliga arbetsvyer (produktedit, inköp/restock, supplier monitoring)
+
+Insight-typer (förklarbar regelbaserad logik):
+- `slow_mover`: `stock_quantity > 0` och `sold_last_60_days = 0`
+- `high_stock_low_velocity`: `stock_quantity >= 12` och `sold_last_60_days <= 2`
+- `stockout_risk`: `stock_quantity <= 2` och (`sold_last_30_days > 0` eller aktiva stock alerts)
+- `demand_without_stock`: `stock_status = out_of_stock/backorder` och (`sold_last_30_days > 0` eller aktiva stock alerts)
+
+Datakällor som återanvänds:
+- `products`
+- `orders` + `order_items`
+- `stock_alert_subscriptions`
+- `purchase_order_drafts` + `purchase_order_draft_items`
+- `restock_flags`
+
+Viktigt:
+- detta är AI-assisterat beslutsstöd i v1 (reviewbar regelmotor)
+- ingen automatisk inköpsorder
+- ingen automatisk lagerstyrning
+- ingen automatisk repricing
+- ingen black-box forecasting-/ML-motor i denna etapp
+
+Lokal testning:
+1. Starta appen (`composer serve`).
+2. Öppna `/admin/ai-inventory-insights`.
+3. Testa filter för insight-typ, leverantör, brand och kategori.
+4. Verifiera att varje rad visar tydliga nyckeltal och fungerande action links.
+5. Verifiera dashboard-kortet för "AI Inventory Insights (v1)" i `/admin`.

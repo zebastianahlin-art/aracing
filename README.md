@@ -1712,6 +1712,44 @@ Lokal testning:
 4. Klicka `Generera förslag` och verifiera pending-förslag.
 5. Godkänn ett förslag och verifiera att alias används i kommande sökningar.
 
+## AI assortment gap insights / missing assortment opportunities v1
+
+Adminvy:
+- `/admin/ai-assortment-gaps`
+
+Syfte i v1:
+- synliggöra var sortimentet verkar tunt eller saknar relevanta artiklar
+- återanvända signaler från search, supplier monitoring/watchlist, fitment gap-kö och enkel demand-signal
+- ge operativa, förklarbara insights med action links till befintliga arbetsflöden
+
+Gap-typer i v1 (förklarbara regler):
+- `search_gap`: återkommande zero-/low-result queries med svag katalogmatchning
+- `supplier_gap`: leverantörer med många supplier items utan produktmappning
+- `fitment_gap`: produkter/områden med tydliga fitment-gap eller låg category coverage
+- `watchlist_gap`: bevakade suppliers/brands med assortment-avvikelser (`newly_seen_item` / `missing_in_recent_import`)
+- `demand_gap`: efterfrågesignal (sök + stock alerts) men svag katalogtäckning
+
+Datakällor som återanvänds:
+- `search_query_logs` via AI Search Insights
+- `supplier_items`, `product_supplier_links`, `import_runs`
+- `supplier monitoring` + `supplier watchlist`
+- `fitment gap queue` (fitment workflow)
+- `products` + `stock_alert_subscriptions`
+
+Viktigt:
+- detta är beslutsstöd i v1
+- ingen automatisk produktimport
+- ingen automatisk inköpsorder/supplier-ordergenerering
+- ingen autopublicering
+- ingen black-box scoringmotor
+
+Lokal testning:
+1. Starta appen (`composer serve`).
+2. Öppna `/admin/ai-assortment-gaps`.
+3. Testa filter för gap-typ, supplier, brand, kategori och watchlist.
+4. Verifiera att varje rad visar typ, kontext, reason, nyckelsignaler, kombinerad signal och action links.
+5. Verifiera dashboard-kortet för "AI Assortment Gap Insights (v1)" i `/admin`.
+
 ## AI pricing insights / margin pressure signals v1
 
 Adminvy:

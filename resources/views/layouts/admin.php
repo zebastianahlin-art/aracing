@@ -47,6 +47,7 @@
     <a href="/admin/ai-pricing-insights">AI Pricing Insights</a>
     <a href="/admin/ai-merch-suggestions">AI Merchandising</a>
     <a href="/admin/ai-search-insights">AI Search Insights</a>
+    <a href="/admin/ai-assortment-gaps">AI Assortment Gaps</a>
     <a href="/admin/brands">Brands</a>
     <a href="/admin/categories">Categories</a>
     <a href="/admin/products">Products</a>

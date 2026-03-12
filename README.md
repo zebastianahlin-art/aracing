@@ -1615,3 +1615,34 @@ Lokal testning:
 3. Kör eller återanvänd importer så att supplier deviations finns i `/admin/supplier-monitoring`.
 4. Verifiera att monitoring visar `Bevakad`-signal och prioritet i listan.
 5. Öppna `/admin/ai-alerts` och verifiera att supplier-relaterade alerts visar `Watchlist-prioriterad` och att severity kan bumpas ett steg när bevakade träffar finns.
+
+## AI merchandising / campaign draft suggestions v1
+
+Ny adminmodul för **review-first AI merchandising-förslag** finns på:
+- `/admin/ai-merch-suggestions`
+
+Funktion i v1:
+- admin kan generera max **1–2 förslag** per körning
+- förslag bygger på befintlig data: top sellers (orders), lagerstatus, nya produkter, fitment-signaler och watchlistade suppliers/brands
+- varje förslag innehåller upp till **8 produkter**, utan dubbletter och utan produkter som saknar lager
+- produkter som redan ligger i aktiva homepage-sektioner filtreras bort
+- statusflöde: `pending` → `approved` eller `rejected`
+
+Suggestion types i v1:
+- `homepage_featured_products`
+- `new_arrivals_collection`
+- `fitment_recommended_collection`
+- `supplier_high_priority_collection`
+
+Review-first-regel:
+- inget publiceras automatiskt
+- inga rabatter aktiveras automatiskt
+- approve skapar endast ett **inaktivt homepage-utkast** (startsidessektion) kopplat till befintligt featured collections/homepage-sektionssystem
+- reject gör endast statusändring
+
+Lokal testning:
+1. Kör migrationer: `php scripts/migrate.php`
+2. Öppna `/admin/ai-merch-suggestions`
+3. Klicka `Generera förslag (max 2)`
+4. Öppna ett pending-förslag och testa `Approve` respektive `Reject`
+5. Verifiera vid approve att ny sektion skapats i `/admin/homepage-sections` (inaktiv som standard)

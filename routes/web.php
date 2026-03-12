@@ -5,8 +5,11 @@ declare(strict_types=1);
 use App\Core\Routing\Router;
 use App\Modules\Admin\Controllers\AdminController;
 use App\Modules\Admin\Controllers\AiOperationalAlertController;
+use App\Modules\Admin\Controllers\AiMerchandisingSuggestionAdminController;
 use App\Modules\Admin\Controllers\AiOperationalReportController;
+use App\Modules\Admin\Repositories\AiMerchandisingSuggestionRepository;
 use App\Modules\Admin\Services\AiOperationalAlertService;
+use App\Modules\Admin\Services\AiMerchandisingSuggestionService;
 use App\Modules\Admin\Services\AiOperationalInsightsService;
 use App\Modules\Brand\Controllers\BrandAdminController;
 use App\Modules\Brand\Repositories\BrandRepository;
@@ -426,6 +429,15 @@ $aiOperationalInsightsService = new AiOperationalInsightsService(
 $aiOperationalAlertService = new AiOperationalAlertService($aiOperationalInsightsService, $supplierMonitoringService);
 $aiOperationalReportAdmin = new AiOperationalReportController($app['view'], $aiOperationalInsightsService);
 $aiOperationalAlertAdmin = new AiOperationalAlertController($app['view'], $aiOperationalAlertService);
+$aiMerchandisingSuggestionAdmin = new AiMerchandisingSuggestionAdminController(
+    $app['view'],
+    new AiMerchandisingSuggestionService(
+        $app['pdo'],
+        new AiMerchandisingSuggestionRepository($app['pdo']),
+        new HomepageSectionRepository($app['pdo']),
+        new HomepageSectionItemRepository($app['pdo'])
+    )
+);
 $admin = new AdminController($app['view'], $aiOperationalAlertService);
 $supportCaseStorefront = new SupportCaseStorefrontController($app['view'], $supportCaseService, $authService, $cmsPageService);
 $supportCaseAdmin = new SupportCaseAdminController($app['view'], $supportCaseService);
@@ -524,6 +536,11 @@ $app['router']->post('/account/orders/{orderId}/support', [$supportCaseStorefron
 $app['router']->get('/admin', [$admin, 'dashboard']);
 $app['router']->get('/admin/ai-alerts', [$aiOperationalAlertAdmin, 'index']);
 $app['router']->get('/admin/ai-ops-report', [$aiOperationalReportAdmin, 'index']);
+$app['router']->get('/admin/ai-merch-suggestions', [$aiMerchandisingSuggestionAdmin, 'index']);
+$app['router']->post('/admin/ai-merch-suggestions/generate', [$aiMerchandisingSuggestionAdmin, 'generate']);
+$app['router']->get('/admin/ai-merch-suggestions/{id}', [$aiMerchandisingSuggestionAdmin, 'show']);
+$app['router']->post('/admin/ai-merch-suggestions/{id}/approve', [$aiMerchandisingSuggestionAdmin, 'approve']);
+$app['router']->post('/admin/ai-merch-suggestions/{id}/reject', [$aiMerchandisingSuggestionAdmin, 'reject']);
 $app['router']->get('/admin/brands', [$brandAdmin, 'index']);
 $app['router']->get('/admin/brands/create', [$brandAdmin, 'createForm']);
 $app['router']->post('/admin/brands', [$brandAdmin, 'store']);

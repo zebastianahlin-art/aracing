@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use App\Core\Routing\Router;
 use App\Modules\Admin\Controllers\AdminController;
+use App\Modules\Admin\Controllers\AiOperationalReportController;
+use App\Modules\Admin\Services\AiOperationalInsightsService;
 use App\Modules\Brand\Controllers\BrandAdminController;
 use App\Modules\Brand\Repositories\BrandRepository;
 use App\Modules\Brand\Services\BrandService;
@@ -392,6 +394,18 @@ $supportCaseService = new SupportCaseService(
     new SupportCaseHistoryRepository($app['pdo']),
     new SupportOrderRepository($app['pdo'])
 );
+$aiOperationalInsightsService = new AiOperationalInsightsService(
+    $orderService,
+    $purchasingService,
+    $purchaseOrderDraftService,
+    $aiProductImportService,
+    $fitmentGapService,
+    $supplierFitmentReviewService,
+    $supportCaseService,
+    $returnRequestService,
+    new StockAlertRepository($app['pdo'])
+);
+$aiOperationalReportAdmin = new AiOperationalReportController($app['view'], $aiOperationalInsightsService);
 $supportCaseStorefront = new SupportCaseStorefrontController($app['view'], $supportCaseService, $authService, $cmsPageService);
 $supportCaseAdmin = new SupportCaseAdminController($app['view'], $supportCaseService);
 $orderAdmin = new OrderAdminController($app['view'], $orderService, $paymentEventRepository, $returnRequestService, $supportCaseService);
@@ -487,6 +501,7 @@ $app['router']->get('/account/orders/{orderId}/support/create', [$supportCaseSto
 $app['router']->post('/account/orders/{orderId}/support', [$supportCaseStorefront, 'orderStore']);
 
 $app['router']->get('/admin', [$admin, 'dashboard']);
+$app['router']->get('/admin/ai-ops-report', [$aiOperationalReportAdmin, 'index']);
 $app['router']->get('/admin/brands', [$brandAdmin, 'index']);
 $app['router']->get('/admin/brands/create', [$brandAdmin, 'createForm']);
 $app['router']->post('/admin/brands', [$brandAdmin, 'store']);

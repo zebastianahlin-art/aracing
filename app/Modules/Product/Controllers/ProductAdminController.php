@@ -13,6 +13,7 @@ use App\Modules\Product\Services\ProductRelationService;
 use App\Modules\Product\Services\ProductMediaService;
 use App\Modules\Product\Services\ProductSupplierLinkService;
 use App\Modules\Product\Services\AiProductEnrichmentService;
+use App\Modules\Product\Services\AiProductAttributeSuggestionService;
 use App\Modules\Supplier\Services\SupplierService;
 use App\Modules\Fitment\Services\ProductFitmentService;
 use InvalidArgumentException;
@@ -29,7 +30,8 @@ final class ProductAdminController
         private readonly SupplierService $suppliers,
         private readonly ProductSupplierLinkService $productSupplierLinks,
         private readonly ProductFitmentService $fitments,
-        private readonly AiProductEnrichmentService $enrichment
+        private readonly AiProductEnrichmentService $enrichment,
+        private readonly AiProductAttributeSuggestionService $attributeSuggestions
     ) {
     }
 
@@ -135,6 +137,7 @@ final class ProductAdminController
             'fitment_types' => $this->fitments->allowedTypes(),
             'fitment_vehicle_query' => trim((string) ($_GET['fitment_vehicle_query'] ?? '')),
             'ai_suggestions' => [],
+            'ai_attribute_suggestions' => [],
             'ai_seo_suggestions' => [],
         ]));
     }
@@ -169,7 +172,7 @@ final class ProductAdminController
         $supplierItemQuery = trim((string) ($_GET['supplier_item_query'] ?? ''));
         $relationQuery = trim((string) ($_GET['relation_query'] ?? ''));
         $allSuggestions = $productId > 0 ? $this->enrichment->listForProduct($productId) : [];
-        $aiSuggestions = array_values(array_filter($allSuggestions, static fn (array $suggestion): bool => (string) ($suggestion['suggestion_type'] ?? '') !== 'seo_metadata'));
+        $aiSuggestions = array_values(array_filter($allSuggestions, static fn (array $suggestion): bool => !in_array((string) ($suggestion['suggestion_type'] ?? ''), ['seo_metadata', 'attribute_summary'], true)));
 
         return new Response($this->views->render('admin.products.form', [
             'product' => $product,
@@ -189,6 +192,7 @@ final class ProductAdminController
             'fitment_types' => $this->fitments->allowedTypes(),
             'fitment_vehicle_query' => trim((string) ($_GET['fitment_vehicle_query'] ?? '')),
             'ai_suggestions' => $aiSuggestions,
+            'ai_attribute_suggestions' => $productId > 0 ? $this->attributeSuggestions->listForProduct($productId) : [],
             'ai_seo_suggestions' => $productId > 0 ? $this->enrichment->listSeoSuggestionsForProduct($productId) : [],
         ]));
     }
@@ -236,6 +240,45 @@ final class ProductAdminController
             return $this->redirect('/admin/products/' . $productId . '/edit?notice=' . urlencode('AI-förslaget avvisades.') . '#ai-enrichment');
         } catch (InvalidArgumentException $e) {
             return $this->redirect('/admin/products/' . $productId . '/edit?media_error=' . urlencode($e->getMessage()) . '#ai-enrichment');
+        }
+    }
+
+    public function createAttributeSuggestion(string $id): Response
+    {
+        $productId = (int) $id;
+
+        try {
+            $suggestionId = $this->attributeSuggestions->createSuggestionForProduct($productId, null);
+
+            return $this->redirect('/admin/products/' . $productId . '/edit?notice=' . urlencode('AI attributförslag #' . $suggestionId . ' skapades och väntar på granskning.') . '#ai-attribute-suggestions');
+        } catch (InvalidArgumentException $e) {
+            return $this->redirect('/admin/products/' . $productId . '/edit?media_error=' . urlencode($e->getMessage()) . '#ai-attribute-suggestions');
+        }
+    }
+
+    public function applyAttributeSuggestion(string $id, string $suggestionId): Response
+    {
+        $productId = (int) $id;
+
+        try {
+            $this->attributeSuggestions->applySuggestion((int) $suggestionId, null);
+
+            return $this->redirect('/admin/products/' . $productId . '/edit?notice=' . urlencode('AI-attributförslaget applicerades på produktens attributfält.') . '#ai-attribute-suggestions');
+        } catch (InvalidArgumentException $e) {
+            return $this->redirect('/admin/products/' . $productId . '/edit?media_error=' . urlencode($e->getMessage()) . '#ai-attribute-suggestions');
+        }
+    }
+
+    public function rejectAttributeSuggestion(string $id, string $suggestionId): Response
+    {
+        $productId = (int) $id;
+
+        try {
+            $this->attributeSuggestions->rejectSuggestion((int) $suggestionId, null);
+
+            return $this->redirect('/admin/products/' . $productId . '/edit?notice=' . urlencode('AI-attributförslaget avvisades.') . '#ai-attribute-suggestions');
+        } catch (InvalidArgumentException $e) {
+            return $this->redirect('/admin/products/' . $productId . '/edit?media_error=' . urlencode($e->getMessage()) . '#ai-attribute-suggestions');
         }
     }
 

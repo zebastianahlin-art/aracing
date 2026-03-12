@@ -1431,3 +1431,29 @@ Lokal testguide:
 4. Verifiera att förslaget visas med status `pending`, föreslagen kategori och AI summary.
 5. Testa `Apply` och verifiera att produktens kategori uppdateras.
 6. Skapa nytt förslag och testa `Reject` och verifiera att produktens kategori förblir oförändrad.
+
+## AI-assisted fitment suggestions v1
+
+Databas:
+- kör även `database/migrations/046_ai_fitment_suggestions_v1.sql`
+
+Admin (produktnivå):
+- öppna `/admin/products/{id}/edit#ai-fitment-suggestions`
+- klicka `Skapa AI-fitmentförslag`
+- systemet bygger ett input-snapshot från produktdata, attribut, AI-importkälla (om finns), supplier-fitmentkandidater och befintliga fitments
+- endast defensiva förslag med stöd i underlaget sparas som `pending`
+- varje förslag visar confidence (`exact`/`likely`), källa och motivering
+- `Godkänn` skapar `product_fitments` (om kopplingen inte redan finns) och markerar förslaget som `approved`
+- `Avvisa` markerar förslaget som `rejected` utan att påverka publika fitments
+
+Viktigt i v1:
+- review-first: inget skrivs till `product_fitments` utan manuell approve
+- central dubblettkontroll blockerar identiska pending-förslag för samma produkt+fordon
+- AI-fitmentförslag är underlag, inte sanning
+
+Lokal testning:
+1. Kör migrationer med `php scripts/migrate.php` och applicera SQL i MariaDB.
+2. Öppna en produkt med supplier-fitmentunderlag.
+3. Skapa AI-fitmentförslag i produktadmin och verifiera pending-listan.
+4. Godkänn ett förslag och verifiera att ny rad syns i sektionen `Fitment / Fordonskopplingar`.
+5. Avvisa ett förslag och verifiera att inga nya publika fitments skapas.

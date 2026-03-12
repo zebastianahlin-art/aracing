@@ -18,6 +18,7 @@ use App\Modules\Product\Services\AiProductCategorySuggestionService;
 use App\Modules\Product\Services\AiProductLocalizationService;
 use App\Modules\Supplier\Services\SupplierService;
 use App\Modules\Fitment\Services\ProductFitmentService;
+use App\Modules\Fitment\Services\AiFitmentSuggestionService;
 use InvalidArgumentException;
 
 final class ProductAdminController
@@ -32,6 +33,7 @@ final class ProductAdminController
         private readonly SupplierService $suppliers,
         private readonly ProductSupplierLinkService $productSupplierLinks,
         private readonly ProductFitmentService $fitments,
+        private readonly AiFitmentSuggestionService $aiFitmentSuggestions,
         private readonly AiProductEnrichmentService $enrichment,
         private readonly AiProductAttributeSuggestionService $attributeSuggestions,
         private readonly AiProductCategorySuggestionService $categorySuggestions,
@@ -140,6 +142,7 @@ final class ProductAdminController
             'fitment_vehicles' => $this->fitments->activeVehicles(trim((string) ($_GET['fitment_vehicle_query'] ?? ''))),
             'fitment_types' => $this->fitments->allowedTypes(),
             'fitment_vehicle_query' => trim((string) ($_GET['fitment_vehicle_query'] ?? '')),
+            'ai_fitment_suggestions' => [],
             'ai_suggestions' => [],
             'ai_attribute_suggestions' => [],
             'ai_seo_suggestions' => [],
@@ -197,6 +200,7 @@ final class ProductAdminController
             'fitment_vehicles' => $this->fitments->activeVehicles(trim((string) ($_GET['fitment_vehicle_query'] ?? ''))),
             'fitment_types' => $this->fitments->allowedTypes(),
             'fitment_vehicle_query' => trim((string) ($_GET['fitment_vehicle_query'] ?? '')),
+            'ai_fitment_suggestions' => $productId > 0 ? $this->aiFitmentSuggestions->listForProduct($productId) : [],
             'ai_suggestions' => $aiSuggestions,
             'ai_attribute_suggestions' => $productId > 0 ? $this->attributeSuggestions->listForProduct($productId) : [],
             'ai_seo_suggestions' => $productId > 0 ? $this->enrichment->listSeoSuggestionsForProduct($productId) : [],
@@ -405,6 +409,53 @@ final class ProductAdminController
             return $this->redirect('/admin/products/' . $productId . '/edit?notice=' . urlencode('AI svensk lokalisering avvisades.') . '#ai-localization-suggestions');
         } catch (InvalidArgumentException $e) {
             return $this->redirect('/admin/products/' . $productId . '/edit?media_error=' . urlencode($e->getMessage()) . '#ai-localization-suggestions');
+        }
+    }
+
+
+    public function createAiFitmentSuggestions(string $id): Response
+    {
+        $productId = (int) $id;
+
+        try {
+            $result = $this->aiFitmentSuggestions->createSuggestionsForProduct($productId, null);
+            $message = 'AI-fitmentförslag skapade: ' . (int) $result['created'] . '.';
+            if ((int) $result['skipped_duplicates'] > 0) {
+                $message .= ' Dubbletter hoppades över: ' . (int) $result['skipped_duplicates'] . '.';
+            }
+            if ((int) $result['skipped_existing_fitments'] > 0) {
+                $message .= ' Redan kopplade fitments hoppades över: ' . (int) $result['skipped_existing_fitments'] . '.';
+            }
+
+            return $this->redirect('/admin/products/' . $productId . '/edit?notice=' . urlencode($message) . '#ai-fitment-suggestions');
+        } catch (\RuntimeException $e) {
+            return $this->redirect('/admin/products/' . $productId . '/edit?media_error=' . urlencode($e->getMessage()) . '#ai-fitment-suggestions');
+        }
+    }
+
+    public function approveAiFitmentSuggestion(string $id, string $suggestionId): Response
+    {
+        $productId = (int) $id;
+
+        try {
+            $this->aiFitmentSuggestions->approveSuggestion((int) $suggestionId, null);
+
+            return $this->redirect('/admin/products/' . $productId . '/edit?notice=' . urlencode('AI-fitmentförslaget godkändes och fordonskopplingen skapades vid behov.') . '#ai-fitment-suggestions');
+        } catch (\RuntimeException $e) {
+            return $this->redirect('/admin/products/' . $productId . '/edit?media_error=' . urlencode($e->getMessage()) . '#ai-fitment-suggestions');
+        }
+    }
+
+    public function rejectAiFitmentSuggestion(string $id, string $suggestionId): Response
+    {
+        $productId = (int) $id;
+
+        try {
+            $this->aiFitmentSuggestions->rejectSuggestion((int) $suggestionId, null);
+
+            return $this->redirect('/admin/products/' . $productId . '/edit?notice=' . urlencode('AI-fitmentförslaget avvisades.') . '#ai-fitment-suggestions');
+        } catch (\RuntimeException $e) {
+            return $this->redirect('/admin/products/' . $productId . '/edit?media_error=' . urlencode($e->getMessage()) . '#ai-fitment-suggestions');
         }
     }
 

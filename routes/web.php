@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 use App\Core\Routing\Router;
 use App\Modules\Admin\Controllers\AdminController;
+use App\Modules\Admin\Controllers\AiOperationalAlertController;
 use App\Modules\Admin\Controllers\AiOperationalReportController;
+use App\Modules\Admin\Services\AiOperationalAlertService;
 use App\Modules\Admin\Services\AiOperationalInsightsService;
 use App\Modules\Brand\Controllers\BrandAdminController;
 use App\Modules\Brand\Repositories\BrandRepository;
@@ -373,7 +375,6 @@ $storefront = new StorefrontController($app['view'], $catalogService, $cmsPageSe
 $cmsStorefront = new CmsStorefrontController($app['view'], $homepageService, $cmsPageService, $seoService, $authService, $fitmentService, $savedVehicleService, $fitmentStorefrontService, $vehicleNavigationService);
 $cartController = new CartController($app['view'], $cartService, $cmsPageService);
 $checkoutController = new CheckoutController($app['view'], $cartService, new CheckoutService(), $orderService, $shippingService, $checkoutTotalsService, $cmsPageService, $paymentService, $authService);
-$admin = new AdminController($app['view']);
 $brandAdmin = new BrandAdminController($app['view'], $brandService);
 $categoryAdmin = new CategoryAdminController($app['view'], $categoryService);
 $redirectAdmin = new RedirectAdminController($app['view'], $redirectService);
@@ -405,7 +406,10 @@ $aiOperationalInsightsService = new AiOperationalInsightsService(
     $returnRequestService,
     new StockAlertRepository($app['pdo'])
 );
+$aiOperationalAlertService = new AiOperationalAlertService($aiOperationalInsightsService);
 $aiOperationalReportAdmin = new AiOperationalReportController($app['view'], $aiOperationalInsightsService);
+$aiOperationalAlertAdmin = new AiOperationalAlertController($app['view'], $aiOperationalAlertService);
+$admin = new AdminController($app['view'], $aiOperationalAlertService);
 $supportCaseStorefront = new SupportCaseStorefrontController($app['view'], $supportCaseService, $authService, $cmsPageService);
 $supportCaseAdmin = new SupportCaseAdminController($app['view'], $supportCaseService);
 $orderAdmin = new OrderAdminController($app['view'], $orderService, $paymentEventRepository, $returnRequestService, $supportCaseService);
@@ -501,6 +505,7 @@ $app['router']->get('/account/orders/{orderId}/support/create', [$supportCaseSto
 $app['router']->post('/account/orders/{orderId}/support', [$supportCaseStorefront, 'orderStore']);
 
 $app['router']->get('/admin', [$admin, 'dashboard']);
+$app['router']->get('/admin/ai-alerts', [$aiOperationalAlertAdmin, 'index']);
 $app['router']->get('/admin/ai-ops-report', [$aiOperationalReportAdmin, 'index']);
 $app['router']->get('/admin/brands', [$brandAdmin, 'index']);
 $app['router']->get('/admin/brands/create', [$brandAdmin, 'createForm']);

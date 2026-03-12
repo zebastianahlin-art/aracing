@@ -1252,3 +1252,32 @@ Lokal snabbtest:
 5. Markera draft som `reviewed`, kör `Skapa produktutkast` och verifiera att produktutkast skapas.
 6. Verifiera i draft-vyn att handofftid/mål visas och att samma draft inte kan handoffas igen.
 7. Öppna skapad produkt i `/admin/products/{id}/edit` och verifiera källa (`AI URL-importutkast`) samt fortsatt manuell artikelvård.
+
+## AI-assisted product enrichment v1
+
+Databas:
+- kör även `database/migrations/043_ai_product_enrichment_v1.sql`
+
+Admin (befintligt produkt-/artikelvårdsflöde):
+- i `/admin/products/{id}/edit` finns nu sektionen **AI-assisterad produktberikning v1**
+- admin kan skapa reviewbara förslagstyper:
+  - `title_description`
+  - `content_cleanup`
+  - `seo_assist`
+  - `attribute_summary`
+- varje förslag sparas i `ai_product_enrichment_suggestions` med `pending` status och `input_snapshot`
+- admin kan därefter:
+  - **Applicera förslag** (uppdaterar produktutkastet manuellt, ingen autopublicering)
+  - **Avvisa förslag** (status `rejected`)
+
+Spårbarhet:
+- `input_snapshot` sparar underlaget som AI/heuristik såg vid generering
+- statusflöde i v1: `pending` -> `applied` eller `rejected`
+
+Lokal testning:
+1. Kör migrationerna via `php scripts/migrate.php` och applicera SQL för `043_ai_product_enrichment_v1.sql`.
+2. Öppna en produkt i `/admin/products/{id}/edit`.
+3. Skapa ett AI-förslag i sektionen för AI-berikning.
+4. Verifiera att förslaget syns som `pending` med jämförelse mellan nuvarande data och AI-förslag.
+5. Testa **Applicera förslag** och verifiera att produktfält uppdateras.
+6. Skapa ett nytt förslag och testa **Avvisa förslag**.

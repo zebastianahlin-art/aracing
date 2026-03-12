@@ -101,11 +101,13 @@ use App\Modules\Product\Repositories\ProductRelationRepository;
 use App\Modules\Product\Repositories\ProductRepository;
 use App\Modules\Product\Repositories\ProductSupplierItemLookupRepository;
 use App\Modules\Product\Repositories\ProductSupplierLinkRepository;
+use App\Modules\Product\Repositories\AiProductEnrichmentSuggestionRepository;
 use App\Modules\Product\Services\ProductService;
 use App\Modules\Product\Services\ProductMediaService;
 use App\Modules\Product\Services\ProductImageStorageService;
 use App\Modules\Product\Services\ProductRelationService;
 use App\Modules\Product\Services\ProductSupplierLinkService;
+use App\Modules\Product\Services\AiProductEnrichmentService;
 use App\Modules\Purchasing\Controllers\PurchasingAdminController;
 use App\Modules\Purchasing\Repositories\PurchaseListItemRepository;
 use App\Modules\Purchasing\Repositories\PurchaseListRepository;
@@ -252,6 +254,12 @@ $aiProductDraftHandoffService = new AiProductDraftHandoffService(
     $productService,
     new ProductRepository($app['pdo'])
 );
+$aiProductEnrichmentService = new AiProductEnrichmentService(
+    $productService,
+    new AiProductEnrichmentSuggestionRepository($app['pdo']),
+    new AiProductImportDraftRepository($app['pdo']),
+    $app['config']
+);
 $cartService = new CartService(new CartRepository($app['pdo']), new CartProductRepository($app['pdo']), $inventoryService, $discountService, $checkoutTotalsService);
 $orderRepository = new OrderRepository($app['pdo']);
 $orderEmailService = new OrderEmailService($orderRepository, $emailMessageRepository, new TransactionalEmailSender(), $app['view']);
@@ -329,7 +337,7 @@ $admin = new AdminController($app['view']);
 $brandAdmin = new BrandAdminController($app['view'], $brandService);
 $categoryAdmin = new CategoryAdminController($app['view'], $categoryService);
 $redirectAdmin = new RedirectAdminController($app['view'], $redirectService);
-$productAdmin = new ProductAdminController($app['view'], $productService, $productMediaService, $productRelationService, $brandService, $categoryService, $supplierService, $productSupplierLinkService, $productFitmentService);
+$productAdmin = new ProductAdminController($app['view'], $productService, $productMediaService, $productRelationService, $brandService, $categoryService, $supplierService, $productSupplierLinkService, $productFitmentService, $aiProductEnrichmentService);
 $supplierAdmin = new SupplierAdminController($app['view'], $supplierService);
 $importProfileAdmin = new ImportProfileAdminController($app['view'], $importProfileService, $supplierService);
 $importRunAdmin = new ImportRunAdminController($app['view'], $importRunService, $importProfileService, $csvImportService);
@@ -470,6 +478,9 @@ $app['router']->post('/admin/products', [$productAdmin, 'store']);
 $app['router']->get('/admin/products/article-care', [$productAdmin, 'articleCareQueue']);
 $app['router']->get('/admin/products/{id}/edit', [$productAdmin, 'editForm']);
 $app['router']->post('/admin/products/{id}', [$productAdmin, 'update']);
+$app['router']->post('/admin/products/{id}/ai-enrichment-suggestions', [$productAdmin, 'createEnrichmentSuggestion']);
+$app['router']->post('/admin/products/{id}/ai-enrichment-suggestions/{suggestionId}/apply', [$productAdmin, 'applyEnrichmentSuggestion']);
+$app['router']->post('/admin/products/{id}/ai-enrichment-suggestions/{suggestionId}/reject', [$productAdmin, 'rejectEnrichmentSuggestion']);
 $app['router']->post('/admin/products/{id}/images/upload', [$productAdmin, 'uploadImages']);
 $app['router']->post('/admin/products/{id}/images/{imageId}/update', [$productAdmin, 'updateImage']);
 $app['router']->post('/admin/products/{id}/images/{imageId}/primary', [$productAdmin, 'setPrimaryImage']);

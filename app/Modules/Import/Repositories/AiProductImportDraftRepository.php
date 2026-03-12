@@ -16,14 +16,14 @@ final class AiProductImportDraftRepository
     public function create(array $data): int
     {
         $stmt = $this->pdo->prepare('INSERT INTO ai_product_import_drafts (
-            source_url, source_domain, source_type, status,
+            source_url, source_domain, source_type, status, parser_key, parser_version, extraction_strategy,
             import_title, import_brand, import_sku, import_short_description, import_description,
             import_price, import_currency, import_stock_text,
             import_image_urls, import_attributes, import_raw_text,
             ai_summary, ai_structured_payload, review_note,
             created_by_user_id, reviewed_by_user_id, reviewed_at
         ) VALUES (
-            :source_url, :source_domain, :source_type, :status,
+            :source_url, :source_domain, :source_type, :status, :parser_key, :parser_version, :extraction_strategy,
             :import_title, :import_brand, :import_sku, :import_short_description, :import_description,
             :import_price, :import_currency, :import_stock_text,
             :import_image_urls, :import_attributes, :import_raw_text,
@@ -36,6 +36,9 @@ final class AiProductImportDraftRepository
             'source_domain' => $data['source_domain'],
             'source_type' => $data['source_type'],
             'status' => $data['status'],
+            'parser_key' => $data['parser_key'] ?? null,
+            'parser_version' => $data['parser_version'] ?? null,
+            'extraction_strategy' => $data['extraction_strategy'] ?? null,
             'import_title' => $data['import_title'],
             'import_brand' => $data['import_brand'],
             'import_sku' => $data['import_sku'],
@@ -61,7 +64,7 @@ final class AiProductImportDraftRepository
     /** @return array<int,array<string,mixed>> */
     public function list(array $filters = []): array
     {
-        $sql = 'SELECT id, source_url, source_domain, source_type, status, import_title, import_brand, import_sku, created_at, reviewed_at
+        $sql = 'SELECT id, source_url, source_domain, source_type, status, parser_key, extraction_strategy, import_title, import_brand, import_sku, created_at, reviewed_at
                 FROM ai_product_import_drafts
                 WHERE 1=1';
 

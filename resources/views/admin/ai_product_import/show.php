@@ -38,10 +38,13 @@ $aiPayload = json_decode((string) ($draft['ai_structured_payload'] ?? ''), true)
     <p><strong>URL:</strong> <?= htmlspecialchars((string) $draft['source_url'], ENT_QUOTES, 'UTF-8') ?></p>
     <p><strong>Domän:</strong> <?= htmlspecialchars((string) ($draft['source_domain'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
     <p><strong>Typ:</strong> <?= htmlspecialchars((string) ($draft['source_type'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+    <p><strong>Parser:</strong> <?= htmlspecialchars((string) ($draft['parser_key'] ?? 'Generisk AI-import'), ENT_QUOTES, 'UTF-8') ?></p>
+    <p><strong>Parser-version:</strong> <?= htmlspecialchars((string) ($draft['parser_version'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
+    <p><strong>Extraktionsstrategi:</strong> <?= htmlspecialchars((string) ($draft['extraction_strategy'] ?? 'generic_ai'), ENT_QUOTES, 'UTF-8') ?></p>
     <p><strong>Status:</strong> <span class="pill"><?= htmlspecialchars((string) $draft['status'], ENT_QUOTES, 'UTF-8') ?></span></p>
     <p><strong>Skapad:</strong> <?= htmlspecialchars((string) ($draft['created_at'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
     <p><strong>Granskad:</strong> <?= htmlspecialchars((string) ($draft['reviewed_at'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
-    <p><strong>Review note:</strong> <?= htmlspecialchars((string) ($draft['review_note'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+    <p><strong>Granskningsnotering:</strong> <?= htmlspecialchars((string) ($draft['review_note'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
   </div>
 
   <div class="card">
@@ -65,9 +68,9 @@ $aiPayload = json_decode((string) ($draft['ai_structured_payload'] ?? ''), true)
   </div>
   <div class="card">
     <h3>AI-tolkning</h3>
-    <label>AI-summary</label>
+    <label>AI-sammanfattning</label>
     <pre><?= htmlspecialchars((string) ($draft['ai_summary'] ?? ''), ENT_QUOTES, 'UTF-8') ?></pre>
-    <label>AI structured payload</label>
+    <label>AI/parsers payload</label>
     <pre><?= htmlspecialchars((string) ($draft['ai_structured_payload'] ?? ''), ENT_QUOTES, 'UTF-8') ?></pre>
   </div>
 </div>

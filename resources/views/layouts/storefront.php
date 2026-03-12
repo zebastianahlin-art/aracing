@@ -117,6 +117,12 @@
         <input type="hidden" name="return_to" value="<?= htmlspecialchars((string) ($_SERVER['REQUEST_URI'] ?? '/search'), ENT_QUOTES, 'UTF-8') ?>">
         <button class="btn-secondary" type="submit">Rensa vald bil</button>
       </form>
+      <?php if (!empty($_SESSION['customer_user_id'])): ?>
+        <form method="post" action="/account/vehicles/save-current" style="display:inline; margin-left:.35rem;">
+          <input type="hidden" name="back_to" value="<?= htmlspecialchars((string) ($_SERVER['REQUEST_URI'] ?? '/search'), ENT_QUOTES, 'UTF-8') ?>">
+          <button class="btn-secondary" type="submit">Spara vald bil</button>
+        </form>
+      <?php endif; ?>
     <?php endif; ?>
     <?php if (!empty($fitmentNotice ?? '')): ?><p class="ok-msg" style="margin:.5rem 0 0;"><?= htmlspecialchars((string) $fitmentNotice, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
   </section>

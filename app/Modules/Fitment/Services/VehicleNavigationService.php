@@ -11,7 +11,8 @@ final class VehicleNavigationService
     public function __construct(
         private readonly FitmentService $fitment,
         private readonly FitmentStorefrontService $fitmentStorefront,
-        private readonly CatalogRepository $catalog
+        private readonly CatalogRepository $catalog,
+        private readonly FitmentCoverageService $coverage
     ) {
     }
 
@@ -58,7 +59,7 @@ final class VehicleNavigationService
             ];
         }
 
-        return $categories;
+        return $this->coverage->decorateStorefrontCategories($categories, $activeVehicle);
     }
 
     /** @return array<string,string> */

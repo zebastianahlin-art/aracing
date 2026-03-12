@@ -21,7 +21,13 @@ ob_start();
     <?php foreach ($entryCategories as $category): ?>
       <article class="product-card">
         <h4><a href="<?= htmlspecialchars((string) ($category['url'] ?? '#'), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) ($category['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></a></h4>
-        <p class="muted">Katalogvisning med vald bil i kontext.</p>
+        <?php $coverage = is_array($category['coverage'] ?? null) ? $category['coverage'] : null; ?>
+        <?php if ($coverage !== null): ?>
+          <p><span class="pill <?= ($coverage['has_matches'] ?? false) ? 'ok' : 'warn' ?>"><?= htmlspecialchars((string) ($coverage['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span></p>
+          <p class="muted"><?= htmlspecialchars((string) ($coverage['hint'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+        <?php else: ?>
+          <p class="muted">Katalogvisning med vald bil i kontext.</p>
+        <?php endif; ?>
       </article>
     <?php endforeach; ?>
     <?php if ($entryCategories === []): ?>

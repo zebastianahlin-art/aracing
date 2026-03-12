@@ -8,6 +8,7 @@ use App\Modules\Inventory\Services\InventoryService;
 use App\Modules\Catalog\Repositories\CatalogRepository;
 use App\Modules\Fitment\Services\FitmentStorefrontService;
 use App\Modules\Fitment\Services\FitmentService;
+use App\Modules\Fitment\Services\FitmentCoverageService;
 
 final class CatalogService
 {
@@ -19,7 +20,8 @@ final class CatalogService
         private readonly InventoryService $inventory,
         private readonly ProductRecommendationService $recommendations,
         private readonly FitmentService $fitment,
-        private readonly FitmentStorefrontService $fitmentStorefront
+        private readonly FitmentStorefrontService $fitmentStorefront,
+        private readonly FitmentCoverageService $fitmentCoverage
     ) {
     }
 
@@ -54,6 +56,8 @@ final class CatalogService
         $total = $this->catalog->countActiveProducts($filters);
         $filterOptions = $this->filterOptions($filters);
 
+        $activeVehicle = $this->fitment->selectedVehicle();
+
         return [
             'category' => $category,
             'products' => $this->fitmentStorefront->decorateProductCardsWithFitment($this->decorateProducts($this->catalog->searchActiveProducts($filters))),
@@ -62,7 +66,8 @@ final class CatalogService
             'filterOptions' => $filterOptions,
             'activeFilters' => $this->activeFilters($filters, $filterOptions, '/category/' . rawurlencode((string) $category['slug'])),
             'clearAllUrl' => $this->buildUrl('/category/' . rawurlencode((string) $category['slug']), $this->baseQueryParams($filters)),
-            'fitmentUi' => $this->fitmentStorefront->catalogFitmentUiPayload($filters, $this->fitment->selectedVehicle()),
+            'fitmentUi' => $this->fitmentStorefront->catalogFitmentUiPayload($filters, $activeVehicle),
+            'coverageSignal' => $this->fitmentCoverage->categoryContextSignal($filters, $activeVehicle, $total),
         ];
     }
 

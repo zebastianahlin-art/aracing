@@ -1254,6 +1254,44 @@ Lokal snabbtest:
 7. Öppna skapad produkt i `/admin/products/{id}/edit` och verifiera källa (`AI URL-importutkast`) samt fortsatt manuell artikelvård.
 
 
+
+## AI-assisted product translation / Swedish localization v1
+
+Produktadmin (`/admin/products/{id}/edit`) har nu en separat sektion för **AI svensk lokalisering** i artikelvårdsflödet.
+
+Flöde (review-first):
+1. Klicka `Skapa AI svensk text`.
+2. Systemet bygger och sparar ett `input_snapshot` med underlag från produkten:
+   - titel
+   - brand
+   - SKU
+   - kort/lång beskrivning (kort via förstameningssammanfattning)
+   - attribut
+   - ev. `source_url` / `source_type` och AI URL-importutkast
+3. AI/heuristik skapar förslag med `suggestion_type = swedish_localization` och status `pending`.
+4. Admin granskar sida-vid-sida:
+   - nuvarande titel / föreslagen svensk titel
+   - nuvarande kort beskrivning / föreslagen svensk kort beskrivning
+   - nuvarande lång beskrivning / föreslagen svensk lång beskrivning
+   - `ai_summary`
+5. Admin väljer manuellt:
+   - `Applicera förslag` (uppdaterar endast produktens titel + beskrivningsfält)
+   - `Avvisa förslag`
+
+Regler och begränsningar i v1:
+- Ingen autopublicering till live-katalog.
+- Ingen massöversättning av hela katalogen.
+- Ingen automatisk överskrivning utan review.
+- Ingen AI-fitmenttolkning.
+- Tomma/svaga förslag sparas inte som giltiga `pending`.
+
+Lokal testning:
+1. Öppna en produkt i `/admin/products/{id}/edit`.
+2. Klicka `Skapa AI svensk text`.
+3. Verifiera att nytt förslag visas med status `pending` och jämförelse mellan nuvarande/föreslagen svensk text.
+4. Testa `Applicera förslag` och verifiera att endast produktens namn/beskrivning uppdateras.
+5. Skapa nytt lokaliseringsförslag och testa `Avvisa förslag`.
+
 ## AI-assisted SEO copy / metadata suggestions v1
 
 Admin (produkt-/artikelvårdsflöde):

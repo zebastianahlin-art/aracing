@@ -9,6 +9,14 @@ ob_start();
   <p class="muted">Prestandadelar för racing och gatbil – utvalda produkter och kategorier uppdateras löpande.</p>
 </section>
 
+<?php $fitmentStorefront = is_array($fitmentStorefront ?? null) ? $fitmentStorefront : []; ?>
+<?php if (($fitmentStorefront['has_active_vehicle'] ?? false) === true): ?>
+<section class="panel" style="margin-bottom:.8rem; border-color:#2f7046;">
+  <p style="margin:0;"><strong>Du handlar för <?= htmlspecialchars((string) ($fitmentStorefront['active_vehicle_label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong></p>
+  <p class="muted" style="margin:.35rem 0 0;">Passformssignaler i listor och produktsidor utgår från denna bil.</p>
+</section>
+<?php endif; ?>
+
 <?php foreach ($homepageSections as $section): ?>
   <section class="panel" style="margin-bottom:.8rem;">
     <h3><?= htmlspecialchars((string) ($section['title'] ?? 'Utvalt'), ENT_QUOTES, 'UTF-8') ?></h3>

@@ -1056,6 +1056,26 @@ Lokal snabbtest:
 4. Öppna produkten i `/admin/products/{id}/edit#fitment` och verifiera att fitmentkopplingen skapats.
 5. Testa även `Avvisa`/`Skippa` och verifiera att ingen ny `product_fitments` skapas.
 
+## Fitment-aware storefront polish v1
+
+Detta steg bygger vidare på YMM/fitment-kärnan och gör passform tydligare i hela köpresan utan ny tung frontend eller ny datamodell.
+
+Vad som ingår i v1:
+- tydligare aktiv bil i storefront-header med snabb byta/rensa-upplevelse
+- tydligare fitmentfilter-kontext i sök- och kategorivyer (inkl. mänsklig filterstatus)
+- enkla fitmentbadges på produktkort när aktiv bil finns (`Passar vald bil`, `Universell`, `Passform ej bekräftad`)
+- tydligare passformsignal på produktsidan med defensiv text
+- lätt koppling till Mina bilar när kund är inloggad
+- centraliserad storefront-logik för fitmentsignaler/payload i service-lagret
+
+Lokal snabbtest:
+1. Välj aktiv bil i YMM i storefront-header.
+2. Öppna `/search` och `/category/{slug}` och verifiera fitmentkontext + filterstatus.
+3. Aktivera/inaktivera `Passar vald bil`-filtret och verifiera att aktiv filtersammanfattning uppdateras.
+4. Verifiera produktkortens fitmentbadge i listvy (confirmed/universal/unknown).
+5. Öppna en produktsida och verifiera tydlig passformsignal för vald bil.
+6. Logga in och verifiera att `Mina bilar`-genväg visas när ingen aktiv bil är vald.
+
 ## Mina bilar / saved vehicles v1
 
 Databas:

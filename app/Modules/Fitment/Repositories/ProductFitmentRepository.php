@@ -86,4 +86,48 @@ final class ProductFitmentRepository
 
         return $stmt->fetchAll();
     }
+
+    /**
+     * @param array<int,int> $productIds
+     * @return array<int,array<int,string>>
+     */
+    public function fitmentTypesForProductsAndVehicle(array $productIds, int $vehicleId): array
+    {
+        if ($productIds === [] || $vehicleId <= 0) {
+            return [];
+        }
+
+        $productIds = array_values(array_unique(array_map(static fn (int $id): int => max(0, $id), $productIds)));
+        $productIds = array_values(array_filter($productIds, static fn (int $id): bool => $id > 0));
+
+        if ($productIds === []) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($productIds), '?'));
+        $sql = 'SELECT product_id, fitment_type
+            FROM product_fitments
+            WHERE product_id IN (' . $placeholders . ')
+              AND (vehicle_id = ? OR fitment_type = ?)';
+
+        $stmt = $this->pdo->prepare($sql);
+        $index = 1;
+        foreach ($productIds as $productId) {
+            $stmt->bindValue($index, $productId, PDO::PARAM_INT);
+            $index++;
+        }
+        $stmt->bindValue($index, $vehicleId, PDO::PARAM_INT);
+        $stmt->bindValue($index + 1, 'universal');
+        $stmt->execute();
+
+        $result = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $productId = (int) $row['product_id'];
+            $type = (string) $row['fitment_type'];
+            $result[$productId] ??= [];
+            $result[$productId][] = $type;
+        }
+
+        return $result;
+    }
 }

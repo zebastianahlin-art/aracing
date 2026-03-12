@@ -9,6 +9,14 @@
 
 $stockLabels = is_array($filterOptions['stock_status_labels'] ?? null) ? $filterOptions['stock_status_labels'] : [];
 ?>
+<?php $fitmentUi = is_array($fitmentUi ?? null) ? $fitmentUi : []; ?>
+<section class="panel" style="margin-bottom:.9rem;">
+  <p style="margin:0;"><strong><?= htmlspecialchars((string) ($fitmentUi['fitment_result_context'] ?? 'Ingen aktiv bil vald – välj bil för tydligare passformsignaler.'), ENT_QUOTES, 'UTF-8') ?></strong></p>
+  <?php if (($fitmentUi['has_active_vehicle'] ?? false) === true): ?>
+    <p class="muted" style="margin:.35rem 0 0;"><?= htmlspecialchars((string) ($fitmentUi['fitment_filter_label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+  <?php endif; ?>
+</section>
+
 <section class="panel" style="margin-bottom:.9rem;">
   <div style="display:flex;justify-content:space-between;gap:.7rem;align-items:center;flex-wrap:wrap;">
     <p style="margin:0;"><strong><?= (int) ($total ?? 0) ?></strong> träffar</p>
@@ -83,7 +91,7 @@ $stockLabels = is_array($filterOptions['stock_status_labels'] ?? null) ? $filter
       <?php if ((int) ($filters['fitment_vehicle_id'] ?? 0) > 0): ?>
         <div style="display:flex;align-items:center;gap:.4rem;">
           <input id="fitment_only" type="checkbox" name="fitment_only" value="1" <?= (string) ($filters['fitment_only'] ?? '0') === '1' ? 'checked' : '' ?>>
-          <label for="fitment_only" style="margin:0;">Visa bara produkter som passar vald bil</label>
+          <label for="fitment_only" style="margin:0;">Passar vald bil: visa endast bekräftade/universella produkter</label>
         </div>
       <?php endif; ?>
       <input type="hidden" name="fitment_vehicle_id" value="<?= (int) ($filters['fitment_vehicle_id'] ?? 0) ?>">

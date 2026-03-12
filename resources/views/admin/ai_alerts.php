@@ -6,7 +6,7 @@ $thresholds = is_array($thresholds ?? null) ? $thresholds : [];
 ?>
 <section class="card">
   <div class="topline">
-    <h1 style="margin:0;">AI Operational Alerts / Anomaly Detection v1</h1>
+    <h1 style="margin:0;">Operational Alerts / Anomaly Detection v1</h1>
     <span class="pill <?= ((int) ($summary['active_count'] ?? 0)) > 0 ? 'warn' : 'ok' ?>">
       Aktiva alerts: <?= (int) ($summary['active_count'] ?? 0) ?>
     </span>
@@ -83,5 +83,5 @@ $thresholds = is_array($thresholds ?? null) ? $thresholds : [];
 </section>
 <?php
 $content = (string) ob_get_clean();
-$title = 'AI Operational Alerts | Admin';
+$title = 'Operational Alerts | Admin';
 require __DIR__ . '/../layouts/admin.php';

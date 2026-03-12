@@ -26,6 +26,7 @@ final class SupplierMonitoringAdminController
             'rows' => $payload['rows'],
             'filters' => $payload['filters'],
             'counts' => $payload['counts'],
+            'alertSummary' => $this->monitoring->alertSummary(),
             'suppliers' => $this->suppliers->listActive(),
         ]));
     }

@@ -414,7 +414,7 @@ $aiOperationalInsightsService = new AiOperationalInsightsService(
     $returnRequestService,
     new StockAlertRepository($app['pdo'])
 );
-$aiOperationalAlertService = new AiOperationalAlertService($aiOperationalInsightsService);
+$aiOperationalAlertService = new AiOperationalAlertService($aiOperationalInsightsService, $supplierMonitoringService);
 $aiOperationalReportAdmin = new AiOperationalReportController($app['view'], $aiOperationalInsightsService);
 $aiOperationalAlertAdmin = new AiOperationalAlertController($app['view'], $aiOperationalAlertService);
 $admin = new AdminController($app['view'], $aiOperationalAlertService);

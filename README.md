@@ -1510,6 +1510,9 @@ V1 är medvetet enkel och regelbaserad:
 
 Alerttyper i v1:
 - `fulfillment_backlog`
+- `supplier_price_change_pressure`
+- `supplier_availability_drop`
+- `supplier_catalog_gap`
 - `restock_pressure`
 - `ai_import_low_quality`
 - `fitment_review_backlog`
@@ -1519,6 +1522,13 @@ Alerttyper i v1:
 Dashboard:
 - admin-dashboard visar nu snabb summering (antal aktiva alerts + topp 3)
 - länk till full alertöversikt
+
+
+Supplier monitoring → operational alerts integration v1:
+- `AiOperationalAlertService` återanvänder nu `SupplierMonitoringService` som datakälla för supplier-relaterade alerts
+- supplier-relaterade alerts använder samma `severity`-modell (`info`, `warning`, `critical`) med tydliga count-trösklar
+- varje supplier alert länkar till filtrerad vy i `/admin/supplier-monitoring` med relevanta query params
+- reglerna är förklarbara och bygger på observerade deviations (`price_increase/price_decrease`, `availability_lost/stock_dropped`, `missing_in_recent_import`)
 
 Viktigt:
 - beslutsstöd för operatör, inte automatisk exekvering
@@ -1558,8 +1568,17 @@ I v1 jämför systemet senaste snapshot mot föregående snapshot per leverantö
 
 Action links i listan går till befintliga arbetsytor (importgranskning, importkörning, artikelvård och inköp) för manuell uppföljning. Ingen automatisk repricing eller automatisk avpublicering görs i denna version.
 
+
+Operational alerts-koppling (v1):
+- `supplier_price_change_pressure`: count av `price_increase` + `price_decrease` (kopplade artiklar)
+- `supplier_availability_drop`: count av `availability_lost` + `stock_dropped` (kopplade artiklar)
+- `supplier_catalog_gap`: count av `missing_in_recent_import` (kopplade artiklar)
+- severity sätts av fasta trösklar i `AiOperationalAlertService::THRESHOLDS`
+
 Lokal test:
 1. Kör en importprofil minst två gånger med ändrade pris/lager-värden i CSV.
 2. Öppna `/admin/supplier-monitoring`.
 3. Filtrera på leverantör, avvikelsetyp och snabbfilter (pris/lager/sortiment).
 4. Verifiera att `tidigare` vs `nytt` visas och att action links fungerar.
+5. Öppna `/admin/ai-alerts` och verifiera att supplier-alerts syns med severity, count och länk till filtrerad supplier monitoring-vy.
+6. Öppna `/admin` och verifiera att supplier-alerts påverkar total alert count samt topp 3-listan.

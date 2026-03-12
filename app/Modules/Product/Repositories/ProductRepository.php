@@ -234,6 +234,61 @@ final class ProductRepository
         ];
     }
 
+    /** @param array<string,string> $filters
+     * @return array<int,array<string,mixed>>
+     */
+    public function fitmentGapQueueOverview(array $filters): array
+    {
+        $sql = 'SELECT p.id,
+                       p.name,
+                       p.sku,
+                       p.brand_id,
+                       p.category_id,
+                       b.name AS brand_name,
+                       c.name AS category_name,
+                       COUNT(pf.id) AS fitment_count,
+                       SUM(CASE WHEN pf.fitment_type = "confirmed" THEN 1 ELSE 0 END) AS confirmed_fitment_count,
+                       SUM(CASE WHEN pf.fitment_type = "universal" THEN 1 ELSE 0 END) AS universal_fitment_count,
+                       SUM(CASE WHEN pf.fitment_type = "unknown" THEN 1 ELSE 0 END) AS unknown_fitment_count
+                FROM products p
+                LEFT JOIN brands b ON b.id = p.brand_id
+                LEFT JOIN categories c ON c.id = p.category_id
+                LEFT JOIN product_fitments pf ON pf.product_id = p.id';
+
+        $where = [];
+        $params = [];
+
+        $query = trim((string) ($filters['query'] ?? ''));
+        if ($query !== '') {
+            $where[] = '(p.name LIKE :query OR p.sku LIKE :query)';
+            $params['query'] = '%' . $query . '%';
+        }
+
+        if (($filters['brand_id'] ?? '') !== '' && ctype_digit((string) $filters['brand_id'])) {
+            $where[] = 'p.brand_id = :brand_id';
+            $params['brand_id'] = (int) $filters['brand_id'];
+        }
+
+        if (($filters['category_id'] ?? '') !== '' && ctype_digit((string) $filters['category_id'])) {
+            $where[] = 'p.category_id = :category_id';
+            $params['category_id'] = (int) $filters['category_id'];
+        }
+
+        if ($where !== []) {
+            $sql .= ' WHERE ' . implode(' AND ', $where);
+        }
+
+        $sql .= ' GROUP BY p.id ORDER BY p.updated_at DESC, p.id DESC LIMIT 500';
+
+        $stmt = $this->pdo->prepare($sql);
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+        }
+        $stmt->execute();
+
+        return $stmt->fetchAll();
+    }
+
 
 
     /** @return array<int, array<string, mixed>> */

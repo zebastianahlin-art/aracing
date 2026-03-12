@@ -1031,15 +1031,23 @@ Lokal snabbtest:
 
 Databas:
 - kör även `database/migrations/037_supplier_fitment_intake_review_v1.sql`
+- kör även `database/migrations/039_fitment_import_mapping_v1.sql`
 
 Admin:
 - `/admin/supplier-fitment-review`
 
 Vad som ingår i v1:
 - nytt reviewbart underlag i `supplier_fitment_candidates` kopplat till `supplier_items`
-- kandidater lagrar råfält (`raw_make`, `raw_model`, `raw_generation`, `raw_engine`, `raw_year_from`, `raw_year_to`, `raw_text`)
+- kandidater lagrar råfält + normaliserade fält för mappinginsyn (`normalized_make`, `normalized_model`, `normalized_generation`, `normalized_engine`)
+- central `SupplierFitmentMappingService` normaliserar raw-fält (trim/case/separatorer) innan lookup
+- defensiv safe-match mot aktiva `vehicles` (ingen fuzzy/AI):
+  - kräver alltid make + model
+  - stödjer exakta kombinationer med generation/engine när de finns
+  - stödjer årintervall endast när kandidatens intervall tydligt ryms inom vehicle-postens intervall
+  - sätter `matched_vehicle_id` endast när exakt en säker träff återstår
+- enkel mappinginsyn sparas via `mapping_source` + `mapping_note`
+- confidence label i detta steg: `exact` eller `unknown`
 - statusflöde: `pending`, `approved`, `rejected`, `skipped`
-- confidence label: `exact`, `likely`, `unknown`
 - snabb intake-väg i admin (för intern test/debug)
 - reviewkö med filter för status, matchat/omatchat fordon, utan produktkoppling och leverantör
 
@@ -1050,11 +1058,13 @@ Reviewregler i v1:
 - rejected/skipped skapar inte publika fitments
 
 Lokal snabbtest:
-1. Skapa en kandidat via `/admin/supplier-fitment-review` (sektionen `Snabb intake`).
-2. Verifiera att kandidaten syns med status `pending` i kön.
-3. Sätt/justera `Vehicle ID` och godkänn kandidaten.
-4. Öppna produkten i `/admin/products/{id}/edit#fitment` och verifiera att fitmentkopplingen skapats.
-5. Testa även `Avvisa`/`Skippa` och verifiera att ingen ny `product_fitments` skapas.
+1. Kör migrationer via `php scripts/migrate.php` och applicera `037_supplier_fitment_intake_review_v1.sql` + `039_fitment_import_mapping_v1.sql` i MariaDB.
+2. Skapa en kandidat via `/admin/supplier-fitment-review` (sektionen `Snabb intake`).
+3. Verifiera att kandidaten syns med status `pending`, normaliserade fält och mappingtext i kön.
+4. Verifiera att endast säkra träffar får `matched_vehicle_id` + confidence `exact`; övriga ska visa `unknown`.
+5. Sätt/justera `Vehicle ID` och godkänn kandidaten.
+6. Öppna produkten i `/admin/products/{id}/edit#fitment` och verifiera att fitmentkopplingen skapats.
+7. Testa även `Avvisa`/`Skippa` och verifiera att ingen ny `product_fitments` skapas.
 
 ## Fitment-aware storefront polish v1
 

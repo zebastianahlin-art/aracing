@@ -27,8 +27,14 @@ final class SupplierFitmentCandidateRepository
                        sfc.raw_year_from,
                        sfc.raw_year_to,
                        sfc.raw_text,
+                       sfc.normalized_make,
+                       sfc.normalized_model,
+                       sfc.normalized_generation,
+                       sfc.normalized_engine,
                        sfc.matched_vehicle_id,
                        sfc.confidence_label,
+                       sfc.mapping_source,
+                       sfc.mapping_note,
                        sfc.status,
                        sfc.review_note,
                        sfc.created_at,
@@ -131,7 +137,8 @@ final class SupplierFitmentCandidateRepository
     public function findById(int $id): ?array
     {
         $stmt = $this->pdo->prepare('SELECT id, supplier_item_id, product_id, raw_make, raw_model, raw_generation, raw_engine,
-                raw_year_from, raw_year_to, raw_text, matched_vehicle_id, confidence_label, status, review_note,
+                raw_year_from, raw_year_to, raw_text, normalized_make, normalized_model, normalized_generation, normalized_engine,
+                matched_vehicle_id, confidence_label, mapping_source, mapping_note, status, review_note,
                 created_at, reviewed_at, reviewed_by_user_id
             FROM supplier_fitment_candidates WHERE id = :id');
         $stmt->execute(['id' => $id]);
@@ -150,11 +157,13 @@ final class SupplierFitmentCandidateRepository
 
         $stmt = $this->pdo->prepare('INSERT INTO supplier_fitment_candidates (
                 supplier_item_id, product_id, raw_make, raw_model, raw_generation, raw_engine,
-                raw_year_from, raw_year_to, raw_text, matched_vehicle_id, confidence_label,
+                raw_year_from, raw_year_to, raw_text, normalized_make, normalized_model, normalized_generation, normalized_engine,
+                matched_vehicle_id, confidence_label, mapping_source, mapping_note,
                 status, review_note, created_at, updated_at
             ) VALUES (
                 :supplier_item_id, :product_id, :raw_make, :raw_model, :raw_generation, :raw_engine,
-                :raw_year_from, :raw_year_to, :raw_text, :matched_vehicle_id, :confidence_label,
+                :raw_year_from, :raw_year_to, :raw_text, :normalized_make, :normalized_model, :normalized_generation, :normalized_engine,
+                :matched_vehicle_id, :confidence_label, :mapping_source, :mapping_note,
                 :status, NULL, NOW(), NOW()
             )');
 
@@ -168,8 +177,14 @@ final class SupplierFitmentCandidateRepository
             'raw_year_from' => $data['raw_year_from'],
             'raw_year_to' => $data['raw_year_to'],
             'raw_text' => $data['raw_text'],
+            'normalized_make' => $data['normalized_make'],
+            'normalized_model' => $data['normalized_model'],
+            'normalized_generation' => $data['normalized_generation'],
+            'normalized_engine' => $data['normalized_engine'],
             'matched_vehicle_id' => $data['matched_vehicle_id'],
             'confidence_label' => $data['confidence_label'],
+            'mapping_source' => $data['mapping_source'],
+            'mapping_note' => $data['mapping_note'],
             'status' => $data['status'],
         ]);
 

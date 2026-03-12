@@ -1345,3 +1345,35 @@ Lokal testning:
 3. Verifiera att förslag syns som nyckel/värde-lista och har status `pending`.
 4. Applicera förslag och verifiera att produktens attributfält uppdateras.
 5. Skapa nytt förslag och testa `Avvisa attributförslag`.
+
+## AI category suggestion / classification assist v1
+
+Databas:
+- kör även `database/migrations/044_ai_category_suggestion_v1.sql`
+
+Produktadmin (`/admin/products/{id}/edit`) har nu sektionen **AI-kategoriförslag** för review-first klassificeringsassistans.
+
+Flöde:
+1. Klicka `Skapa AI-kategoriförslag`.
+2. Systemet sparar ett `input_snapshot` (titel, brand, SKU, beskrivning, attribut, source_url och ev. nuvarande kategori).
+3. AI/heuristik föreslår **en** primär kategori och en kort motivering (`ai_summary`).
+4. Admin granskar nuvarande kategori mot föreslagen kategori.
+5. Admin väljer manuellt:
+   - `Apply` → uppdaterar produktens `category_id` och markerar förslaget som `applied`.
+   - `Reject` → markerar förslaget som `rejected` utan att ändra produkten.
+
+Regler och begränsningar i v1:
+- Ingen autopublicering till live-katalog.
+- Ingen masskörning för hela katalogen.
+- Ingen taxonomiändring eller skapande av nya kategorier.
+- Ingen automatisk multi-category assignment.
+- Ingen AI-fitmenttolkning.
+- Max 1 `pending` kategoriförslag per produkt.
+
+Lokal testguide:
+1. Kör migrationer via `php scripts/migrate.php` och applicera `044_ai_category_suggestion_v1.sql`.
+2. Öppna en produkt i `/admin/products/{id}/edit`.
+3. Klicka `Skapa AI-kategoriförslag`.
+4. Verifiera att förslaget visas med status `pending`, föreslagen kategori och AI summary.
+5. Testa `Apply` och verifiera att produktens kategori uppdateras.
+6. Skapa nytt förslag och testa `Reject` och verifiera att produktens kategori förblir oförändrad.

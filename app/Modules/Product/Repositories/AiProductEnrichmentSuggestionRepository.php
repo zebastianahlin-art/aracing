@@ -17,11 +17,13 @@ final class AiProductEnrichmentSuggestionRepository
     {
         $stmt = $this->pdo->prepare('INSERT INTO ai_product_enrichment_suggestions (
             product_id, suggestion_type, source_context, input_snapshot,
+            suggested_category_id,
             suggested_title, suggested_short_description, suggested_description,
             suggested_attributes, suggested_seo_title, suggested_meta_description,
             ai_summary, status, created_by_user_id, reviewed_by_user_id, reviewed_at
         ) VALUES (
             :product_id, :suggestion_type, :source_context, :input_snapshot,
+            :suggested_category_id,
             :suggested_title, :suggested_short_description, :suggested_description,
             :suggested_attributes, :suggested_seo_title, :suggested_meta_description,
             :ai_summary, :status, :created_by_user_id, :reviewed_by_user_id, :reviewed_at
@@ -32,6 +34,7 @@ final class AiProductEnrichmentSuggestionRepository
             'suggestion_type' => $data['suggestion_type'],
             'source_context' => $data['source_context'] ?? null,
             'input_snapshot' => $data['input_snapshot'] ?? null,
+            'suggested_category_id' => $data['suggested_category_id'] ?? null,
             'suggested_title' => $data['suggested_title'] ?? null,
             'suggested_short_description' => $data['suggested_short_description'] ?? null,
             'suggested_description' => $data['suggested_description'] ?? null,
@@ -46,6 +49,26 @@ final class AiProductEnrichmentSuggestionRepository
         ]);
 
         return (int) $this->pdo->lastInsertId();
+    }
+
+    /** @return array<string,mixed>|null */
+    public function findPendingByProductAndType(int $productId, string $suggestionType): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT *
+            FROM ai_product_enrichment_suggestions
+            WHERE product_id = :product_id
+              AND suggestion_type = :suggestion_type
+              AND status = "pending"
+            ORDER BY created_at DESC, id DESC
+            LIMIT 1');
+        $stmt->execute([
+            'product_id' => $productId,
+            'suggestion_type' => $suggestionType,
+        ]);
+
+        $row = $stmt->fetch();
+
+        return $row === false ? null : $row;
     }
 
     /** @return array<int,array<string,mixed>> */

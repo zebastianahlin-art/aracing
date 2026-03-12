@@ -14,6 +14,11 @@ $stockOptions = ['in_stock', 'out_of_stock', 'backorder'];
 $filterAction = $isEdit ? '/admin/products/' . (int) $product['id'] . '/edit' : '/admin/products/create';
 $mediaError = (string) ($_GET['media_error'] ?? '');
 $notice = (string) ($_GET['notice'] ?? '');
+
+$categoryNameMap = [];
+foreach (($categories ?? []) as $categoryOption) {
+    $categoryNameMap[(int) ($categoryOption['id'] ?? 0)] = (string) ($categoryOption['name'] ?? '');
+}
 ob_start();
 ?>
 <section class="card" style="margin-bottom:.8rem;">
@@ -162,6 +167,57 @@ ob_start();
 </section>
 
 <?php if ($isEdit): ?>
+
+<section id="ai-category-suggestions" class="card" style="margin-top:.8rem;">
+  <h3>AI-kategoriförslag</h3>
+  <p class="muted">Review-first stöd för primär kategori. Admin måste manuellt applicera eller avvisa. Ingen autopublicering sker.</p>
+
+  <form method="post" action="/admin/products/<?= (int) $product['id'] ?>/ai-category-suggestions" style="margin-bottom:.8rem;">
+    <button class="btn" type="submit">Skapa AI-kategoriförslag</button>
+  </form>
+
+  <?php $aiCategorySuggestions = $ai_category_suggestions ?? []; ?>
+  <?php if ($aiCategorySuggestions === []): ?>
+    <p class="muted">Inga AI-kategoriförslag ännu.</p>
+  <?php else: ?>
+    <?php foreach ($aiCategorySuggestions as $suggestion): ?>
+      <?php
+        $currentCategoryId = (int) ($product['category_id'] ?? 0);
+        $suggestedCategoryId = (int) ($suggestion['suggested_category_id'] ?? 0);
+        $currentCategoryName = $currentCategoryId > 0 ? ($categoryNameMap[$currentCategoryId] ?? ('#' . $currentCategoryId)) : 'Ingen';
+        $suggestedCategoryName = $suggestedCategoryId > 0 ? ($categoryNameMap[$suggestedCategoryId] ?? ('#' . $suggestedCategoryId)) : 'Okänd';
+      ?>
+      <div class="card" style="margin-bottom:.7rem;">
+        <p><strong>Kategoriförslag #<?= (int) $suggestion['id'] ?></strong> · status: <?= htmlspecialchars((string) ($suggestion['status'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+        <div class="grid" style="grid-template-columns:1fr 1fr; gap:.6rem;">
+          <div>
+            <strong>Nuvarande kategori</strong>
+            <p class="muted"><?= htmlspecialchars($currentCategoryName, ENT_QUOTES, 'UTF-8') ?></p>
+          </div>
+          <div>
+            <strong>AI-föreslagen kategori</strong>
+            <p class="muted"><?= htmlspecialchars($suggestedCategoryName, ENT_QUOTES, 'UTF-8') ?></p>
+          </div>
+        </div>
+        <?php if (trim((string) ($suggestion['ai_summary'] ?? '')) !== ''): ?>
+          <p class="muted" style="margin-top:.5rem;"><?= nl2br(htmlspecialchars((string) $suggestion['ai_summary'], ENT_QUOTES, 'UTF-8')) ?></p>
+        <?php endif; ?>
+
+        <?php if ((string) ($suggestion['status'] ?? '') === 'pending'): ?>
+          <div style="display:flex; gap:.5rem; margin-top:.6rem;">
+            <form method="post" action="/admin/products/<?= (int) $product['id'] ?>/ai-category-suggestions/<?= (int) $suggestion['id'] ?>/apply" onsubmit="return confirm('Applicera kategoriförslaget som produktens primära kategori?');">
+              <button class="btn" type="submit">Apply</button>
+            </form>
+            <form method="post" action="/admin/products/<?= (int) $product['id'] ?>/ai-category-suggestions/<?= (int) $suggestion['id'] ?>/reject" onsubmit="return confirm('Avvisa kategoriförslaget?');">
+              <button class="btn" type="submit">Reject</button>
+            </form>
+          </div>
+        <?php endif; ?>
+      </div>
+    <?php endforeach; ?>
+  <?php endif; ?>
+</section>
+
 <section id="ai-seo-suggestions" class="card" style="margin-top:.8rem;">
   <h3>AI-assisterade SEO-förslag v1</h3>
   <p class="muted">Skapar reviewbara förslag för SEO-titel och meta description på produktnivå. Ingen autopublicering sker.</p>

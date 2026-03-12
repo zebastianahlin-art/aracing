@@ -14,6 +14,7 @@ use App\Modules\Product\Services\ProductMediaService;
 use App\Modules\Product\Services\ProductSupplierLinkService;
 use App\Modules\Product\Services\AiProductEnrichmentService;
 use App\Modules\Product\Services\AiProductAttributeSuggestionService;
+use App\Modules\Product\Services\AiProductCategorySuggestionService;
 use App\Modules\Supplier\Services\SupplierService;
 use App\Modules\Fitment\Services\ProductFitmentService;
 use InvalidArgumentException;
@@ -31,7 +32,8 @@ final class ProductAdminController
         private readonly ProductSupplierLinkService $productSupplierLinks,
         private readonly ProductFitmentService $fitments,
         private readonly AiProductEnrichmentService $enrichment,
-        private readonly AiProductAttributeSuggestionService $attributeSuggestions
+        private readonly AiProductAttributeSuggestionService $attributeSuggestions,
+        private readonly AiProductCategorySuggestionService $categorySuggestions
     ) {
     }
 
@@ -139,6 +141,7 @@ final class ProductAdminController
             'ai_suggestions' => [],
             'ai_attribute_suggestions' => [],
             'ai_seo_suggestions' => [],
+            'ai_category_suggestions' => [],
         ]));
     }
 
@@ -194,6 +197,7 @@ final class ProductAdminController
             'ai_suggestions' => $aiSuggestions,
             'ai_attribute_suggestions' => $productId > 0 ? $this->attributeSuggestions->listForProduct($productId) : [],
             'ai_seo_suggestions' => $productId > 0 ? $this->enrichment->listSeoSuggestionsForProduct($productId) : [],
+            'ai_category_suggestions' => $productId > 0 ? $this->categorySuggestions->listForProduct($productId) : [],
         ]));
     }
 
@@ -318,6 +322,46 @@ final class ProductAdminController
             return $this->redirect('/admin/products/' . $productId . '/edit?notice=' . urlencode('AI SEO-förslaget avvisades.') . '#ai-seo-suggestions');
         } catch (InvalidArgumentException $e) {
             return $this->redirect('/admin/products/' . $productId . '/edit?media_error=' . urlencode($e->getMessage()) . '#ai-seo-suggestions');
+        }
+    }
+
+
+    public function createCategorySuggestion(string $id): Response
+    {
+        $productId = (int) $id;
+
+        try {
+            $suggestionId = $this->categorySuggestions->createSuggestionForProduct($productId, null);
+
+            return $this->redirect('/admin/products/' . $productId . '/edit?notice=' . urlencode('AI-kategoriförslag #' . $suggestionId . ' skapades och väntar på granskning.') . '#ai-category-suggestions');
+        } catch (InvalidArgumentException $e) {
+            return $this->redirect('/admin/products/' . $productId . '/edit?media_error=' . urlencode($e->getMessage()) . '#ai-category-suggestions');
+        }
+    }
+
+    public function applyCategorySuggestion(string $id, string $suggestionId): Response
+    {
+        $productId = (int) $id;
+
+        try {
+            $this->categorySuggestions->applySuggestion((int) $suggestionId, null);
+
+            return $this->redirect('/admin/products/' . $productId . '/edit?notice=' . urlencode('AI-kategoriförslaget applicerades på produktens primära kategori.') . '#ai-category-suggestions');
+        } catch (InvalidArgumentException $e) {
+            return $this->redirect('/admin/products/' . $productId . '/edit?media_error=' . urlencode($e->getMessage()) . '#ai-category-suggestions');
+        }
+    }
+
+    public function rejectCategorySuggestion(string $id, string $suggestionId): Response
+    {
+        $productId = (int) $id;
+
+        try {
+            $this->categorySuggestions->rejectSuggestion((int) $suggestionId, null);
+
+            return $this->redirect('/admin/products/' . $productId . '/edit?notice=' . urlencode('AI-kategoriförslaget avvisades.') . '#ai-category-suggestions');
+        } catch (InvalidArgumentException $e) {
+            return $this->redirect('/admin/products/' . $productId . '/edit?media_error=' . urlencode($e->getMessage()) . '#ai-category-suggestions');
         }
     }
 

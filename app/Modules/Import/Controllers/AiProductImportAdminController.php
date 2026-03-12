@@ -27,6 +27,7 @@ final class AiProductImportAdminController
             'rows' => $payload['rows'],
             'filters' => $payload['filters'],
             'status_options' => $payload['status_options'],
+            'quality_options' => $payload['quality_options'],
             'message' => trim((string) ($_GET['message'] ?? '')),
             'error' => trim((string) ($_GET['error'] ?? '')),
         ]));
@@ -48,17 +49,23 @@ final class AiProductImportAdminController
 
     public function show(string $id): Response
     {
-        $draft = $this->imports->getDraft((int) $id);
+        try {
+            $draftId = (int) $id;
+            $this->imports->refreshDraftQuality($draftId);
+            $draft = $this->imports->getDraft($draftId);
 
-        if ($draft === null) {
-            return $this->redirect('/admin/ai-product-import?error=' . urlencode('Utkastet hittades inte.'));
+            if ($draft === null) {
+                return $this->redirect('/admin/ai-product-import?error=' . urlencode('Utkastet hittades inte.'));
+            }
+
+            return new Response($this->views->render('admin.ai_product_import.show', [
+                'draft' => $draft,
+                'message' => trim((string) ($_GET['message'] ?? '')),
+                'error' => trim((string) ($_GET['error'] ?? '')),
+            ]));
+        } catch (InvalidArgumentException $e) {
+            return $this->redirect('/admin/ai-product-import?error=' . urlencode($e->getMessage()));
         }
-
-        return new Response($this->views->render('admin.ai_product_import.show', [
-            'draft' => $draft,
-            'message' => trim((string) ($_GET['message'] ?? '')),
-            'error' => trim((string) ($_GET['error'] ?? '')),
-        ]));
     }
 
     public function markReviewed(string $id): Response

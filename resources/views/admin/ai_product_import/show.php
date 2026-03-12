@@ -3,6 +3,14 @@
 $images = json_decode((string) ($draft['import_image_urls'] ?? ''), true);
 $attributes = json_decode((string) ($draft['import_attributes'] ?? ''), true);
 $aiPayload = json_decode((string) ($draft['ai_structured_payload'] ?? ''), true);
+$missingFields = json_decode((string) ($draft['missing_fields'] ?? ''), true);
+$qualityFlags = json_decode((string) ($draft['quality_flags'] ?? ''), true);
+$qualityLabel = (string) ($draft['quality_label'] ?? '');
+$qualityText = [
+    'high' => 'Hög kvalitet',
+    'medium' => 'Medel',
+    'low' => 'Låg',
+];
 ?>
 <div class="topline">
   <h1>AI-importutkast #<?= (int) $draft['id'] ?></h1>
@@ -33,6 +41,33 @@ $aiPayload = json_decode((string) ($draft['ai_structured_payload'] ?? ''), true)
     <button class="btn" type="submit" <?= ((string) ($draft['status'] ?? '') !== 'reviewed' || !empty($draft['handed_off_at'])) ? 'disabled' : '' ?>>Skapa produktutkast</button>
   </form>
   <a class="btn" href="/admin/products/create">Skapa produktutkast manuellt</a>
+</div>
+
+<div class="card" style="margin-top:.8rem; margin-bottom:.8rem;">
+  <h3>Kvalitetssignal (review-stöd)</h3>
+  <p><strong>Kvalitetsnivå:</strong>
+    <?php if ($qualityLabel !== ''): ?>
+      <span class="pill"><?= htmlspecialchars((string) ($qualityText[$qualityLabel] ?? $qualityLabel), ENT_QUOTES, 'UTF-8') ?></span>
+    <?php else: ?>
+      -
+    <?php endif; ?>
+  </p>
+  <p><strong>Confidence-sammanfattning:</strong> <?= htmlspecialchars((string) ($draft['confidence_summary'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+  <p><strong>Saknade nyckelfält:</strong>
+    <?php if (is_array($missingFields) && $missingFields !== []): ?>
+      <?= htmlspecialchars(implode(', ', array_map('strval', $missingFields)), ENT_QUOTES, 'UTF-8') ?>
+    <?php else: ?>
+      Inga
+    <?php endif; ?>
+  </p>
+  <p><strong>Kvalitetsflaggor:</strong>
+    <?php if (is_array($qualityFlags) && $qualityFlags !== []): ?>
+      <?= htmlspecialchars(implode(', ', array_map('strval', $qualityFlags)), ENT_QUOTES, 'UTF-8') ?>
+    <?php else: ?>
+      Inga
+    <?php endif; ?>
+  </p>
+  <p><small>Dessa signaler är beslutsstöd. Granskning och beslut görs alltid manuellt av admin.</small></p>
 </div>
 
 <div class="grid">

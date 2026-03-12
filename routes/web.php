@@ -73,6 +73,7 @@ use App\Modules\Import\Services\ImportProfileService;
 use App\Modules\Import\Services\ImportRunService;
 use App\Modules\Import\Services\SupplierItemReviewService;
 use App\Modules\Import\Services\AiProductImportService;
+use App\Modules\Import\Services\AiImportQualityService;
 use App\Modules\Import\Services\AiProductDraftHandoffService;
 use App\Modules\Import\Services\AiProductStructuringService;
 use App\Modules\Import\Services\ProductPageFetchService;
@@ -250,7 +251,8 @@ $aiProductImportService = new AiProductImportService(
         new AkrapovicProductParser(),
         new GarrettProductParser(),
         new HksProductParser(),
-    ])
+    ]),
+    new AiImportQualityService()
 );
 $aiProductDraftHandoffService = new AiProductDraftHandoffService(
     new AiProductImportDraftRepository($app['pdo']),

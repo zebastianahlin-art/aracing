@@ -19,6 +19,7 @@ final class AiProductImportService
         private readonly ProductPageExtractService $extractor,
         private readonly AiProductStructuringService $aiStructurer,
         private readonly SupplierProductParserResolver $parserResolver,
+        private readonly AiImportQualityService $qualityService,
     ) {
     }
 
@@ -39,6 +40,10 @@ final class AiProductImportService
                 'parser_key' => $resolvedParser?->getParserKey(),
                 'parser_version' => $resolvedParser?->getParserVersion(),
                 'extraction_strategy' => $resolvedParser !== null ? 'supplier_parser_failed_fetch' : 'generic_ai_failed_fetch',
+                'quality_label' => 'low',
+                'confidence_summary' => 'Låg kvalitet: URL kunde inte hämtas och utkastet saknar extraherat underlag.',
+                'missing_fields' => $this->encodeJson(['title', 'brand', 'sku', 'description', 'image_urls']),
+                'quality_flags' => $this->encodeJson(['missing_title', 'missing_brand', 'missing_sku', 'missing_description', 'missing_images', 'weak_raw_text']),
                 'import_title' => null,
                 'import_brand' => null,
                 'import_sku' => null,
@@ -121,7 +126,7 @@ final class AiProductImportService
         $status = $rawText === null ? 'failed' : 'pending';
         $sourceType = $resolvedParser !== null ? 'supplier_product_page' : $this->inferSourceType($domain);
 
-        $draftId = $this->drafts->create([
+        $draftData = [
             'source_url' => $normalizedUrl,
             'source_domain' => $domain !== '' ? $domain : null,
             'source_type' => $sourceType,
@@ -156,12 +161,20 @@ final class AiProductImportService
             'created_by_user_id' => $createdByUserId,
             'reviewed_by_user_id' => null,
             'reviewed_at' => null,
-        ]);
+        ];
+
+        $quality = $this->qualityService->analyzeDraft($draftData);
+        $draftData['quality_label'] = $quality['quality_label'];
+        $draftData['confidence_summary'] = $quality['confidence_summary'];
+        $draftData['missing_fields'] = $this->encodeJson($quality['missing_fields']);
+        $draftData['quality_flags'] = $this->encodeJson($quality['quality_flags']);
+
+        $draftId = $this->drafts->create($draftData);
 
         return ['draft_id' => $draftId, 'status' => $status, 'error' => $status === 'failed' ? 'Otillräckligt underlag extraherades från sidan.' : null];
     }
 
-    /** @return array{rows:array<int,array<string,mixed>>,filters:array<string,string>,status_options:array<int,string>} */
+    /** @return array{rows:array<int,array<string,mixed>>,filters:array<string,string>,status_options:array<int,string>,quality_options:array<int,string>} */
     public function listDrafts(array $filters = []): array
     {
         $status = trim((string) ($filters['status'] ?? ''));
@@ -169,10 +182,16 @@ final class AiProductImportService
             $status = '';
         }
 
+        $qualityLabel = trim((string) ($filters['quality_label'] ?? ''));
+        if ($qualityLabel !== '' && !in_array($qualityLabel, ['high', 'medium', 'low'], true)) {
+            $qualityLabel = '';
+        }
+
         return [
-            'rows' => $this->drafts->list(['status' => $status]),
-            'filters' => ['status' => $status],
+            'rows' => $this->drafts->list(['status' => $status, 'quality_label' => $qualityLabel]),
+            'filters' => ['status' => $status, 'quality_label' => $qualityLabel],
             'status_options' => self::ALLOWED_STATUSES,
+            'quality_options' => ['high', 'medium', 'low'],
         ];
     }
 
@@ -198,6 +217,22 @@ final class AiProductImportService
     {
         $this->assertDraftExists($id);
         $this->drafts->updateStatus($id, 'imported', $reviewedByUserId, $this->normalizeText($note, 2000));
+    }
+
+    public function refreshDraftQuality(int $id): void
+    {
+        $draft = $this->drafts->findById($id);
+        if ($draft === null) {
+            throw new InvalidArgumentException('Importutkastet kunde inte hittas.');
+        }
+
+        $quality = $this->qualityService->analyzeDraft($draft);
+        $this->drafts->updateQualityMetadata($id, [
+            'quality_label' => $quality['quality_label'],
+            'confidence_summary' => $quality['confidence_summary'],
+            'missing_fields' => $this->encodeJson($quality['missing_fields']),
+            'quality_flags' => $this->encodeJson($quality['quality_flags']),
+        ]);
     }
 
     private function validateUrl(string $url): string

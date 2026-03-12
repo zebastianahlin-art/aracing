@@ -17,6 +17,7 @@ final class AiProductImportDraftRepository
     {
         $stmt = $this->pdo->prepare('INSERT INTO ai_product_import_drafts (
             source_url, source_domain, source_type, status, parser_key, parser_version, extraction_strategy,
+            quality_label, confidence_summary, missing_fields, quality_flags,
             import_title, import_brand, import_sku, import_short_description, import_description,
             import_price, import_currency, import_stock_text,
             import_image_urls, import_attributes, import_raw_text,
@@ -24,6 +25,7 @@ final class AiProductImportDraftRepository
             created_by_user_id, reviewed_by_user_id, reviewed_at
         ) VALUES (
             :source_url, :source_domain, :source_type, :status, :parser_key, :parser_version, :extraction_strategy,
+            :quality_label, :confidence_summary, :missing_fields, :quality_flags,
             :import_title, :import_brand, :import_sku, :import_short_description, :import_description,
             :import_price, :import_currency, :import_stock_text,
             :import_image_urls, :import_attributes, :import_raw_text,
@@ -39,6 +41,10 @@ final class AiProductImportDraftRepository
             'parser_key' => $data['parser_key'] ?? null,
             'parser_version' => $data['parser_version'] ?? null,
             'extraction_strategy' => $data['extraction_strategy'] ?? null,
+            'quality_label' => $data['quality_label'] ?? null,
+            'confidence_summary' => $data['confidence_summary'] ?? null,
+            'missing_fields' => $data['missing_fields'] ?? null,
+            'quality_flags' => $data['quality_flags'] ?? null,
             'import_title' => $data['import_title'],
             'import_brand' => $data['import_brand'],
             'import_sku' => $data['import_sku'],
@@ -64,7 +70,9 @@ final class AiProductImportDraftRepository
     /** @return array<int,array<string,mixed>> */
     public function list(array $filters = []): array
     {
-        $sql = 'SELECT id, source_url, source_domain, source_type, status, parser_key, extraction_strategy, import_title, import_brand, import_sku, created_at, reviewed_at
+        $sql = 'SELECT id, source_url, source_domain, source_type, status, parser_key, extraction_strategy,
+                       quality_label, missing_fields, quality_flags,
+                       import_title, import_brand, import_sku, created_at, reviewed_at
                 FROM ai_product_import_drafts
                 WHERE 1=1';
 
@@ -73,6 +81,12 @@ final class AiProductImportDraftRepository
         if ($status !== '') {
             $sql .= ' AND status = :status';
             $params['status'] = $status;
+        }
+
+        $qualityLabel = trim((string) ($filters['quality_label'] ?? ''));
+        if ($qualityLabel !== '') {
+            $sql .= ' AND quality_label = :quality_label';
+            $params['quality_label'] = $qualityLabel;
         }
 
         $sql .= ' ORDER BY created_at DESC, id DESC LIMIT 300';
@@ -136,5 +150,25 @@ final class AiProductImportDraftRepository
         ]);
 
         return $stmt->rowCount() > 0;
+    }
+
+    /** @param array<string,mixed> $quality */
+    public function updateQualityMetadata(int $id, array $quality): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE ai_product_import_drafts
+                                     SET quality_label = :quality_label,
+                                         confidence_summary = :confidence_summary,
+                                         missing_fields = :missing_fields,
+                                         quality_flags = :quality_flags,
+                                         updated_at = NOW()
+                                     WHERE id = :id');
+
+        $stmt->execute([
+            'id' => $id,
+            'quality_label' => $quality['quality_label'] ?? null,
+            'confidence_summary' => $quality['confidence_summary'] ?? null,
+            'missing_fields' => $quality['missing_fields'] ?? null,
+            'quality_flags' => $quality['quality_flags'] ?? null,
+        ]);
     }
 }

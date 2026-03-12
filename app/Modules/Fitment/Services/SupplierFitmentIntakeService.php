@@ -5,19 +5,16 @@ declare(strict_types=1);
 namespace App\Modules\Fitment\Services;
 
 use App\Modules\Fitment\Repositories\SupplierFitmentCandidateRepository;
-use App\Modules\Fitment\Repositories\VehicleRepository;
 use App\Modules\Import\Repositories\SupplierItemRepository;
 use App\Modules\Product\Repositories\ProductSupplierLinkRepository;
 
 final class SupplierFitmentIntakeService
 {
-    private const ALLOWED_CONFIDENCE = ['exact', 'likely', 'unknown'];
-
     public function __construct(
         private readonly SupplierFitmentCandidateRepository $candidates,
         private readonly SupplierItemRepository $supplierItems,
         private readonly ProductSupplierLinkRepository $supplierLinks,
-        private readonly VehicleRepository $vehicles
+        private readonly SupplierFitmentMappingService $mapping
     ) {
     }
 
@@ -45,18 +42,14 @@ final class SupplierFitmentIntakeService
         $yearTo = $this->normalizeNullableInt($input['raw_year_to'] ?? null);
         $rawText = $this->normalizeNullableString($input['raw_text'] ?? null, 65000);
 
-        $matchedVehicleId = $this->normalizeNullableInt($input['matched_vehicle_id'] ?? null);
-        if ($matchedVehicleId === null) {
-            $exactMatch = $this->vehicles->findExactMatch($make, $model, $generation, $engine, $yearFrom, $yearTo);
-            if ($exactMatch !== null) {
-                $matchedVehicleId = (int) $exactMatch['id'];
-            }
-        }
-
-        $confidence = $this->normalizeNullableString($input['confidence_label'] ?? null, 40);
-        if ($confidence !== null && !in_array($confidence, self::ALLOWED_CONFIDENCE, true)) {
-            $confidence = 'unknown';
-        }
+        $mapping = $this->mapping->map([
+            'raw_make' => $make,
+            'raw_model' => $model,
+            'raw_generation' => $generation,
+            'raw_engine' => $engine,
+            'raw_year_from' => $yearFrom,
+            'raw_year_to' => $yearTo,
+        ]);
 
         return $this->candidates->create([
             'supplier_item_id' => $supplierItemId,
@@ -65,11 +58,17 @@ final class SupplierFitmentIntakeService
             'raw_model' => $model,
             'raw_generation' => $generation,
             'raw_engine' => $engine,
-            'raw_year_from' => $yearFrom,
-            'raw_year_to' => $yearTo,
+            'raw_year_from' => $mapping['raw_year_from'],
+            'raw_year_to' => $mapping['raw_year_to'],
             'raw_text' => $rawText,
-            'matched_vehicle_id' => $matchedVehicleId,
-            'confidence_label' => $confidence,
+            'normalized_make' => $mapping['normalized_make'],
+            'normalized_model' => $mapping['normalized_model'],
+            'normalized_generation' => $mapping['normalized_generation'],
+            'normalized_engine' => $mapping['normalized_engine'],
+            'matched_vehicle_id' => $mapping['matched_vehicle_id'],
+            'confidence_label' => $mapping['confidence_label'],
+            'mapping_source' => $mapping['mapping_source'],
+            'mapping_note' => $mapping['mapping_note'],
             'status' => 'pending',
         ]);
     }

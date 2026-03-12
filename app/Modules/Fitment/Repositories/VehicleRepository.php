@@ -72,6 +72,24 @@ final class VehicleRepository
 
         return $row !== false ? $row : null;
     }
+
+    /** @return array<int,array<string,mixed>> */
+    public function findActiveByMakeAndModelNormalized(string $normalizedMake, string $normalizedModel): array
+    {
+        $stmt = $this->pdo->prepare('SELECT id, make, model, generation, engine, year_from, year_to
+            FROM vehicles
+            WHERE is_active = 1
+              AND LOWER(TRIM(make)) = :make
+              AND LOWER(TRIM(model)) = :model
+            ORDER BY id ASC');
+        $stmt->execute([
+            'make' => $normalizedMake,
+            'model' => $normalizedModel,
+        ]);
+
+        return $stmt->fetchAll();
+    }
+
     public function create(array $data): int
     {
         $stmt = $this->pdo->prepare('INSERT INTO vehicles (make, model, generation, engine, fuel_type, year_from, year_to, body_type, is_active, sort_order, created_at, updated_at)

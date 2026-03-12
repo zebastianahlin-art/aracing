@@ -62,14 +62,6 @@ $filters = $filters ?? ['status' => 'pending', 'vehicle_match' => '', 'product_l
       <div><label>Raw engine</label><input name="raw_engine"></div>
       <div><label>År från</label><input name="raw_year_from"></div>
       <div><label>År till</label><input name="raw_year_to"></div>
-      <div><label>Confidence</label>
-        <select name="confidence_label">
-          <option value="">-</option>
-          <option value="exact">exact</option>
-          <option value="likely">likely</option>
-          <option value="unknown">unknown</option>
-        </select>
-      </div>
       <div style="grid-column: span 4;"><label>Raw text</label><textarea name="raw_text"></textarea></div>
       <div><button class="btn" type="submit">Skapa kandidat</button></div>
     </form>
@@ -95,7 +87,9 @@ $filters = $filters ?? ['status' => 'pending', 'vehicle_match' => '', 'product_l
         <td>
           <?= htmlspecialchars((string) (($row['raw_make'] ?? '-') . ' ' . ($row['raw_model'] ?? '')), ENT_QUOTES, 'UTF-8') ?><br>
           <span class="muted"><?= htmlspecialchars((string) (($row['raw_generation'] ?? '-') . ' / ' . ($row['raw_engine'] ?? '-')), ENT_QUOTES, 'UTF-8') ?></span><br>
-          <span class="muted">År: <?= htmlspecialchars((string) (($row['raw_year_from'] ?? '-') . ' - ' . ($row['raw_year_to'] ?? '-')), ENT_QUOTES, 'UTF-8') ?></span>
+          <span class="muted">År: <?= htmlspecialchars((string) (($row['raw_year_from'] ?? '-') . ' - ' . ($row['raw_year_to'] ?? '-')), ENT_QUOTES, 'UTF-8') ?></span><br>
+          <span class="muted">Normaliserat: <?= htmlspecialchars((string) (($row['normalized_make'] ?? '-') . ' ' . ($row['normalized_model'] ?? '-')), ENT_QUOTES, 'UTF-8') ?></span><br>
+          <span class="muted">Normaliserat gen/motor: <?= htmlspecialchars((string) (($row['normalized_generation'] ?? '-') . ' / ' . ($row['normalized_engine'] ?? '-')), ENT_QUOTES, 'UTF-8') ?></span>
           <?php if (($row['raw_text'] ?? null) !== null && trim((string) $row['raw_text']) !== ''): ?>
             <pre style="margin-top:.4rem;"><?= htmlspecialchars((string) $row['raw_text'], ENT_QUOTES, 'UTF-8') ?></pre>
           <?php endif; ?>
@@ -116,6 +110,12 @@ $filters = $filters ?? ['status' => 'pending', 'vehicle_match' => '', 'product_l
           <?php else: ?>
             <span class="pill warn">Ingen vehicle-match</span>
           <?php endif; ?>
+          <div style="margin-top:.35rem;">
+            <small><strong>Mapping:</strong> <?= htmlspecialchars((string) ($row['mapping_note'] ?? 'Ingen säker match hittades.'), ENT_QUOTES, 'UTF-8') ?></small>
+            <?php if (($row['mapping_source'] ?? null) !== null): ?>
+              <div><small class="muted">Källa: <?= htmlspecialchars((string) $row['mapping_source'], ENT_QUOTES, 'UTF-8') ?></small></div>
+            <?php endif; ?>
+          </div>
         </td>
         <td>
           <form method="post" action="/admin/supplier-fitment-review/<?= (int) $row['id'] ?>/approve" style="margin-bottom:.4rem;">

@@ -40,6 +40,7 @@ use App\Modules\Fitment\Services\VehicleNavigationService;
 use App\Modules\Fitment\Services\FitmentCoverageService;
 use App\Modules\Fitment\Services\FitmentGapService;
 use App\Modules\Fitment\Services\SupplierFitmentIntakeService;
+use App\Modules\Fitment\Services\SupplierFitmentMappingService;
 use App\Modules\Fitment\Services\SupplierFitmentReviewService;
 use App\Modules\Discount\Repositories\DiscountCodeRepository;
 use App\Modules\Discount\Services\DiscountService;
@@ -196,7 +197,8 @@ $fitmentService = new FitmentService($vehicleRepository, new ProductFitmentRepos
 $savedVehicleService = new SavedVehicleService(new UserVehicleRepository($app['pdo']), $vehicleRepository, $fitmentService);
 $fitmentWorkflowService = new FitmentWorkflowService(new ProductRepository($app['pdo']), new FitmentFlagRepository($app['pdo']));
 $supplierFitmentCandidateRepository = new SupplierFitmentCandidateRepository($app['pdo']);
-$supplierFitmentIntakeService = new SupplierFitmentIntakeService($supplierFitmentCandidateRepository, $supplierItemRepository, new ProductSupplierLinkRepository($app['pdo']), $vehicleRepository);
+$supplierFitmentMappingService = new SupplierFitmentMappingService($vehicleRepository);
+$supplierFitmentIntakeService = new SupplierFitmentIntakeService($supplierFitmentCandidateRepository, $supplierItemRepository, new ProductSupplierLinkRepository($app['pdo']), $supplierFitmentMappingService);
 $supplierFitmentReviewService = new SupplierFitmentReviewService($app['pdo'], $supplierFitmentCandidateRepository, $supplierFitmentIntakeService, new ProductFitmentRepository($app['pdo']), new ProductRepository($app['pdo']), $vehicleRepository);
 $catalogRepository = new CatalogRepository($app['pdo']);
 $fitmentCoverageService = new FitmentCoverageService($catalogRepository);

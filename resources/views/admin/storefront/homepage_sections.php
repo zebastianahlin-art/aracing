@@ -27,7 +27,7 @@ ob_start();
   </form>
 
   <?php foreach ($sections as $section): ?>
-    <fieldset style="border:1px solid #2a2f3d; margin:0 0 .8rem; padding:.7rem; border-radius:8px;">
+    <fieldset id="section-<?= (int) $section['id'] ?>" style="border:1px solid #2a2f3d; margin:0 0 .8rem; padding:.7rem; border-radius:8px;">
       <legend><strong>#<?= (int) $section['id'] ?> <?= htmlspecialchars((string) $section['section_key'], ENT_QUOTES, 'UTF-8') ?></strong></legend>
 
       <form method="post" action="/admin/homepage-sections" class="grid" style="margin-bottom:.8rem;">

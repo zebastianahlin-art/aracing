@@ -52,6 +52,40 @@ final class SupplierMonitoringService
         ];
     }
 
+    /**
+     * @return array{price_change_pressure_count:int,availability_drop_count:int,catalog_gap_count:int}
+     */
+    public function alertSummary(): array
+    {
+        $payload = $this->deviations(['linked_only' => '1']);
+        $rows = is_array($payload['rows'] ?? null) ? $payload['rows'] : [];
+
+        $summary = [
+            'price_change_pressure_count' => 0,
+            'availability_drop_count' => 0,
+            'catalog_gap_count' => 0,
+        ];
+
+        foreach ($rows as $row) {
+            $type = (string) ($row['type'] ?? '');
+            if (in_array($type, ['price_increase', 'price_decrease'], true)) {
+                $summary['price_change_pressure_count']++;
+                continue;
+            }
+
+            if (in_array($type, ['availability_lost', 'stock_dropped'], true)) {
+                $summary['availability_drop_count']++;
+                continue;
+            }
+
+            if ($type === 'missing_in_recent_import') {
+                $summary['catalog_gap_count']++;
+            }
+        }
+
+        return $summary;
+    }
+
     /** @param array<string, mixed> $state
      * @return array<int, array<string, mixed>>
      */

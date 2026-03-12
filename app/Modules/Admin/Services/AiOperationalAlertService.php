@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Admin\Services;
 
+use App\Modules\Supplier\Services\SupplierMonitoringService;
 use Throwable;
 
 final class AiOperationalAlertService
@@ -11,6 +12,9 @@ final class AiOperationalAlertService
     /** @var array<string,array{warning:int,critical:int}> */
     public const THRESHOLDS = [
         'fulfillment_backlog' => ['warning' => 8, 'critical' => 20],
+        'supplier_price_change_pressure' => ['warning' => 8, 'critical' => 20],
+        'supplier_availability_drop' => ['warning' => 6, 'critical' => 15],
+        'supplier_catalog_gap' => ['warning' => 10, 'critical' => 25],
         'restock_pressure' => ['warning' => 15, 'critical' => 35],
         'ai_import_low_quality' => ['warning' => 5, 'critical' => 12],
         'fitment_review_backlog' => ['warning' => 12, 'critical' => 30],
@@ -18,17 +22,23 @@ final class AiOperationalAlertService
         'stock_alert_pressure' => ['warning' => 20, 'critical' => 50],
     ];
 
-    public function __construct(private readonly AiOperationalInsightsService $insights)
-    {
+    public function __construct(
+        private readonly AiOperationalInsightsService $insights,
+        private readonly SupplierMonitoringService $supplierMonitoring,
+    ) {
     }
 
     /** @return array<int,array<string,mixed>> */
     public function buildActiveAlerts(): array
     {
         $signals = $this->safe(fn (): array => $this->insights->collectOperationalSnapshot(), []);
+        $supplierSignals = $this->supplierAlertSignals();
 
         $alerts = array_values(array_filter([
             $this->buildFulfillmentBacklogAlert($signals),
+            $this->buildSupplierPriceChangePressureAlert($supplierSignals),
+            $this->buildSupplierAvailabilityDropAlert($supplierSignals),
+            $this->buildSupplierCatalogGapAlert($supplierSignals),
             $this->buildRestockPressureAlert($signals),
             $this->buildAiImportLowQualityAlert($signals),
             $this->buildFitmentReviewBacklogAlert($signals),
@@ -89,6 +99,62 @@ final class AiOperationalAlertService
             'Fulfillment-kö växer',
             sprintf('%d ordrar väntar i pack/redo att skicka. Kontrollera orderkön för att undvika leveransförseningar.', $count),
             '/admin/orders?queue=pack'
+        );
+    }
+
+
+    /** @return array<string,mixed>|null */
+    private function buildSupplierPriceChangePressureAlert(array $supplierSignals): ?array
+    {
+        $count = (int) ($supplierSignals['price_change_pressure_count'] ?? 0);
+
+        return $this->buildAlert(
+            'supplier_price_change_pressure',
+            $count,
+            sprintf('%d leverantörsartiklar har prisändrats kraftigt', $count),
+            sprintf('Supplier monitoring har identifierat %d prisavvikelser (ökning/minskning) i senaste underlaget för kopplade artiklar.', $count),
+            '/admin/supplier-monitoring?deviation_scope=price&linked_only=1'
+        );
+    }
+
+    /** @return array<string,mixed>|null */
+    private function buildSupplierAvailabilityDropAlert(array $supplierSignals): ?array
+    {
+        $count = (int) ($supplierSignals['availability_drop_count'] ?? 0);
+
+        return $this->buildAlert(
+            'supplier_availability_drop',
+            $count,
+            sprintf('%d leverantörsartiklar har tappat tillgänglighet', $count),
+            sprintf('Supplier monitoring har identifierat %d availability/stock-avvikelser som indikerar tappad leveransförmåga.', $count),
+            '/admin/supplier-monitoring?deviation_scope=stock&linked_only=1'
+        );
+    }
+
+    /** @return array<string,mixed>|null */
+    private function buildSupplierCatalogGapAlert(array $supplierSignals): ?array
+    {
+        $count = (int) ($supplierSignals['catalog_gap_count'] ?? 0);
+
+        return $this->buildAlert(
+            'supplier_catalog_gap',
+            $count,
+            sprintf('%d artiklar saknas i senaste importen', $count),
+            sprintf('Supplier monitoring har identifierat %d artiklar som saknas i senaste import, vilket kan signalera sortimentsgap.', $count),
+            '/admin/supplier-monitoring?deviation_type=missing_in_recent_import&linked_only=1'
+        );
+    }
+
+    /** @return array<string,int> */
+    private function supplierAlertSignals(): array
+    {
+        return $this->safe(
+            fn (): array => $this->supplierMonitoring->alertSummary(),
+            [
+                'price_change_pressure_count' => 0,
+                'availability_drop_count' => 0,
+                'catalog_gap_count' => 0,
+            ]
         );
     }
 

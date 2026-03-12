@@ -3,6 +3,7 @@
 /** @var array<string, mixed> $filters */
 /** @var array<string, int> $counts */
 /** @var array<int, array<string, mixed>> $suppliers */
+/** @var array<string, int> $alertSummary */
 
 $typeLabels = [
     'price_increase' => 'Prisökning',
@@ -25,6 +26,15 @@ ob_start();
 ?>
 <section class="card">
   <div class="topline"><h1>Supplier monitoring v1</h1></div>
+
+
+<?php $alertSummary = is_array($alertSummary ?? null) ? $alertSummary : []; ?>
+<div class="actions-inline" style="margin-bottom:.7rem;">
+  <span class="pill">Alertdrivare:</span>
+  <a class="btn" href="/admin/supplier-monitoring?deviation_scope=price&linked_only=1">Prisändringstryck: <?= (int) ($alertSummary['price_change_pressure_count'] ?? 0) ?></a>
+  <a class="btn" href="/admin/supplier-monitoring?deviation_scope=stock&linked_only=1">Tillgänglighet tappad: <?= (int) ($alertSummary['availability_drop_count'] ?? 0) ?></a>
+  <a class="btn" href="/admin/supplier-monitoring?deviation_type=missing_in_recent_import&linked_only=1">Sortimentsgap: <?= (int) ($alertSummary['catalog_gap_count'] ?? 0) ?></a>
+</div>
 
   <form method="get" class="grid-4" style="margin-bottom:.9rem;">
     <div><label>Leverantör</label>

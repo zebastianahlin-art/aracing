@@ -116,4 +116,25 @@ final class AiProductImportDraftRepository
             'reviewed_at' => $reviewedAt,
         ]);
     }
+
+    public function markHandedOff(int $id, string $targetType, int $targetId, ?int $handedOffByUserId = null): bool
+    {
+        $stmt = $this->pdo->prepare('UPDATE ai_product_import_drafts
+                                     SET handed_off_at = NOW(),
+                                         handed_off_by_user_id = :handed_off_by_user_id,
+                                         handoff_target_type = :handoff_target_type,
+                                         handoff_target_id = :handoff_target_id,
+                                         updated_at = NOW()
+                                     WHERE id = :id
+                                       AND handed_off_at IS NULL');
+
+        $stmt->execute([
+            'id' => $id,
+            'handed_off_by_user_id' => $handedOffByUserId,
+            'handoff_target_type' => $targetType,
+            'handoff_target_id' => $targetId,
+        ]);
+
+        return $stmt->rowCount() > 0;
+    }
 }

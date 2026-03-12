@@ -6,6 +6,7 @@ namespace App\Modules\Import\Controllers;
 
 use App\Core\Http\Response;
 use App\Core\View\ViewFactory;
+use App\Modules\Import\Services\AiProductDraftHandoffService;
 use App\Modules\Import\Services\AiProductImportService;
 use InvalidArgumentException;
 
@@ -13,7 +14,8 @@ final class AiProductImportAdminController
 {
     public function __construct(
         private readonly ViewFactory $views,
-        private readonly AiProductImportService $imports
+        private readonly AiProductImportService $imports,
+        private readonly AiProductDraftHandoffService $handoff,
     ) {
     }
 
@@ -87,6 +89,17 @@ final class AiProductImportAdminController
             $this->imports->markImported((int) $id, null, (string) ($_POST['review_note'] ?? ''));
 
             return $this->redirect('/admin/ai-product-import/' . (int) $id . '?message=' . urlencode('Utkast markerat som imported.')); 
+        } catch (InvalidArgumentException $e) {
+            return $this->redirect('/admin/ai-product-import/' . (int) $id . '?error=' . urlencode($e->getMessage()));
+        }
+    }
+
+    public function handoffToProductDraft(string $id): Response
+    {
+        try {
+            $result = $this->handoff->handoffToProductDraft((int) $id, null);
+
+            return $this->redirect('/admin/ai-product-import/' . (int) $id . '?message=' . urlencode('Handoff klar: produktutkast #' . (int) $result['product_id'] . ' skapades och ligger nu i artikelvårdskön.'));
         } catch (InvalidArgumentException $e) {
             return $this->redirect('/admin/ai-product-import/' . (int) $id . '?error=' . urlencode($e->getMessage()));
         }

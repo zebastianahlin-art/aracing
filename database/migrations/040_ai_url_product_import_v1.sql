@@ -20,11 +20,17 @@ CREATE TABLE IF NOT EXISTS ai_product_import_drafts (
     review_note TEXT NULL,
     created_by_user_id BIGINT UNSIGNED NULL,
     reviewed_by_user_id BIGINT UNSIGNED NULL,
+    handed_off_by_user_id BIGINT UNSIGNED NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     reviewed_at DATETIME NULL,
+    handed_off_at DATETIME NULL,
+    handoff_target_type VARCHAR(60) NULL,
+    handoff_target_id BIGINT UNSIGNED NULL,
     KEY idx_ai_import_status (status),
     KEY idx_ai_import_created_by (created_by_user_id),
     KEY idx_ai_import_reviewed_by (reviewed_by_user_id),
+    KEY idx_ai_import_handed_off_by (handed_off_by_user_id),
+    KEY idx_ai_import_handoff_target (handoff_target_type, handoff_target_id),
     KEY idx_ai_import_source_domain (source_domain)
 );

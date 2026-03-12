@@ -1204,6 +1204,7 @@ Lokal snabbtest:
 Databas:
 - kör även `database/migrations/040_ai_url_product_import_v1.sql`
 - kör även `database/migrations/041_supplier_specific_product_parsers_v1.sql`
+- kör även `database/migrations/042_ai_draft_catalog_handoff_v1.sql`
 
 Admin:
 - `/admin/ai-product-import` visar URL-form + lista över importutkast
@@ -1216,6 +1217,9 @@ Flöde i v1:
 4. Om parsern hittar tillräcklig data skapas utkast via parser (och vid behov komplettering med AI).
 5. Om parser saknas eller parsern fallerar går URL:en via befintlig generisk extract + AI-structuring.
 6. Resultatet sparas alltid i `ai_product_import_drafts` som granskningsutkast (review-first).
+7. Efter manuell review kan admin köra handoff via `Skapa produktutkast` i draft-detaljen.
+8. Handoff skapar ett inaktivt produktutkast i befintligt produkt/admin-flöde och markerar draftet som handoffat/imported.
+9. Fortsatt artikelvård sker i ordinarie produktflöde (t.ex. `/admin/products/{id}/edit` och `/admin/products/article-care`).
 
 Stödda parserdomäner i denna version:
 - `akrapovic.com`
@@ -1227,15 +1231,24 @@ Spårbarhet i utkast:
 - `parser_version`
 - `extraction_strategy`
 - rådata (`import_raw_text`) och AI/parsers payload (`ai_structured_payload`)
+- handoffmetadata: `handed_off_at`, `handed_off_by_user_id`, `handoff_target_type`, `handoff_target_id`
+
+Spårbarhet i målflödet:
+- produkter skapade via handoff får `products.source_type = ai_url_import`
+- `products.source_reference_id` pekar på draft-id
+- `products.source_url` sparar käll-URL och visas i produktadmin
 
 Viktigt:
 - ingen autopublicering till live-katalog
-- inga direktskrivningar till `products` från AI-importen
+- ingen autonom produktskapning utan manuell review/handoff
 - fallback till generisk pipeline sker defensivt om supplier-parser inte ger tillräckligt underlag
+- exakt en handoff per draft i v1 (dubblettskydd)
 
 Lokal snabbtest:
 1. Starta appen (`composer serve`).
 2. Öppna `/admin/ai-product-import`.
 3. Importera en URL från stödd domän och verifiera att strategi/parser visas i detaljvyn.
 4. Importera en URL från okänd domän och verifiera att strategin blir generisk AI-import.
-5. Verifiera att utkast skapas med status `pending` eller `failed` samt att review-flödet (`reviewed` / `rejected` / `imported`) fungerar.
+5. Markera draft som `reviewed`, kör `Skapa produktutkast` och verifiera att produktutkast skapas.
+6. Verifiera i draft-vyn att handofftid/mål visas och att samma draft inte kan handoffas igen.
+7. Öppna skapad produkt i `/admin/products/{id}/edit` och verifiera källa (`AI URL-importutkast`) samt fortsatt manuell artikelvård.

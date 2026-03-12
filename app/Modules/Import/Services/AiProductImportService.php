@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Import\Services;
 
 use App\Modules\Import\Repositories\AiProductImportDraftRepository;
+use App\Modules\Import\Services\SupplierParsers\SupplierProductParserResolver;
 use InvalidArgumentException;
 
 final class AiProductImportService
@@ -17,6 +18,7 @@ final class AiProductImportService
         private readonly ProductPageFetchService $fetcher,
         private readonly ProductPageExtractService $extractor,
         private readonly AiProductStructuringService $aiStructurer,
+        private readonly SupplierProductParserResolver $parserResolver,
     ) {
     }
 
@@ -25,6 +27,7 @@ final class AiProductImportService
     {
         $normalizedUrl = $this->validateUrl($url);
         $domain = (string) (parse_url($normalizedUrl, PHP_URL_HOST) ?? '');
+        $resolvedParser = $this->parserResolver->resolve($domain);
 
         $fetch = $this->fetcher->fetch($normalizedUrl);
         if (($fetch['ok'] ?? false) !== true) {
@@ -33,6 +36,9 @@ final class AiProductImportService
                 'source_domain' => $domain !== '' ? $domain : null,
                 'source_type' => 'unknown',
                 'status' => 'failed',
+                'parser_key' => $resolvedParser?->getParserKey(),
+                'parser_version' => $resolvedParser?->getParserVersion(),
+                'extraction_strategy' => $resolvedParser !== null ? 'supplier_parser_failed_fetch' : 'generic_ai_failed_fetch',
                 'import_title' => null,
                 'import_brand' => null,
                 'import_sku' => null,
@@ -56,17 +62,73 @@ final class AiProductImportService
         }
 
         $extracted = $this->extractor->extract($normalizedUrl, (string) ($fetch['body'] ?? ''));
-        $structured = $this->aiStructurer->structure($extracted);
-        $payload = is_array($structured['payload'] ?? null) ? $structured['payload'] : [];
 
-        $status = trim((string) ($extracted['raw_text'] ?? '')) === '' ? 'failed' : 'pending';
-        $sourceType = $this->inferSourceType($domain);
+        $parserInfo = ['parser_key' => null, 'parser_version' => null, 'strategy' => 'generic_ai'];
+        $payload = [];
+        $summary = null;
+        $notes = null;
+        $usedAi = false;
+        $reviewNote = null;
+        $parserMetadata = [];
+
+        if ($resolvedParser !== null) {
+            $parsed = $resolvedParser->parse($normalizedUrl, (string) ($fetch['body'] ?? ''));
+            $parserInfo = [
+                'parser_key' => $resolvedParser->getParserKey(),
+                'parser_version' => $resolvedParser->getParserVersion(),
+                'strategy' => 'supplier_parser',
+            ];
+
+            $parserFields = is_array($parsed['fields'] ?? null) ? $parsed['fields'] : [];
+            $parserMetadata = is_array($parsed['metadata'] ?? null) ? $parsed['metadata'] : [];
+
+            if (($parsed['ok'] ?? false) === true && $this->hasMeaningfulParserData($parserFields)) {
+                $payload = $this->mergePreferPrimary($parserFields, [
+                    'title' => $extracted['title'] ?? null,
+                    'description' => $extracted['visible_text'] ?? null,
+                    'image_urls' => $extracted['images'] ?? [],
+                    'attributes' => [],
+                ]);
+
+                if ($this->shouldEnrichWithAi($payload)) {
+                    $structured = $this->aiStructurer->structure($extracted);
+                    $aiPayload = is_array($structured['payload'] ?? null) ? $structured['payload'] : [];
+                    $payload = $this->mergePreferPrimary($payload, $aiPayload);
+                    $summary = $this->normalizeText($structured['summary'] ?? null, 50000);
+                    $notes = $structured['notes'] ?? null;
+                    $usedAi = (bool) ($structured['used_ai'] ?? false);
+                    $parserInfo['strategy'] = 'supplier_parser_plus_ai';
+                }
+            } else {
+                $structured = $this->aiStructurer->structure($extracted);
+                $payload = is_array($structured['payload'] ?? null) ? $structured['payload'] : [];
+                $summary = $this->normalizeText($structured['summary'] ?? null, 50000);
+                $notes = $structured['notes'] ?? null;
+                $usedAi = (bool) ($structured['used_ai'] ?? false);
+                $reviewNote = 'Supplier-parsern gav otillräckligt underlag; fallback till generisk AI-pipeline användes.';
+                $parserInfo['strategy'] = 'supplier_parser_fallback_generic_ai';
+                $parserMetadata['parser_error'] = $parsed['error'] ?? 'okänd parseravvikelse';
+            }
+        } else {
+            $structured = $this->aiStructurer->structure($extracted);
+            $payload = is_array($structured['payload'] ?? null) ? $structured['payload'] : [];
+            $summary = $this->normalizeText($structured['summary'] ?? null, 50000);
+            $notes = $structured['notes'] ?? null;
+            $usedAi = (bool) ($structured['used_ai'] ?? false);
+        }
+
+        $rawText = $this->normalizeText($extracted['raw_text'] ?? null, 50000);
+        $status = $rawText === null ? 'failed' : 'pending';
+        $sourceType = $resolvedParser !== null ? 'supplier_product_page' : $this->inferSourceType($domain);
 
         $draftId = $this->drafts->create([
             'source_url' => $normalizedUrl,
             'source_domain' => $domain !== '' ? $domain : null,
             'source_type' => $sourceType,
             'status' => $status,
+            'parser_key' => $parserInfo['parser_key'],
+            'parser_version' => $parserInfo['parser_version'],
+            'extraction_strategy' => $parserInfo['strategy'],
             'import_title' => $this->normalizeText($payload['title'] ?? $extracted['title'] ?? null, 255),
             'import_brand' => $this->normalizeText($payload['brand'] ?? null, 190),
             'import_sku' => $this->normalizeText($payload['sku'] ?? null, 120),
@@ -77,14 +139,20 @@ final class AiProductImportService
             'import_stock_text' => $this->normalizeText($payload['stock_text'] ?? null, 190),
             'import_image_urls' => $this->encodeJson($payload['image_urls'] ?? $extracted['images'] ?? []),
             'import_attributes' => $this->encodeJson($payload['attributes'] ?? []),
-            'import_raw_text' => $this->normalizeText($extracted['raw_text'] ?? null, 50000),
-            'ai_summary' => $this->normalizeText($structured['summary'] ?? null, 50000),
+            'import_raw_text' => $rawText,
+            'ai_summary' => $summary,
             'ai_structured_payload' => $this->encodeJson([
-                'notes' => $structured['notes'] ?? null,
-                'used_ai' => $structured['used_ai'] ?? false,
+                'notes' => $notes,
+                'used_ai' => $usedAi,
                 'payload' => $payload,
+                'parser' => [
+                    'key' => $parserInfo['parser_key'],
+                    'version' => $parserInfo['parser_version'],
+                    'strategy' => $parserInfo['strategy'],
+                    'metadata' => $parserMetadata,
+                ],
             ]),
-            'review_note' => $status === 'failed' ? 'Sidan gav otillräckligt textunderlag för tolkning.' : null,
+            'review_note' => $status === 'failed' ? 'Sidan gav otillräckligt textunderlag för tolkning.' : $reviewNote,
             'created_by_user_id' => $createdByUserId,
             'reviewed_by_user_id' => null,
             'reviewed_at' => null,
@@ -196,5 +264,49 @@ final class AiProductImportService
         $encoded = json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
         return $encoded === false ? null : $encoded;
+    }
+
+    /** @param array<string,mixed> $primary @param array<string,mixed> $fallback @return array<string,mixed> */
+    private function mergePreferPrimary(array $primary, array $fallback): array
+    {
+        $merged = $fallback;
+
+        foreach ($primary as $key => $value) {
+            if ($value === null) {
+                continue;
+            }
+
+            if (is_string($value) && trim($value) === '') {
+                continue;
+            }
+
+            if (is_array($value) && $value === []) {
+                continue;
+            }
+
+            if (is_array($value) && is_array($merged[$key] ?? null)) {
+                $merged[$key] = array_merge($merged[$key], $value);
+                continue;
+            }
+
+            $merged[$key] = $value;
+        }
+
+        return $merged;
+    }
+
+    /** @param array<string,mixed> $fields */
+    private function hasMeaningfulParserData(array $fields): bool
+    {
+        return trim((string) ($fields['title'] ?? '')) !== ''
+            || trim((string) ($fields['sku'] ?? '')) !== ''
+            || trim((string) ($fields['description'] ?? '')) !== '';
+    }
+
+    /** @param array<string,mixed> $fields */
+    private function shouldEnrichWithAi(array $fields): bool
+    {
+        return trim((string) ($fields['short_description'] ?? '')) === ''
+            || trim((string) ($fields['description'] ?? '')) === '';
     }
 }

@@ -76,6 +76,10 @@ use App\Modules\Import\Services\AiProductImportService;
 use App\Modules\Import\Services\AiProductStructuringService;
 use App\Modules\Import\Services\ProductPageFetchService;
 use App\Modules\Import\Services\ProductPageExtractService;
+use App\Modules\Import\Services\SupplierParsers\AkrapovicProductParser;
+use App\Modules\Import\Services\SupplierParsers\GarrettProductParser;
+use App\Modules\Import\Services\SupplierParsers\HksProductParser;
+use App\Modules\Import\Services\SupplierParsers\SupplierProductParserResolver;
 use App\Modules\Inventory\Repositories\InventoryRepository;
 use App\Modules\Inventory\Repositories\StockMovementRepository;
 use App\Modules\Inventory\Services\InventoryService;
@@ -235,7 +239,12 @@ $aiProductImportService = new AiProductImportService(
     new AiProductImportDraftRepository($app['pdo']),
     new ProductPageFetchService(),
     new ProductPageExtractService(),
-    new AiProductStructuringService($app['config'])
+    new AiProductStructuringService($app['config']),
+    new SupplierProductParserResolver([
+        new AkrapovicProductParser(),
+        new GarrettProductParser(),
+        new HksProductParser(),
+    ])
 );
 $cartService = new CartService(new CartRepository($app['pdo']), new CartProductRepository($app['pdo']), $inventoryService, $discountService, $checkoutTotalsService);
 $orderRepository = new OrderRepository($app['pdo']);

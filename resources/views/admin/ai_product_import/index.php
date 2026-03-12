@@ -49,6 +49,7 @@
         <th>ID</th>
         <th>Källa</th>
         <th>Status</th>
+        <th>Strategi</th>
         <th>Titel</th>
         <th>Brand</th>
         <th>SKU</th>
@@ -64,6 +65,10 @@
             <small><?= htmlspecialchars((string) $row['source_url'], ENT_QUOTES, 'UTF-8') ?></small>
           </td>
           <td><span class="pill"><?= htmlspecialchars((string) $row['status'], ENT_QUOTES, 'UTF-8') ?></span></td>
+          <td>
+            <?= htmlspecialchars((string) ($row['extraction_strategy'] ?? 'generic_ai'), ENT_QUOTES, 'UTF-8') ?>
+            <?php if (!empty($row['parser_key'])): ?><br><small><?= htmlspecialchars((string) $row['parser_key'], ENT_QUOTES, 'UTF-8') ?></small><?php endif; ?>
+          </td>
           <td><?= htmlspecialchars((string) ($row['import_title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
           <td><?= htmlspecialchars((string) ($row['import_brand'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
           <td><?= htmlspecialchars((string) ($row['import_sku'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
@@ -71,7 +76,7 @@
         </tr>
       <?php endforeach; ?>
       <?php if ($rows === []): ?>
-        <tr><td colspan="7">Inga utkast hittades för valt filter.</td></tr>
+        <tr><td colspan="8">Inga utkast hittades för valt filter.</td></tr>
       <?php endif; ?>
     </tbody>
   </table>

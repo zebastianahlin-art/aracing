@@ -1199,10 +1199,11 @@ Lokal snabbtest:
 4. Testa filter för gap-signal, brand, kategori och sök.
 5. Verifiera åtgärdslänkar till produktadmin, `/admin/fitment-workflow` och `/admin/supplier-fitment-review`.
 
-## AI URL product import v1 (admin)
+## AI URL product import v1 + supplier-specific parsers v1 (admin)
 
 Databas:
 - kör även `database/migrations/040_ai_url_product_import_v1.sql`
+- kör även `database/migrations/041_supplier_specific_product_parsers_v1.sql`
 
 Admin:
 - `/admin/ai-product-import` visar URL-form + lista över importutkast
@@ -1210,19 +1211,31 @@ Admin:
 
 Flöde i v1:
 1. Klistra in en URL i admin.
-2. Systemet hämtar sidan, extraherar råtext + grunddata (titel, text, bild-URL:er).
-3. AI-strukturering körs defensivt (heuristik + valfritt OpenAI-anrop via `AI_URL_IMPORT_OPENAI_API_KEY`).
-4. Resultatet sparas i `ai_product_import_drafts` som granskningsutkast.
-5. Admin granskar och markerar som `reviewed`, `rejected` eller `imported`.
+2. Systemet hämtar sidan och identifierar domän.
+3. Om domänen matchar en känd supplier-parser används parser först.
+4. Om parsern hittar tillräcklig data skapas utkast via parser (och vid behov komplettering med AI).
+5. Om parser saknas eller parsern fallerar går URL:en via befintlig generisk extract + AI-structuring.
+6. Resultatet sparas alltid i `ai_product_import_drafts` som granskningsutkast (review-first).
+
+Stödda parserdomäner i denna version:
+- `akrapovic.com`
+- `garrettmotion.com`
+- `hks-power.co.jp`
+
+Spårbarhet i utkast:
+- `parser_key`
+- `parser_version`
+- `extraction_strategy`
+- rådata (`import_raw_text`) och AI/parsers payload (`ai_structured_payload`)
 
 Viktigt:
 - ingen autopublicering till live-katalog
 - inga direktskrivningar till `products` från AI-importen
-- rådata (`import_raw_text`) och AI-data (`ai_summary`, `ai_structured_payload`) sparas parallellt för spårbar review
+- fallback till generisk pipeline sker defensivt om supplier-parser inte ger tillräckligt underlag
 
 Lokal snabbtest:
 1. Starta appen (`composer serve`).
 2. Öppna `/admin/ai-product-import`.
-3. Importera en test-URL.
-4. Verifiera att utkast skapas och att detaljvyn visar både råtext och AI-tolkning.
-5. Testa statusåtgärderna `reviewed`, `rejected`, `imported`.
+3. Importera en URL från stödd domän och verifiera att strategi/parser visas i detaljvyn.
+4. Importera en URL från okänd domän och verifiera att strategin blir generisk AI-import.
+5. Verifiera att utkast skapas med status `pending` eller `failed` samt att review-flödet (`reviewed` / `rejected` / `imported`) fungerar.

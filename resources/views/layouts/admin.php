@@ -45,6 +45,7 @@
     <a href="/admin/ai-ops-report">AI Ops-rapport</a>
     <a href="/admin/ai-inventory-insights">AI Inventory Insights</a>
     <a href="/admin/ai-merch-suggestions">AI Merchandising</a>
+    <a href="/admin/ai-search-insights">AI Search Insights</a>
     <a href="/admin/brands">Brands</a>
     <a href="/admin/categories">Categories</a>
     <a href="/admin/products">Products</a>

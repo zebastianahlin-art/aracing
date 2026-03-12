@@ -57,6 +57,7 @@
     .footer-links { display:flex; gap:.8rem; flex-wrap:wrap; margin-top:.4rem; }
     .ymm-box { margin-top:.8rem; border:1px solid var(--line); border-radius:8px; padding:.7rem; background:#131722; }
     .ymm-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:.5rem; align-items:end; }
+    .fitment-banner { margin-top:.55rem; padding:.55rem .65rem; border-radius:8px; border:1px solid #2a3d31; background:#111c15; }
     @media (max-width: 800px) { .grid-2 { grid-template-columns:1fr; } }
   </style>
 </head>
@@ -86,6 +87,7 @@
 
   <?php $fitment = is_array($fitment ?? null) ? $fitment : []; ?>
   <?php $selectedVehicle = is_array($fitment['selected_vehicle'] ?? null) ? $fitment['selected_vehicle'] : null; ?>
+  <?php $fitmentStorefront = is_array($fitmentStorefront ?? null) ? $fitmentStorefront : []; ?>
   <section class="ymm-box">
     <form method="post" action="/fitment/select" class="ymm-grid">
       <input type="hidden" name="return_to" value="<?= htmlspecialchars((string) ($_SERVER['REQUEST_URI'] ?? '/search'), ENT_QUOTES, 'UTF-8') ?>">
@@ -111,6 +113,12 @@
       </div>
       <button class="btn-primary" type="submit">Välj bil</button>
     </form>
+    <?php if (($fitmentStorefront['has_active_vehicle'] ?? false) === true): ?>
+      <div class="fitment-banner">
+        <strong>Du handlar för <?= htmlspecialchars((string) ($fitmentStorefront['active_vehicle_label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong>
+        <span class="muted" style="margin-left:.35rem;">Byt bil i fälten ovan eller rensa för att visa hela katalogen.</span>
+      </div>
+    <?php endif; ?>
     <?php if ($selectedVehicle !== null): ?>
       <p style="margin:.6rem 0 .3rem;"><strong>Vald bil:</strong> <?= htmlspecialchars((string) ($selectedVehicle['display_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
       <form method="post" action="/fitment/clear" style="display:inline;">
@@ -123,6 +131,9 @@
           <button class="btn-secondary" type="submit">Spara vald bil</button>
         </form>
       <?php endif; ?>
+    <?php endif; ?>
+    <?php if ($selectedVehicle === null && !empty($_SESSION['customer_user_id']) && (($fitmentStorefront['has_saved_vehicles'] ?? false) === true)): ?>
+      <p class="muted" style="margin:.55rem 0 0;">Välj snabbt från <a href="/account/vehicles">Mina bilar</a> (<?= (int) ($fitmentStorefront['saved_vehicles_count'] ?? 0) ?> sparade).</p>
     <?php endif; ?>
     <?php if (!empty($fitmentNotice ?? '')): ?><p class="ok-msg" style="margin:.5rem 0 0;"><?= htmlspecialchars((string) $fitmentNotice, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
   </section>

@@ -32,8 +32,10 @@ ob_start();
     <p class="muted">Lagerstatus: <?= htmlspecialchars((string) ($product['storefront_stock_label'] ?? 'Tillfälligt slut'), ENT_QUOTES, 'UTF-8') ?> (<?= (int) ($product['stock_quantity'] ?? 0) ?>)</p>
 
     <?php if (is_array($fitmentStatus ?? null)): ?>
-      <?php $fitmentClass = ($fitmentStatus['code'] ?? '') === 'confirmed' ? 'ok' : (($fitmentStatus['code'] ?? '') === 'unknown' ? 'bad' : ''); ?>
-      <p><span class="pill <?= htmlspecialchars($fitmentClass, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) ($fitmentStatus['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span></p>
+      <div class="panel" style="padding:.7rem;margin:.7rem 0;background:#141a22;">
+        <p style="margin:.1rem 0;"><span class="pill <?= htmlspecialchars((string) ($fitmentStatus['badge_class'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) ($fitmentStatus['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span></p>
+        <p class="muted" style="margin:.35rem 0 0;"><?= htmlspecialchars((string) ($fitmentStatus['description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+      </div>
     <?php endif; ?>
 
     <?php

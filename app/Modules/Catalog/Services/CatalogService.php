@@ -6,6 +6,8 @@ namespace App\Modules\Catalog\Services;
 
 use App\Modules\Inventory\Services\InventoryService;
 use App\Modules\Catalog\Repositories\CatalogRepository;
+use App\Modules\Fitment\Services\FitmentStorefrontService;
+use App\Modules\Fitment\Services\FitmentService;
 
 final class CatalogService
 {
@@ -15,7 +17,9 @@ final class CatalogService
     public function __construct(
         private readonly CatalogRepository $catalog,
         private readonly InventoryService $inventory,
-        private readonly ProductRecommendationService $recommendations
+        private readonly ProductRecommendationService $recommendations,
+        private readonly FitmentService $fitment,
+        private readonly FitmentStorefrontService $fitmentStorefront
     ) {
     }
 
@@ -52,12 +56,13 @@ final class CatalogService
 
         return [
             'category' => $category,
-            'products' => $this->decorateProducts($this->catalog->searchActiveProducts($filters)),
+            'products' => $this->fitmentStorefront->decorateProductCardsWithFitment($this->decorateProducts($this->catalog->searchActiveProducts($filters))),
             'total' => $total,
             'filters' => $filters,
             'filterOptions' => $filterOptions,
             'activeFilters' => $this->activeFilters($filters, $filterOptions, '/category/' . rawurlencode((string) $category['slug'])),
             'clearAllUrl' => $this->buildUrl('/category/' . rawurlencode((string) $category['slug']), $this->baseQueryParams($filters)),
+            'fitmentUi' => $this->fitmentStorefront->catalogFitmentUiPayload($filters, $this->fitment->selectedVehicle()),
         ];
     }
 
@@ -71,12 +76,13 @@ final class CatalogService
         $filterOptions = $this->filterOptions($filters);
 
         return [
-            'products' => $this->decorateProducts($this->catalog->searchActiveProducts($filters)),
+            'products' => $this->fitmentStorefront->decorateProductCardsWithFitment($this->decorateProducts($this->catalog->searchActiveProducts($filters))),
             'total' => $total,
             'filters' => $filters,
             'filterOptions' => $filterOptions,
             'activeFilters' => $this->activeFilters($filters, $filterOptions, '/search'),
             'clearAllUrl' => $this->buildUrl('/search', $this->baseQueryParams($filters)),
+            'fitmentUi' => $this->fitmentStorefront->catalogFitmentUiPayload($filters, $this->fitment->selectedVehicle()),
         ];
     }
 

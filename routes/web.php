@@ -33,6 +33,7 @@ use App\Modules\Fitment\Services\ProductFitmentService;
 use App\Modules\Fitment\Services\VehicleService;
 use App\Modules\Fitment\Services\SavedVehicleService;
 use App\Modules\Fitment\Services\FitmentWorkflowService;
+use App\Modules\Fitment\Services\FitmentStorefrontService;
 use App\Modules\Fitment\Services\SupplierFitmentIntakeService;
 use App\Modules\Fitment\Services\SupplierFitmentReviewService;
 use App\Modules\Discount\Repositories\DiscountCodeRepository;
@@ -198,7 +199,8 @@ $productRecommendationService = new ProductRecommendationService(
     $catalogRepository,
     $inventoryService
 );
-$catalogService = new CatalogService($catalogRepository, $inventoryService, $productRecommendationService);
+$fitmentStorefrontService = new FitmentStorefrontService($fitmentService, $savedVehicleService, new ProductFitmentRepository($app['pdo']));
+$catalogService = new CatalogService($catalogRepository, $inventoryService, $productRecommendationService, $fitmentService, $fitmentStorefrontService);
 $shippingService = new ShippingService(new ShippingMethodRepository($app['pdo']));
 $checkoutTotalsService = new CheckoutTotalsService();
 $discountService = new DiscountService(new DiscountCodeRepository($app['pdo']));
@@ -282,7 +284,7 @@ $robotsService = new RobotsService();
 $sitemapController = new SitemapController($sitemapService, $robotsService);
 $recentViewedService = new RecentViewedService($catalogRepository, $inventoryService);
 $compareService = new CompareService($catalogRepository, $inventoryService);
-$storefront = new StorefrontController($app['view'], $catalogService, $cmsPageService, $authService, $productReviewService, $seoService, $wishlistService, $stockAlertService, $recentViewedService, $compareService, $fitmentService, $savedVehicleService);
+$storefront = new StorefrontController($app['view'], $catalogService, $cmsPageService, $authService, $productReviewService, $seoService, $wishlistService, $stockAlertService, $recentViewedService, $compareService, $fitmentService, $savedVehicleService, $fitmentStorefrontService);
 $cmsStorefront = new CmsStorefrontController($app['view'], $homepageService, $cmsPageService, $seoService);
 $cartController = new CartController($app['view'], $cartService, $cmsPageService);
 $checkoutController = new CheckoutController($app['view'], $cartService, new CheckoutService(), $orderService, $shippingService, $checkoutTotalsService, $cmsPageService, $paymentService, $authService);

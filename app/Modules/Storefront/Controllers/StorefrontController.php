@@ -17,6 +17,7 @@ use App\Modules\Wishlist\Services\WishlistService;
 use App\Modules\Compare\Services\CompareService;
 use App\Modules\Fitment\Services\FitmentService;
 use App\Modules\Fitment\Services\SavedVehicleService;
+use App\Modules\Fitment\Services\FitmentStorefrontService;
 
 final class StorefrontController
 {
@@ -32,7 +33,8 @@ final class StorefrontController
         private readonly RecentViewedService $recentViewed,
         private readonly CompareService $compare,
         private readonly FitmentService $fitment,
-        private readonly SavedVehicleService $savedVehicles
+        private readonly SavedVehicleService $savedVehicles,
+        private readonly FitmentStorefrontService $fitmentStorefront
     ) {
     }
 
@@ -47,6 +49,7 @@ final class StorefrontController
             'seo' => $this->seo->forStaticPage('Start', '/'),
             'fitment' => $this->fitment->selectorData(),
             'fitmentNotice' => trim((string) ($_GET['fitment_notice'] ?? '')),
+            'fitmentStorefront' => $this->fitmentStorefront->activeVehiclePayload($this->customerId()),
         ]));
     }
 
@@ -61,6 +64,7 @@ final class StorefrontController
         $payload['seo'] = $this->seo->forCategory($payload['category'], '/category/' . rawurlencode($slug), $secondaryFilters);
         $payload['fitment'] = $this->fitment->selectorData();
         $payload['fitmentNotice'] = trim((string) ($_GET['fitment_notice'] ?? ''));
+        $payload['fitmentStorefront'] = $this->fitmentStorefront->activeVehiclePayload($this->customerId());
 
         return new Response($this->views->render('storefront.category', $payload));
     }
@@ -74,6 +78,7 @@ final class StorefrontController
         $payload['seo'] = $this->seo->forSearch('/search');
         $payload['fitment'] = $this->fitment->selectorData();
         $payload['fitmentNotice'] = trim((string) ($_GET['fitment_notice'] ?? ''));
+        $payload['fitmentStorefront'] = $this->fitmentStorefront->activeVehiclePayload($this->customerId());
 
         return new Response($this->views->render('storefront.search', $payload));
     }
@@ -133,8 +138,9 @@ final class StorefrontController
             'infoPages' => $this->pages->storefrontInfoPages(),
             'seo' => $this->seo->forProduct($product, '/product/' . rawurlencode($slug)),
             'fitment' => $this->fitment->selectorData(),
-            'fitmentStatus' => $product !== null ? $this->fitment->productFitmentStatus((int) $product['id']) : null,
+            'fitmentStatus' => $product !== null ? $this->fitmentStorefront->fitmentSignalForProduct((int) $product['id']) : null,
             'fitmentNotice' => trim((string) ($_GET['fitment_notice'] ?? '')),
+            'fitmentStorefront' => $this->fitmentStorefront->activeVehiclePayload($this->customerId()),
         ]));
     }
 
@@ -146,6 +152,7 @@ final class StorefrontController
             'infoPages' => $this->pages->storefrontInfoPages(),
             'fitment' => $this->fitment->selectorData(),
             'fitmentNotice' => trim((string) ($_GET['fitment_notice'] ?? '')),
+            'fitmentStorefront' => $this->fitmentStorefront->activeVehiclePayload($this->customerId()),
         ]));
     }
 
@@ -157,6 +164,7 @@ final class StorefrontController
             'infoPages' => $this->pages->storefrontInfoPages(),
             'fitment' => $this->fitment->selectorData(),
             'fitmentNotice' => trim((string) ($_GET['fitment_notice'] ?? '')),
+            'fitmentStorefront' => $this->fitmentStorefront->activeVehiclePayload($this->customerId()),
         ]));
     }
 
@@ -169,6 +177,13 @@ final class StorefrontController
         }
 
         $this->savedVehicles->applyPrimaryVehicleIfNoActiveSelection((int) $customer['id']);
+    }
+
+    private function customerId(): ?int
+    {
+        $customer = $this->auth->currentCustomer();
+
+        return $customer !== null ? (int) $customer['id'] : null;
     }
 
     /** @param array<string,mixed> $query */

@@ -18,6 +18,7 @@ use App\Modules\Compare\Services\CompareService;
 use App\Modules\Fitment\Services\FitmentService;
 use App\Modules\Fitment\Services\SavedVehicleService;
 use App\Modules\Fitment\Services\FitmentStorefrontService;
+use App\Modules\Fitment\Services\VehicleNavigationService;
 
 final class StorefrontController
 {
@@ -34,7 +35,8 @@ final class StorefrontController
         private readonly CompareService $compare,
         private readonly FitmentService $fitment,
         private readonly SavedVehicleService $savedVehicles,
-        private readonly FitmentStorefrontService $fitmentStorefront
+        private readonly FitmentStorefrontService $fitmentStorefront,
+        private readonly VehicleNavigationService $vehicleNavigation
     ) {
     }
 
@@ -50,6 +52,7 @@ final class StorefrontController
             'fitment' => $this->fitment->selectorData(),
             'fitmentNotice' => trim((string) ($_GET['fitment_notice'] ?? '')),
             'fitmentStorefront' => $this->fitmentStorefront->activeVehiclePayload($this->customerId()),
+            'vehicleNavigation' => $this->vehicleNavigation->storefrontPayload($this->customerId()),
         ]));
     }
 
@@ -65,6 +68,7 @@ final class StorefrontController
         $payload['fitment'] = $this->fitment->selectorData();
         $payload['fitmentNotice'] = trim((string) ($_GET['fitment_notice'] ?? ''));
         $payload['fitmentStorefront'] = $this->fitmentStorefront->activeVehiclePayload($this->customerId());
+        $payload['vehicleNavigation'] = $this->vehicleNavigation->storefrontPayload($this->customerId());
 
         return new Response($this->views->render('storefront.category', $payload));
     }
@@ -79,6 +83,7 @@ final class StorefrontController
         $payload['fitment'] = $this->fitment->selectorData();
         $payload['fitmentNotice'] = trim((string) ($_GET['fitment_notice'] ?? ''));
         $payload['fitmentStorefront'] = $this->fitmentStorefront->activeVehiclePayload($this->customerId());
+        $payload['vehicleNavigation'] = $this->vehicleNavigation->storefrontPayload($this->customerId());
 
         return new Response($this->views->render('storefront.search', $payload));
     }
@@ -141,6 +146,25 @@ final class StorefrontController
             'fitmentStatus' => $product !== null ? $this->fitmentStorefront->fitmentSignalForProduct((int) $product['id']) : null,
             'fitmentNotice' => trim((string) ($_GET['fitment_notice'] ?? '')),
             'fitmentStorefront' => $this->fitmentStorefront->activeVehiclePayload($this->customerId()),
+            'vehicleNavigation' => $this->vehicleNavigation->storefrontPayload($this->customerId()),
+        ]));
+    }
+
+
+    public function shopByVehicle(): Response
+    {
+        $this->applyPrimaryVehicleForCustomer();
+
+        $customerId = $this->customerId();
+        $vehicleNavigation = $this->vehicleNavigation->storefrontPayload($customerId, 18);
+
+        return new Response($this->views->render('storefront.shop_by_vehicle', [
+            'infoPages' => $this->pages->storefrontInfoPages(),
+            'seo' => $this->seo->forStaticPage('Handla till vald bil', '/shop-by-vehicle'),
+            'fitment' => $this->fitment->selectorData(),
+            'fitmentNotice' => trim((string) ($_GET['fitment_notice'] ?? '')),
+            'fitmentStorefront' => $this->fitmentStorefront->activeVehiclePayload($customerId),
+            'vehicleNavigation' => $vehicleNavigation,
         ]));
     }
 
@@ -153,6 +177,7 @@ final class StorefrontController
             'fitment' => $this->fitment->selectorData(),
             'fitmentNotice' => trim((string) ($_GET['fitment_notice'] ?? '')),
             'fitmentStorefront' => $this->fitmentStorefront->activeVehiclePayload($this->customerId()),
+            'vehicleNavigation' => $this->vehicleNavigation->storefrontPayload($this->customerId()),
         ]));
     }
 
@@ -165,6 +190,7 @@ final class StorefrontController
             'fitment' => $this->fitment->selectorData(),
             'fitmentNotice' => trim((string) ($_GET['fitment_notice'] ?? '')),
             'fitmentStorefront' => $this->fitmentStorefront->activeVehiclePayload($this->customerId()),
+            'vehicleNavigation' => $this->vehicleNavigation->storefrontPayload($this->customerId()),
         ]));
     }
 

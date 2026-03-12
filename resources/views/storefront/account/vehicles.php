@@ -7,6 +7,7 @@ $vehicles = is_array($vehicles ?? null) ? $vehicles : [];
   <?php if (($message ?? '') !== ''): ?><p class="ok-msg"><?= htmlspecialchars((string) $message, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
   <?php if (($error ?? '') !== ''): ?><p class="err-msg"><?= htmlspecialchars((string) $error, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
   <p class="muted">Spara dina fordon för snabbare YMM-val. Primär bil används som enkel standard när ingen aktiv bil finns vald i sessionen.</p>
+  <p style="margin-top:.5rem;"><a class="btn-secondary" href="/shop-by-vehicle">Gå till Handla till vald bil</a></p>
 </section>
 
 <section class="panel" style="margin-top:.8rem;">
@@ -39,6 +40,11 @@ $vehicles = is_array($vehicles ?? null) ? $vehicles : [];
             <form method="post" action="/account/vehicles/use" style="display:inline;">
               <input type="hidden" name="vehicle_id" value="<?= (int) $vehicle['vehicle_id'] ?>">
               <button class="btn-secondary" type="submit" <?= (int) ($vehicle['is_selectable'] ?? 0) === 1 ? '' : 'disabled' ?>>Använd denna bil</button>
+            </form>
+            <form method="post" action="/account/vehicles/use" style="display:inline; margin-left:.35rem;">
+              <input type="hidden" name="vehicle_id" value="<?= (int) $vehicle['vehicle_id'] ?>">
+              <input type="hidden" name="back_to" value="/shop-by-vehicle">
+              <button class="btn-primary" type="submit" <?= (int) ($vehicle['is_selectable'] ?? 0) === 1 ? '' : 'disabled' ?>>Handla till denna bil</button>
             </form>
             <form method="post" action="/account/vehicles/primary" style="display:inline; margin-left:.35rem;">
               <input type="hidden" name="vehicle_id" value="<?= (int) $vehicle['vehicle_id'] ?>">

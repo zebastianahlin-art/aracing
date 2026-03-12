@@ -80,12 +80,13 @@ final class SavedVehicleController
         }
 
         $vehicleId = (int) ($_POST['vehicle_id'] ?? 0);
+        $backTo = $this->sanitizeBackTo((string) ($_POST['back_to'] ?? '/account/vehicles'));
         try {
             $this->savedVehicles->useSavedVehicle((int) $customer['id'], $vehicleId);
 
-            return $this->redirect('/account/vehicles?message=' . urlencode('Vald bil används nu i butiken.'));
+            return $this->redirect($backTo . $this->separator($backTo) . 'fitment_notice=' . urlencode('Vald bil används nu i butiken.'));
         } catch (InvalidArgumentException $e) {
-            return $this->redirect('/account/vehicles?error=' . urlencode($e->getMessage()));
+            return $this->redirect($backTo . $this->separator($backTo) . 'error=' . urlencode($e->getMessage()));
         }
     }
 

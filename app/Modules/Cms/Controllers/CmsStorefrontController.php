@@ -8,6 +8,11 @@ use App\Core\Http\Response;
 use App\Core\View\ViewFactory;
 use App\Modules\Storefront\Services\HomepageService;
 use App\Modules\Cms\Services\CmsPageService;
+use App\Modules\Customer\Services\AuthService;
+use App\Modules\Fitment\Services\FitmentService;
+use App\Modules\Fitment\Services\FitmentStorefrontService;
+use App\Modules\Fitment\Services\SavedVehicleService;
+use App\Modules\Fitment\Services\VehicleNavigationService;
 use App\Modules\Storefront\Services\SeoService;
 
 final class CmsStorefrontController
@@ -16,14 +21,26 @@ final class CmsStorefrontController
         private readonly ViewFactory $views,
         private readonly HomepageService $home,
         private readonly CmsPageService $pages,
-        private readonly SeoService $seo
+        private readonly SeoService $seo,
+        private readonly AuthService $auth,
+        private readonly FitmentService $fitment,
+        private readonly SavedVehicleService $savedVehicles,
+        private readonly FitmentStorefrontService $fitmentStorefront,
+        private readonly VehicleNavigationService $vehicleNavigation
     ) {
     }
 
     public function home(): Response
     {
+        $this->applyPrimaryVehicleForCustomer();
+
         $payload = $this->home->storefrontHomeData();
+        $customerId = $this->customerId();
         $payload['infoPages'] = $this->pages->storefrontInfoPages();
+        $payload['fitment'] = $this->fitment->selectorData();
+        $payload['fitmentNotice'] = trim((string) ($_GET['fitment_notice'] ?? ''));
+        $payload['fitmentStorefront'] = $this->fitmentStorefront->activeVehiclePayload($customerId);
+        $payload['vehicleNavigation'] = $this->vehicleNavigation->storefrontPayload($customerId);
         $payload['seo'] = [
             'title' => 'Start | A-Racing',
             'description' => null,
@@ -46,5 +63,22 @@ final class CmsStorefrontController
             'infoPages' => $this->pages->storefrontInfoPages(),
             'seo' => $this->seo->forCmsPage($page, '/pages/' . rawurlencode($slug)),
         ]));
+    }
+
+    private function applyPrimaryVehicleForCustomer(): void
+    {
+        $customerId = $this->customerId();
+        if ($customerId === null) {
+            return;
+        }
+
+        $this->savedVehicles->applyPrimaryVehicleIfNoActiveSelection($customerId);
+    }
+
+    private function customerId(): ?int
+    {
+        $customer = $this->auth->currentCustomer();
+
+        return $customer !== null ? (int) $customer['id'] : null;
     }
 }

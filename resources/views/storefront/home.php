@@ -17,6 +17,24 @@ ob_start();
 </section>
 <?php endif; ?>
 
+
+<?php $vehicleNavigation = is_array($vehicleNavigation ?? null) ? $vehicleNavigation : []; ?>
+<section class="panel" style="margin-bottom:.8rem;">
+  <h3><?= htmlspecialchars((string) ($vehicleNavigation['entry_label'] ?? 'Handla till bil'), ENT_QUOTES, 'UTF-8') ?></h3>
+  <?php if (($vehicleNavigation['has_active_vehicle'] ?? false) === true): ?>
+    <p class="muted">Utforska kategorier för <?= htmlspecialchars((string) ($vehicleNavigation['active_vehicle_label'] ?? ''), ENT_QUOTES, 'UTF-8') ?>.</p>
+    <p><a class="btn-primary" href="<?= htmlspecialchars((string) ($vehicleNavigation['entry_url'] ?? '/shop-by-vehicle'), ENT_QUOTES, 'UTF-8') ?>">Gå till fordonsanpassad kategoriingång</a></p>
+    <div class="top-links">
+      <?php foreach (($vehicleNavigation['entry_categories'] ?? []) as $entryCategory): ?>
+        <a href="<?= htmlspecialchars((string) ($entryCategory['url'] ?? '#'), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) ($entryCategory['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></a>
+      <?php endforeach; ?>
+    </div>
+  <?php else: ?>
+    <p class="muted"><?= htmlspecialchars((string) ($vehicleNavigation['empty_state']['description'] ?? 'Välj bil i YMM-väljaren för att fortsätta.'), ENT_QUOTES, 'UTF-8') ?></p>
+    <p><a class="btn-secondary" href="#ymm-selector"><?= htmlspecialchars((string) ($vehicleNavigation['empty_state']['cta_label'] ?? 'Välj bil'), ENT_QUOTES, 'UTF-8') ?></a></p>
+  <?php endif; ?>
+</section>
+
 <?php foreach ($homepageSections as $section): ?>
   <section class="panel" style="margin-bottom:.8rem;">
     <h3><?= htmlspecialchars((string) ($section['title'] ?? 'Utvalt'), ENT_QUOTES, 'UTF-8') ?></h3>

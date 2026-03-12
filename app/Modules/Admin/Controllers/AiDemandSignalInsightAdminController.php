@@ -1,0 +1,31 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Modules\Admin\Controllers;
+
+use App\Core\Http\Response;
+use App\Core\View\ViewFactory;
+use App\Modules\Admin\Services\AiDemandSignalInsightService;
+use App\Modules\Brand\Services\BrandService;
+use App\Modules\Category\Services\CategoryService;
+
+final class AiDemandSignalInsightAdminController
+{
+    public function __construct(
+        private readonly ViewFactory $views,
+        private readonly AiDemandSignalInsightService $insights,
+        private readonly BrandService $brands,
+        private readonly CategoryService $categories,
+    ) {
+    }
+
+    public function index(): Response
+    {
+        return new Response($this->views->render('admin.ai_demand_signals', [
+            'payload' => $this->insights->listInsights($_GET),
+            'brandOptions' => $this->brands->list(),
+            'categoryOptions' => $this->categories->listForSelect(),
+        ]));
+    }
+}

@@ -11,6 +11,7 @@ $sections = is_array($report['sections'] ?? null) ? $report['sections'] : [];
 
   <p><strong>Sammanfattning:</strong> <?= htmlspecialchars((string) ($report['summary_text'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
   <p><small>Detta är ett AI-assisterat beslutsstöd i v1 (förklarbar regelbaserad sammanställning), inte en automatisk beslutsmotor.</small></p>
+  <p><a class="btn" href="/admin/ai-alerts">Öppna AI operational alerts</a></p>
 </section>
 
 <?php foreach ($sections as $section): ?>

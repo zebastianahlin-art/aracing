@@ -1497,3 +1497,46 @@ Viktigt:
    - AI import: `/admin/ai-product-import`
    - fitment: `/admin/fitment-gaps`, `/admin/supplier-fitment-review`
    - support/returns: `/admin/support-cases`, `/admin/returns`
+
+## AI operational alerts / anomaly detection v1
+
+Admin har nu ett första lager för operativa varningssignaler på:
+- `/admin/ai-alerts`
+
+V1 är medvetet enkel och regelbaserad:
+- dynamiska alerts byggs on-demand ovanpå befintliga moduler (ingen tung alertplattform)
+- varje alert har `severity` (`info`, `warning`, `critical`), `count`, kort förklaring och åtgärdslänk
+- reglerna är transparenta med fasta trösklar och visas i adminvyn
+
+Alerttyper i v1:
+- `fulfillment_backlog`
+- `restock_pressure`
+- `ai_import_low_quality`
+- `fitment_review_backlog`
+- `support_backlog`
+- `stock_alert_pressure`
+
+Dashboard:
+- admin-dashboard visar nu snabb summering (antal aktiva alerts + topp 3)
+- länk till full alertöversikt
+
+Viktigt:
+- beslutsstöd för operatör, inte automatisk exekvering
+- ingen notifieringsmotor (e-post/slack/push) i denna v1
+- inga black-box-modeller; all severity är tröskelstyrd och manuellt begriplig
+
+### Lokal testning (snabbtest)
+
+1. Starta appen:
+   ```bash
+   composer serve
+   ```
+2. Öppna alertöversikten:
+   - `http://127.0.0.1:8000/admin/ai-alerts`
+3. Verifiera:
+   - att aktiva alerts visas med severity/count/förklaring
+   - att varje alert har åtgärdslänk till relevant befintlig arbetsvy
+   - att tröskel-tabellen visas längst ner
+4. Öppna dashboard:
+   - `http://127.0.0.1:8000/admin`
+   - verifiera att operational alerts-sammanfattningen visas

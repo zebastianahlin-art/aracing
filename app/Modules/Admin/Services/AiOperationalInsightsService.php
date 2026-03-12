@@ -33,12 +33,13 @@ final class AiOperationalInsightsService
     /** @return array<string,mixed> */
     public function buildDailyOperationsReport(): array
     {
+        $signals = $this->collectOperationalSnapshot();
         $sections = [
-            $this->ordersSection(),
-            $this->restockSection(),
-            $this->aiImportSection(),
-            $this->fitmentSection(),
-            $this->supportReturnsSection(),
+            $this->ordersSection($signals),
+            $this->restockSection($signals),
+            $this->aiImportSection($signals),
+            $this->fitmentSection($signals),
+            $this->supportReturnsSection($signals),
         ];
 
         $payload = [
@@ -57,6 +58,51 @@ final class AiOperationalInsightsService
         ];
     }
 
+    /** @return array<string,int> */
+    public function collectOperationalSnapshot(): array
+    {
+        $orderCounts = $this->safe(fn (): array => $this->orders->fulfillmentQueueCounts(), [
+            'to_process' => 0,
+            'pick' => 0,
+            'pack' => 0,
+            'ready_to_ship' => 0,
+        ]);
+        $refillRows = $this->safe(fn (): array => $this->purchasing->listRefillNeeds([]), []);
+        $openDrafts = $this->safe(fn (): array => $this->purchaseDrafts->listDrafts('draft', null), []);
+        $receivingPending = $this->safe(fn (): array => $this->purchaseDrafts->listDrafts(null, 'partially_received'), []);
+        $pendingAiDrafts = $this->safe(fn (): array => $this->aiImports->listDrafts(['status' => 'pending']), []);
+        $gapPayload = $this->safe(fn (): array => $this->fitmentGaps->adminQueue([]), ['rows' => []]);
+        $reviewPayload = $this->safe(fn (): array => $this->fitmentReview->adminQueue(['status' => 'pending']), ['rows' => []]);
+
+        $gapRows = is_array($gapPayload['rows'] ?? null) ? $gapPayload['rows'] : [];
+        $reviewRows = is_array($reviewPayload['rows'] ?? null) ? $reviewPayload['rows'] : [];
+
+        $supportOpen = $this->safe(fn (): int => count($this->support->listAdmin(['status' => 'open'])), 0);
+        $supportInProgress = $this->safe(fn (): int => count($this->support->listAdmin(['status' => 'in_progress'])), 0);
+        $returnsRequested = $this->safe(fn (): int => count($this->returns->listAdmin(['status' => 'requested'])), 0);
+        $returnsReview = $this->safe(fn (): int => count($this->returns->listAdmin(['status' => 'under_review'])), 0);
+        $activeStockAlerts = $this->safe(fn (): int => $this->stockAlerts->countActiveSubscriptions(), 0);
+
+        return [
+            'orders_to_process' => (int) ($orderCounts['to_process'] ?? 0),
+            'orders_pick' => (int) ($orderCounts['pick'] ?? 0),
+            'orders_pack' => (int) ($orderCounts['pack'] ?? 0),
+            'orders_ready_to_ship' => (int) ($orderCounts['ready_to_ship'] ?? 0),
+            'restock_candidates' => count($refillRows),
+            'purchase_drafts_open' => count($openDrafts),
+            'purchase_receiving_partial' => count($receivingPending),
+            'ai_import_pending' => count($pendingAiDrafts),
+            'ai_import_low_quality' => $this->countWhereQualityIsLow($pendingAiDrafts),
+            'fitment_gap_queue' => count($gapRows),
+            'fitment_review_pending' => count($reviewRows),
+            'support_open' => $supportOpen,
+            'support_in_progress' => $supportInProgress,
+            'returns_requested' => $returnsRequested,
+            'returns_under_review' => $returnsReview,
+            'stock_alert_active' => $activeStockAlerts,
+        ];
+    }
+
     /** @param array<string,mixed> $payload */
     private function buildSummaryText(array $payload): string
     {
@@ -72,17 +118,13 @@ final class AiOperationalInsightsService
         );
     }
 
-    /** @return array<string,mixed> */
-    private function ordersSection(): array
+    /**
+     * @param array<string,int> $signals
+     * @return array<string,mixed>
+     */
+    private function ordersSection(array $signals): array
     {
-        $counts = $this->safe(static fn (): array => $this->orders->fulfillmentQueueCounts(), [
-            'to_process' => 0,
-            'pick' => 0,
-            'pack' => 0,
-            'ready_to_ship' => 0,
-        ]);
-
-        $attention = (int) ($counts['pack'] ?? 0) + (int) ($counts['ready_to_ship'] ?? 0);
+        $attention = (int) ($signals['orders_pack'] ?? 0) + (int) ($signals['orders_ready_to_ship'] ?? 0);
 
         return [
             'key' => 'orders_fulfillment',
@@ -90,10 +132,10 @@ final class AiOperationalInsightsService
             'status' => $attention > 0 ? 'needs_attention' : 'stable',
             'attention_count' => $attention,
             'metrics' => [
-                ['label' => 'Att behandla', 'count' => (int) ($counts['to_process'] ?? 0)],
-                ['label' => 'Att plocka', 'count' => (int) ($counts['pick'] ?? 0)],
-                ['label' => 'Att packa', 'count' => (int) ($counts['pack'] ?? 0)],
-                ['label' => 'Redo att skicka', 'count' => (int) ($counts['ready_to_ship'] ?? 0)],
+                                ['label' => 'Att behandla', 'count' => (int) ($signals['orders_to_process'] ?? 0)],
+                ['label' => 'Att plocka', 'count' => (int) ($signals['orders_pick'] ?? 0)],
+                ['label' => 'Att packa', 'count' => (int) ($signals['orders_pack'] ?? 0)],
+                ['label' => 'Redo att skicka', 'count' => (int) ($signals['orders_ready_to_ship'] ?? 0)],
             ],
             'action_links' => [
                 ['label' => 'Öppna orderkö (pack)', 'url' => '/admin/orders?queue=pack'],
@@ -102,14 +144,15 @@ final class AiOperationalInsightsService
         ];
     }
 
-    /** @return array<string,mixed> */
-    private function restockSection(): array
+    /**
+     * @param array<string,int> $signals
+     * @return array<string,mixed>
+     */
+    private function restockSection(array $signals): array
     {
-        $refillRows = $this->safe(static fn (): array => $this->purchasing->listRefillNeeds([]), []);
-        $openDrafts = $this->safe(static fn (): array => $this->purchaseDrafts->listDrafts('draft', null), []);
-        $receivingPending = $this->safe(static fn (): array => $this->purchaseDrafts->listDrafts(null, 'partially_received'), []);
-
-        $attention = count($refillRows) + count($openDrafts) + count($receivingPending);
+        $attention = (int) ($signals['restock_candidates'] ?? 0)
+            + (int) ($signals['purchase_drafts_open'] ?? 0)
+            + (int) ($signals['purchase_receiving_partial'] ?? 0);
 
         return [
             'key' => 'restock_purchasing',
@@ -117,9 +160,9 @@ final class AiOperationalInsightsService
             'status' => $attention > 0 ? 'needs_attention' : 'stable',
             'attention_count' => $attention,
             'metrics' => [
-                ['label' => 'Restock-kandidater', 'count' => count($refillRows)],
-                ['label' => 'Öppna inköpsutkast', 'count' => count($openDrafts)],
-                ['label' => 'Mottagning delvis mottagen', 'count' => count($receivingPending)],
+                ['label' => 'Restock-kandidater', 'count' => (int) ($signals['restock_candidates'] ?? 0)],
+                ['label' => 'Öppna inköpsutkast', 'count' => (int) ($signals['purchase_drafts_open'] ?? 0)],
+                ['label' => 'Mottagning delvis mottagen', 'count' => (int) ($signals['purchase_receiving_partial'] ?? 0)],
             ],
             'action_links' => [
                 ['label' => 'Öppna restock-vy', 'url' => '/admin/purchasing'],
@@ -129,20 +172,20 @@ final class AiOperationalInsightsService
         ];
     }
 
-    /** @return array<string,mixed> */
-    private function aiImportSection(): array
+    /**
+     * @param array<string,int> $signals
+     * @return array<string,mixed>
+     */
+    private function aiImportSection(array $signals): array
     {
-        $pending = $this->safe(static fn (): array => $this->aiImports->listDrafts(['status' => 'pending']), []);
-        $lowQuality = $this->countWhereQualityIsLow($pending);
-
         return [
             'key' => 'ai_import_queue',
             'label' => 'AI import queue',
-            'status' => count($pending) > 0 ? 'needs_attention' : 'stable',
-            'attention_count' => count($pending),
+            'status' => ((int) ($signals['ai_import_pending'] ?? 0)) > 0 ? 'needs_attention' : 'stable',
+            'attention_count' => (int) ($signals['ai_import_pending'] ?? 0),
             'metrics' => [
-                ['label' => 'Pending review', 'count' => count($pending)],
-                ['label' => 'Låg kvalitet', 'count' => $lowQuality],
+                ['label' => 'Pending review', 'count' => (int) ($signals['ai_import_pending'] ?? 0)],
+                ['label' => 'Låg kvalitet', 'count' => (int) ($signals['ai_import_low_quality'] ?? 0)],
             ],
             'action_links' => [
                 ['label' => 'Öppna AI URL-import (pending)', 'url' => '/admin/ai-product-import?status=pending'],
@@ -151,16 +194,13 @@ final class AiOperationalInsightsService
         ];
     }
 
-    /** @return array<string,mixed> */
-    private function fitmentSection(): array
+    /**
+     * @param array<string,int> $signals
+     * @return array<string,mixed>
+     */
+    private function fitmentSection(array $signals): array
     {
-        $gapPayload = $this->safe(static fn (): array => $this->fitmentGaps->adminQueue([]), ['rows' => [], 'totals' => []]);
-        $reviewPayload = $this->safe(static fn (): array => $this->fitmentReview->adminQueue(['status' => 'pending']), ['rows' => []]);
-
-        $gapRows = is_array($gapPayload['rows'] ?? null) ? $gapPayload['rows'] : [];
-        $reviewRows = is_array($reviewPayload['rows'] ?? null) ? $reviewPayload['rows'] : [];
-
-        $attention = count($gapRows) + count($reviewRows);
+        $attention = (int) ($signals['fitment_gap_queue'] ?? 0) + (int) ($signals['fitment_review_pending'] ?? 0);
 
         return [
             'key' => 'fitment_review',
@@ -168,8 +208,8 @@ final class AiOperationalInsightsService
             'status' => $attention > 0 ? 'needs_attention' : 'stable',
             'attention_count' => $attention,
             'metrics' => [
-                ['label' => 'Fitment gap-kö', 'count' => count($gapRows)],
-                ['label' => 'Supplier fitment review (pending)', 'count' => count($reviewRows)],
+                ['label' => 'Fitment gap-kö', 'count' => (int) ($signals['fitment_gap_queue'] ?? 0)],
+                ['label' => 'Supplier fitment review (pending)', 'count' => (int) ($signals['fitment_review_pending'] ?? 0)],
             ],
             'action_links' => [
                 ['label' => 'Öppna fitment gap-kö', 'url' => '/admin/fitment-gaps'],
@@ -178,14 +218,17 @@ final class AiOperationalInsightsService
         ];
     }
 
-    /** @return array<string,mixed> */
-    private function supportReturnsSection(): array
+    /**
+     * @param array<string,int> $signals
+     * @return array<string,mixed>
+     */
+    private function supportReturnsSection(array $signals): array
     {
-        $supportOpen = $this->safe(static fn (): int => count($this->support->listAdmin(['status' => 'open'])), 0);
-        $supportInProgress = $this->safe(static fn (): int => count($this->support->listAdmin(['status' => 'in_progress'])), 0);
-        $returnsRequested = $this->safe(static fn (): int => count($this->returns->listAdmin(['status' => 'requested'])), 0);
-        $returnsReview = $this->safe(static fn (): int => count($this->returns->listAdmin(['status' => 'under_review'])), 0);
-        $activeStockAlerts = $this->safe(static fn (): int => $this->stockAlerts->countActiveSubscriptions(), 0);
+        $supportOpen = (int) ($signals['support_open'] ?? 0);
+        $supportInProgress = (int) ($signals['support_in_progress'] ?? 0);
+        $returnsRequested = (int) ($signals['returns_requested'] ?? 0);
+        $returnsReview = (int) ($signals['returns_under_review'] ?? 0);
+        $activeStockAlerts = (int) ($signals['stock_alert_active'] ?? 0);
 
         $attention = $supportOpen + $supportInProgress + $returnsRequested + $returnsReview;
 

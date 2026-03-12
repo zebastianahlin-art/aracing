@@ -1230,6 +1230,7 @@ Spårbarhet i utkast:
 - `parser_key`
 - `parser_version`
 - `extraction_strategy`
+- quality/confidence v1: `quality_label` (`high|medium|low`), `confidence_summary`, `missing_fields`, `quality_flags`
 - rådata (`import_raw_text`) och AI/parsers payload (`ai_structured_payload`)
 - handoffmetadata: `handed_off_at`, `handed_off_by_user_id`, `handoff_target_type`, `handoff_target_id`
 
@@ -1237,6 +1238,19 @@ Spårbarhet i målflödet:
 - produkter skapade via handoff får `products.source_type = ai_url_import`
 - `products.source_reference_id` pekar på draft-id
 - `products.source_url` sparar käll-URL och visas i produktadmin
+
+
+Quality/confidence-regler i v1 (review-first, förklarbara):
+- Nyckelfält som kontrolleras: `title`, `brand`, `sku`, `description`, `image_urls`.
+- `high`: inga saknade nyckelfält, ingen fallback-signal, ingen svag råtextsignal, och underlaget är parser/AI-spårbart.
+- `medium`: viss brist finns men underlaget är fortfarande användbart för manuell review.
+- `low`: tunt underlag (t.ex. kort råtext) eller flera saknade nyckelfält.
+- `quality_flags` används för tydliga orsaker (t.ex. `parser_used`, `fallback_used`, `missing_title`, `missing_images`, `weak_raw_text`, `ai_only_no_parser`, `parser_and_ai_combined`).
+- Signalerna är beslutsstöd; de blockerar inte review och ersätter inte manuell bedömning.
+
+Adminstöd i v1:
+- Draft-listan visar kvalitetslabel och stödjer filter på `high/medium/low`.
+- Draft-detaljen visar kvalitet, sammanfattning, saknade nyckelfält och quality-flaggor i läsbar form.
 
 Viktigt:
 - ingen autopublicering till live-katalog
@@ -1249,9 +1263,11 @@ Lokal snabbtest:
 2. Öppna `/admin/ai-product-import`.
 3. Importera en URL från stödd domän och verifiera att strategi/parser visas i detaljvyn.
 4. Importera en URL från okänd domän och verifiera att strategin blir generisk AI-import.
-5. Markera draft som `reviewed`, kör `Skapa produktutkast` och verifiera att produktutkast skapas.
-6. Verifiera i draft-vyn att handofftid/mål visas och att samma draft inte kan handoffas igen.
-7. Öppna skapad produkt i `/admin/products/{id}/edit` och verifiera källa (`AI URL-importutkast`) samt fortsatt manuell artikelvård.
+5. Verifiera i listvyn att kvalitetslabel visas och att filter på kvalitet fungerar (`high`, `medium`, `low`).
+6. Öppna ett utkast och verifiera `confidence_summary`, saknade nyckelfält och quality-flaggor.
+7. Markera draft som `reviewed`, kör `Skapa produktutkast` och verifiera att produktutkast skapas.
+8. Verifiera i draft-vyn att handofftid/mål visas och att samma draft inte kan handoffas igen.
+9. Öppna skapad produkt i `/admin/products/{id}/edit` och verifiera källa (`AI URL-importutkast`) samt fortsatt manuell artikelvård.
 
 
 

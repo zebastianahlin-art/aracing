@@ -2,6 +2,13 @@
 /** @var array<int,array<string,mixed>> $rows */
 /** @var array<string,string> $filters */
 /** @var array<int,string> $status_options */
+/** @var array<int,string> $quality_options */
+
+$qualityLabels = [
+    'high' => 'Hög kvalitet',
+    'medium' => 'Medel',
+    'low' => 'Låg',
+];
 ?>
 <div class="topline">
   <h1>AI URL-import v1</h1>
@@ -28,13 +35,22 @@
 
 <div class="card">
   <h2>Utkast</h2>
-  <form method="get" action="/admin/ai-product-import" class="grid" style="grid-template-columns:220px 160px; margin-bottom:.8rem;">
+  <form method="get" action="/admin/ai-product-import" class="grid" style="grid-template-columns:220px 220px 160px; margin-bottom:.8rem;">
     <div>
       <label for="status">Status</label>
       <select id="status" name="status">
         <option value="">Alla</option>
         <?php foreach ($status_options as $status): ?>
           <option value="<?= htmlspecialchars($status, ENT_QUOTES, 'UTF-8') ?>" <?= ($filters['status'] ?? '') === $status ? 'selected' : '' ?>><?= htmlspecialchars($status, ENT_QUOTES, 'UTF-8') ?></option>
+        <?php endforeach; ?>
+      </select>
+    </div>
+    <div>
+      <label for="quality_label">Kvalitet</label>
+      <select id="quality_label" name="quality_label">
+        <option value="">Alla</option>
+        <?php foreach ($quality_options as $quality): ?>
+          <option value="<?= htmlspecialchars($quality, ENT_QUOTES, 'UTF-8') ?>" <?= ($filters['quality_label'] ?? '') === $quality ? 'selected' : '' ?>><?= htmlspecialchars($qualityLabels[$quality] ?? $quality, ENT_QUOTES, 'UTF-8') ?></option>
         <?php endforeach; ?>
       </select>
     </div>
@@ -49,6 +65,7 @@
         <th>ID</th>
         <th>Källa</th>
         <th>Status</th>
+        <th>Kvalitet</th>
         <th>Strategi</th>
         <th>Titel</th>
         <th>Brand</th>
@@ -58,6 +75,7 @@
     </thead>
     <tbody>
       <?php foreach ($rows as $row): ?>
+        <?php $quality = (string) ($row['quality_label'] ?? ''); ?>
         <tr>
           <td><a href="/admin/ai-product-import/<?= (int) $row['id'] ?>">#<?= (int) $row['id'] ?></a></td>
           <td>
@@ -65,6 +83,13 @@
             <small><?= htmlspecialchars((string) $row['source_url'], ENT_QUOTES, 'UTF-8') ?></small>
           </td>
           <td><span class="pill"><?= htmlspecialchars((string) $row['status'], ENT_QUOTES, 'UTF-8') ?></span></td>
+          <td>
+            <?php if ($quality !== ''): ?>
+              <span class="pill"><?= htmlspecialchars((string) ($qualityLabels[$quality] ?? $quality), ENT_QUOTES, 'UTF-8') ?></span>
+            <?php else: ?>
+              <span>-</span>
+            <?php endif; ?>
+          </td>
           <td>
             <?= htmlspecialchars((string) ($row['extraction_strategy'] ?? 'generic_ai'), ENT_QUOTES, 'UTF-8') ?>
             <?php if (!empty($row['parser_key'])): ?><br><small><?= htmlspecialchars((string) $row['parser_key'], ENT_QUOTES, 'UTF-8') ?></small><?php endif; ?>
@@ -76,7 +101,7 @@
         </tr>
       <?php endforeach; ?>
       <?php if ($rows === []): ?>
-        <tr><td colspan="8">Inga utkast hittades för valt filter.</td></tr>
+        <tr><td colspan="9">Inga utkast hittades för valt filter.</td></tr>
       <?php endif; ?>
     </tbody>
   </table>

@@ -13,6 +13,9 @@ return [
         'url_import' => [
             'openai_api_key' => getenv('AI_URL_IMPORT_OPENAI_API_KEY') ?: '',
         ],
+        'product_enrichment' => [
+            'openai_api_key' => getenv('AI_PRODUCT_ENRICHMENT_OPENAI_API_KEY') ?: '',
+        ],
     ],
     'payment' => [
         'stripe' => [

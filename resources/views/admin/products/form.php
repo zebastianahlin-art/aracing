@@ -13,6 +13,7 @@ $selectedSupplierId = (string) ($selected_supplier_id ?? '');
 $stockOptions = ['in_stock', 'out_of_stock', 'backorder'];
 $filterAction = $isEdit ? '/admin/products/' . (int) $product['id'] . '/edit' : '/admin/products/create';
 $mediaError = (string) ($_GET['media_error'] ?? '');
+$notice = (string) ($_GET['notice'] ?? '');
 ob_start();
 ?>
 <section class="card" style="margin-bottom:.8rem;">
@@ -37,6 +38,12 @@ ob_start();
 
 <section class="card">
   <h3><?= $isEdit ? 'Redigera produkt' : 'Skapa produkt' ?></h3>
+  <?php if ($notice !== ''): ?>
+    <p class="pill ok"><?= htmlspecialchars($notice, ENT_QUOTES, 'UTF-8') ?></p>
+  <?php endif; ?>
+  <?php if ($mediaError !== ''): ?>
+    <p class="pill bad"><?= htmlspecialchars($mediaError, ENT_QUOTES, 'UTF-8') ?></p>
+  <?php endif; ?>
   <?php if ($isEdit && (string) ($product['source_type'] ?? '') === 'ai_url_import' && (int) ($product['source_reference_id'] ?? 0) > 0): ?>
     <p class="pill warn">
       Källa: AI URL-importutkast #<?= (int) $product['source_reference_id'] ?>.
@@ -154,6 +161,68 @@ ob_start();
   </form>
 </section>
 
+<?php if ($isEdit): ?>
+<section id="ai-enrichment" class="card" style="margin-top:.8rem;">
+  <h3>AI-assisterad produktberikning v1</h3>
+  <p class="muted">AI-förslag är assistans och kräver manuell review innan applicering till produktutkastet.</p>
+
+  <form method="post" action="/admin/products/<?= (int) $product['id'] ?>/ai-enrichment-suggestions" style="display:grid;gap:.5rem;grid-template-columns:2fr auto;align-items:end;margin-bottom:.8rem;">
+    <div>
+      <label>Skapa AI-förslag</label>
+      <select name="suggestion_type" required>
+        <option value="title_description">title_description</option>
+        <option value="content_cleanup">content_cleanup</option>
+        <option value="seo_assist">seo_assist</option>
+        <option value="attribute_summary">attribute_summary</option>
+      </select>
+    </div>
+    <button class="btn" type="submit">Skapa AI-förslag</button>
+  </form>
+
+  <?php $aiSuggestions = $ai_suggestions ?? []; ?>
+  <?php if ($aiSuggestions === []): ?>
+    <p class="muted">Inga AI-förslag ännu.</p>
+  <?php else: ?>
+    <?php foreach ($aiSuggestions as $suggestion): ?>
+      <div class="card" style="margin-bottom:.7rem;">
+        <p><strong>Förslag #<?= (int) $suggestion['id'] ?></strong> · typ: <?= htmlspecialchars((string) $suggestion['suggestion_type'], ENT_QUOTES, 'UTF-8') ?> · status: <?= htmlspecialchars((string) $suggestion['status'], ENT_QUOTES, 'UTF-8') ?></p>
+        <?php if (trim((string) ($suggestion['ai_summary'] ?? '')) !== ''): ?>
+          <p class="muted"><?= nl2br(htmlspecialchars((string) $suggestion['ai_summary'], ENT_QUOTES, 'UTF-8')) ?></p>
+        <?php endif; ?>
+        <div class="grid" style="grid-template-columns:1fr 1fr; gap:.6rem;">
+          <div>
+            <strong>Nuvarande</strong>
+            <p class="muted">Titel: <?= htmlspecialchars((string) ($product['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+            <p class="muted">Beskrivning: <?= nl2br(htmlspecialchars((string) ($product['description'] ?? ''), ENT_QUOTES, 'UTF-8')) ?></p>
+            <p class="muted">SEO-titel: <?= htmlspecialchars((string) ($product['seo_title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+            <p class="muted">SEO-beskrivning: <?= nl2br(htmlspecialchars((string) ($product['seo_description'] ?? ''), ENT_QUOTES, 'UTF-8')) ?></p>
+          </div>
+          <div>
+            <strong>AI-förslag</strong>
+            <?php if (trim((string) ($suggestion['suggested_title'] ?? '')) !== ''): ?><p class="muted">Titel: <?= htmlspecialchars((string) $suggestion['suggested_title'], ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
+            <?php if (trim((string) ($suggestion['suggested_short_description'] ?? '')) !== ''): ?><p class="muted">Kort beskrivning: <?= nl2br(htmlspecialchars((string) $suggestion['suggested_short_description'], ENT_QUOTES, 'UTF-8')) ?></p><?php endif; ?>
+            <?php if (trim((string) ($suggestion['suggested_description'] ?? '')) !== ''): ?><p class="muted">Beskrivning: <?= nl2br(htmlspecialchars((string) $suggestion['suggested_description'], ENT_QUOTES, 'UTF-8')) ?></p><?php endif; ?>
+            <?php if (trim((string) ($suggestion['suggested_seo_title'] ?? '')) !== ''): ?><p class="muted">SEO-titel: <?= htmlspecialchars((string) $suggestion['suggested_seo_title'], ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
+            <?php if (trim((string) ($suggestion['suggested_meta_description'] ?? '')) !== ''): ?><p class="muted">Meta description: <?= nl2br(htmlspecialchars((string) $suggestion['suggested_meta_description'], ENT_QUOTES, 'UTF-8')) ?></p><?php endif; ?>
+            <?php if (trim((string) ($suggestion['suggested_attributes'] ?? '')) !== ''): ?><pre style="white-space:pre-wrap;"><?= htmlspecialchars((string) $suggestion['suggested_attributes'], ENT_QUOTES, 'UTF-8') ?></pre><?php endif; ?>
+          </div>
+        </div>
+
+        <?php if ((string) ($suggestion['status'] ?? '') === 'pending'): ?>
+          <div style="display:flex; gap:.5rem; margin-top:.6rem;">
+            <form method="post" action="/admin/products/<?= (int) $product['id'] ?>/ai-enrichment-suggestions/<?= (int) $suggestion['id'] ?>/apply" onsubmit="return confirm('Applicera förslaget?');">
+              <button class="btn" type="submit">Applicera förslag</button>
+            </form>
+            <form method="post" action="/admin/products/<?= (int) $product['id'] ?>/ai-enrichment-suggestions/<?= (int) $suggestion['id'] ?>/reject" onsubmit="return confirm('Avvisa förslaget?');">
+              <button class="btn" type="submit">Avvisa förslag</button>
+            </form>
+          </div>
+        <?php endif; ?>
+      </div>
+    <?php endforeach; ?>
+  <?php endif; ?>
+</section>
+<?php endif; ?>
 
 
 <?php if ($isEdit): ?>

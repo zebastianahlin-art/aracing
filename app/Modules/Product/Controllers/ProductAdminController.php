@@ -12,8 +12,10 @@ use App\Modules\Product\Services\ProductService;
 use App\Modules\Product\Services\ProductRelationService;
 use App\Modules\Product\Services\ProductMediaService;
 use App\Modules\Product\Services\ProductSupplierLinkService;
+use App\Modules\Product\Services\AiProductEnrichmentService;
 use App\Modules\Supplier\Services\SupplierService;
 use App\Modules\Fitment\Services\ProductFitmentService;
+use InvalidArgumentException;
 
 final class ProductAdminController
 {
@@ -26,7 +28,8 @@ final class ProductAdminController
         private readonly CategoryService $categories,
         private readonly SupplierService $suppliers,
         private readonly ProductSupplierLinkService $productSupplierLinks,
-        private readonly ProductFitmentService $fitments
+        private readonly ProductFitmentService $fitments,
+        private readonly AiProductEnrichmentService $enrichment
     ) {
     }
 
@@ -131,6 +134,7 @@ final class ProductAdminController
             'fitment_vehicles' => $this->fitments->activeVehicles(trim((string) ($_GET['fitment_vehicle_query'] ?? ''))),
             'fitment_types' => $this->fitments->allowedTypes(),
             'fitment_vehicle_query' => trim((string) ($_GET['fitment_vehicle_query'] ?? '')),
+            'ai_suggestions' => $productId > 0 ? $this->enrichment->listForProduct($productId) : [],
         ]));
     }
 
@@ -181,6 +185,7 @@ final class ProductAdminController
             'fitment_vehicles' => $this->fitments->activeVehicles(trim((string) ($_GET['fitment_vehicle_query'] ?? ''))),
             'fitment_types' => $this->fitments->allowedTypes(),
             'fitment_vehicle_query' => trim((string) ($_GET['fitment_vehicle_query'] ?? '')),
+            'ai_suggestions' => $productId > 0 ? $this->enrichment->listForProduct($productId) : [],
         ]));
     }
 
@@ -189,6 +194,45 @@ final class ProductAdminController
         $this->products->update((int) $id, $_POST);
 
         return $this->redirect('/admin/products');
+    }
+
+    public function createEnrichmentSuggestion(string $id): Response
+    {
+        $productId = (int) $id;
+
+        try {
+            $suggestionId = $this->enrichment->createSuggestionForProduct($productId, (string) ($_POST['suggestion_type'] ?? ''), null);
+
+            return $this->redirect('/admin/products/' . $productId . '/edit?notice=' . urlencode('AI-förslag #' . $suggestionId . ' skapades och väntar på granskning.') . '#ai-enrichment');
+        } catch (InvalidArgumentException $e) {
+            return $this->redirect('/admin/products/' . $productId . '/edit?media_error=' . urlencode($e->getMessage()) . '#ai-enrichment');
+        }
+    }
+
+    public function applyEnrichmentSuggestion(string $id, string $suggestionId): Response
+    {
+        $productId = (int) $id;
+
+        try {
+            $this->enrichment->applySuggestion((int) $suggestionId, null);
+
+            return $this->redirect('/admin/products/' . $productId . '/edit?notice=' . urlencode('AI-förslaget applicerades på produktutkastet.') . '#ai-enrichment');
+        } catch (InvalidArgumentException $e) {
+            return $this->redirect('/admin/products/' . $productId . '/edit?media_error=' . urlencode($e->getMessage()) . '#ai-enrichment');
+        }
+    }
+
+    public function rejectEnrichmentSuggestion(string $id, string $suggestionId): Response
+    {
+        $productId = (int) $id;
+
+        try {
+            $this->enrichment->rejectSuggestion((int) $suggestionId, null);
+
+            return $this->redirect('/admin/products/' . $productId . '/edit?notice=' . urlencode('AI-förslaget avvisades.') . '#ai-enrichment');
+        } catch (InvalidArgumentException $e) {
+            return $this->redirect('/admin/products/' . $productId . '/edit?media_error=' . urlencode($e->getMessage()) . '#ai-enrichment');
+        }
     }
 
     public function uploadImages(string $id): Response

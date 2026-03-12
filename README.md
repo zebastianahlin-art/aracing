@@ -1055,3 +1055,30 @@ Lokal snabbtest:
 3. Sätt/justera `Vehicle ID` och godkänn kandidaten.
 4. Öppna produkten i `/admin/products/{id}/edit#fitment` och verifiera att fitmentkopplingen skapats.
 5. Testa även `Avvisa`/`Skippa` och verifiera att ingen ny `product_fitments` skapas.
+
+## Mina bilar / saved vehicles v1
+
+Databas:
+- kör även `database/migrations/038_saved_vehicles_my_garage_v1.sql`
+
+Storefront/kundkonto:
+- inloggad kund kan spara aktuell vald YMM-bil via knappen `Spara vald bil` i YMM-sektionen.
+- kundens sparade bilar visas på `/account/vehicles`.
+- kund kan:
+  - använda en sparad bil som aktiv YMM-bil i session
+  - sätta en sparad aktiv bil som primär
+  - ta bort sparad bil
+
+Regler i v1:
+- `saved vehicle` (konto-data) och `aktiv bil` (session-data) hålls separerade.
+- samma bil kan inte sparas flera gånger för samma kund (`UNIQUE(user_id, vehicle_id)`).
+- endast aktiva fordon kan sparas, användas och sättas som primär.
+- om primär bil finns och ingen aktiv bil redan är vald i sessionen används primär bil som enkel default i storefront.
+
+Lokal snabbtest:
+1. Logga in som kund.
+2. Välj bil i YMM-väljaren och klicka `Spara vald bil`.
+3. Öppna `/account/vehicles` och verifiera att bilen syns.
+4. Klicka `Sätt som primär` och ladda om en storefront-sida med tom YMM-session för att verifiera defaultval.
+5. Klicka `Använd denna bil` för att sätta aktiv bil i session.
+6. Klicka `Ta bort` och verifiera att bilen försvinner från listan (utan att fordonet tas bort ur `vehicles`).

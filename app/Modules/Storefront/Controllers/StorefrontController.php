@@ -16,6 +16,7 @@ use App\Modules\StockAlert\Services\StockAlertService;
 use App\Modules\Wishlist\Services\WishlistService;
 use App\Modules\Compare\Services\CompareService;
 use App\Modules\Fitment\Services\FitmentService;
+use App\Modules\Fitment\Services\SavedVehicleService;
 
 final class StorefrontController
 {
@@ -30,12 +31,15 @@ final class StorefrontController
         private readonly StockAlertService $stockAlerts,
         private readonly RecentViewedService $recentViewed,
         private readonly CompareService $compare,
-        private readonly FitmentService $fitment
+        private readonly FitmentService $fitment,
+        private readonly SavedVehicleService $savedVehicles
     ) {
     }
 
     public function home(): Response
     {
+        $this->applyPrimaryVehicleForCustomer();
+
         return new Response($this->views->render('storefront.home', [
             'products' => $this->catalog->latestProducts(8),
             'recentlyViewedProducts' => $this->recentViewed->recentlyViewedProducts(6),
@@ -48,6 +52,8 @@ final class StorefrontController
 
     public function category(string $slug): Response
     {
+        $this->applyPrimaryVehicleForCustomer();
+
         $payload = $this->catalog->categoryPage($slug, $this->fitment->catalogQueryWithFitment($_GET));
         $payload['infoPages'] = $this->pages->storefrontInfoPages();
 
@@ -61,6 +67,8 @@ final class StorefrontController
 
     public function search(): Response
     {
+        $this->applyPrimaryVehicleForCustomer();
+
         $payload = $this->catalog->searchPage($this->fitment->catalogQueryWithFitment($_GET));
         $payload['infoPages'] = $this->pages->storefrontInfoPages();
         $payload['seo'] = $this->seo->forSearch('/search');
@@ -72,6 +80,8 @@ final class StorefrontController
 
     public function product(string $slug): Response
     {
+        $this->applyPrimaryVehicleForCustomer();
+
         $product = $this->catalog->productPage($slug);
 
         $recentlyViewedProducts = [];
@@ -130,6 +140,8 @@ final class StorefrontController
 
     public function cart(): Response
     {
+        $this->applyPrimaryVehicleForCustomer();
+
         return new Response($this->views->render('storefront.cart', [
             'infoPages' => $this->pages->storefrontInfoPages(),
             'fitment' => $this->fitment->selectorData(),
@@ -139,11 +151,24 @@ final class StorefrontController
 
     public function checkout(): Response
     {
+        $this->applyPrimaryVehicleForCustomer();
+
         return new Response($this->views->render('storefront.checkout', [
             'infoPages' => $this->pages->storefrontInfoPages(),
             'fitment' => $this->fitment->selectorData(),
             'fitmentNotice' => trim((string) ($_GET['fitment_notice'] ?? '')),
         ]));
+    }
+
+
+    private function applyPrimaryVehicleForCustomer(): void
+    {
+        $customer = $this->auth->currentCustomer();
+        if ($customer === null) {
+            return;
+        }
+
+        $this->savedVehicles->applyPrimaryVehicleIfNoActiveSelection((int) $customer['id']);
     }
 
     /** @param array<string,mixed> $query */

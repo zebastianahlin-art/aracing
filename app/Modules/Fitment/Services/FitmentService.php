@@ -108,6 +108,22 @@ final class FitmentService
         unset($_SESSION[self::SESSION_KEY]);
     }
 
+    public function selectVehicleById(int $vehicleId): bool
+    {
+        if ($vehicleId <= 0) {
+            return false;
+        }
+
+        $vehicle = $this->vehicles->findActiveById($vehicleId);
+        if ($vehicle === null) {
+            return false;
+        }
+
+        $_SESSION[self::SESSION_KEY] = (int) $vehicle['id'];
+
+        return true;
+    }
+
     /** @return array<string,mixed>|null */
     public function selectedVehicle(): ?array
     {
@@ -166,7 +182,7 @@ final class FitmentService
     }
 
     /** @param array<string,mixed> $vehicle */
-    private function vehicleDisplayName(array $vehicle): string
+    public function vehicleDisplayName(array $vehicle): string
     {
         $parts = [trim((string) $vehicle['make']), trim((string) $vehicle['model'])];
 

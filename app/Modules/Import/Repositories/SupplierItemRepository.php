@@ -15,7 +15,8 @@ final class SupplierItemRepository
     /** @param array<string, mixed> $mappedRow
      * @param array<string, mixed> $rawRow
      */
-    public function upsertFromImport(int $supplierId, int $runId, array $mappedRow, array $rawRow): void
+    /** @return array{id:int, price:?string, stock_qty:?int} */
+    public function upsertFromImport(int $supplierId, int $runId, array $mappedRow, array $rawRow): array
     {
         $stmt = $this->pdo->prepare(
             'INSERT INTO supplier_items (supplier_id, supplier_sku, supplier_title, supplier_name, raw_payload, import_run_id, price, stock_qty, created_at, updated_at)
@@ -32,16 +33,29 @@ final class SupplierItemRepository
 
         $title = (string) ($mappedRow['supplier_title'] ?? $mappedRow['supplier_name'] ?? '');
 
+        $supplierSku = (string) ($mappedRow['supplier_sku'] ?? '');
+
+        $price = $this->toNullableDecimal($mappedRow['price'] ?? null);
+        $stockQty = $this->toNullableInt($mappedRow['stock_qty'] ?? null);
+
         $stmt->execute([
             'supplier_id' => $supplierId,
-            'supplier_sku' => (string) ($mappedRow['supplier_sku'] ?? ''),
+            'supplier_sku' => $supplierSku,
             'supplier_title' => $title !== '' ? $title : null,
             'supplier_name' => $title !== '' ? $title : null,
             'raw_payload' => json_encode($rawRow, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
             'import_run_id' => $runId,
-            'price' => $this->toNullableDecimal($mappedRow['price'] ?? null),
-            'stock_qty' => $this->toNullableInt($mappedRow['stock_qty'] ?? null),
+            'price' => $price,
+            'stock_qty' => $stockQty,
         ]);
+
+        $id = $this->findIdBySupplierSku($supplierId, $supplierSku);
+
+        return [
+            'id' => $id,
+            'price' => $price,
+            'stock_qty' => $stockQty,
+        ];
     }
 
     /** @return array<string, mixed>|null */
@@ -118,5 +132,21 @@ final class SupplierItemRepository
         }
 
         return (int) $normalized;
+    }
+
+    private function findIdBySupplierSku(int $supplierId, string $supplierSku): int
+    {
+        $stmt = $this->pdo->prepare('SELECT id FROM supplier_items WHERE supplier_id = :supplier_id AND supplier_sku = :supplier_sku LIMIT 1');
+        $stmt->execute([
+            'supplier_id' => $supplierId,
+            'supplier_sku' => $supplierSku,
+        ]);
+
+        $id = $stmt->fetchColumn();
+        if ($id === false) {
+            throw new \RuntimeException('Kunde inte hitta leverantörsartikel efter upsert.');
+        }
+
+        return (int) $id;
     }
 }

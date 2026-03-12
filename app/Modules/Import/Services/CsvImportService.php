@@ -7,6 +7,7 @@ namespace App\Modules\Import\Services;
 use App\Modules\Import\Repositories\ImportRowRepository;
 use App\Modules\Import\Repositories\ImportRunRepository;
 use App\Modules\Import\Repositories\SupplierItemRepository;
+use App\Modules\Import\Repositories\SupplierItemSnapshotRepository;
 use RuntimeException;
 
 final class CsvImportService
@@ -15,6 +16,7 @@ final class CsvImportService
         private readonly ImportRunRepository $runs,
         private readonly ImportRowRepository $rows,
         private readonly SupplierItemRepository $supplierItems,
+        private readonly SupplierItemSnapshotRepository $snapshots,
         private readonly ImportProfileService $profiles
     ) {
     }
@@ -102,7 +104,8 @@ final class CsvImportService
                     throw new RuntimeException('Obligatoriskt fält supplier_sku saknas efter mapping.');
                 }
 
-                $this->supplierItems->upsertFromImport((int) $profile['supplier_id'], $runId, $mappedRow, $rawRow);
+                $upserted = $this->supplierItems->upsertFromImport((int) $profile['supplier_id'], $runId, $mappedRow, $rawRow);
+                $this->snapshots->capture((int) $upserted['id'], $runId, $upserted['price'], $upserted['stock_qty']);
                 $this->rows->create($runId, $rowNumber, 'success', $rawRow, $mappedRow, null);
                 $this->runs->incrementCounters($runId, true);
             } catch (\Throwable $exception) {

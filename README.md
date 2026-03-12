@@ -1540,3 +1540,26 @@ Viktigt:
 4. Öppna dashboard:
    - `http://127.0.0.1:8000/admin`
    - verifiera att operational alerts-sammanfattningen visas
+
+
+## Supplier monitoring / avvikelser v1
+
+Databas:
+- kör även `database/migrations/047_supplier_monitoring_v1.sql`
+
+Admin:
+- `/admin/supplier-monitoring`
+
+I v1 jämför systemet senaste snapshot mot föregående snapshot per leverantörsartikel och visar operativa avvikelser:
+- `price_increase` / `price_decrease`
+- `availability_lost` / `availability_restored`
+- `stock_dropped` / `stock_restored`
+- `missing_in_recent_import` / `newly_seen_item` (baserat på senaste completed import per leverantör)
+
+Action links i listan går till befintliga arbetsytor (importgranskning, importkörning, artikelvård och inköp) för manuell uppföljning. Ingen automatisk repricing eller automatisk avpublicering görs i denna version.
+
+Lokal test:
+1. Kör en importprofil minst två gånger med ändrade pris/lager-värden i CSV.
+2. Öppna `/admin/supplier-monitoring`.
+3. Filtrera på leverantör, avvikelsetyp och snabbfilter (pris/lager/sortiment).
+4. Verifiera att `tidigare` vs `nytt` visas och att action links fungerar.

@@ -547,6 +547,21 @@ final class CatalogRepository
         };
     }
 
+
+    /** @return array<string,mixed> */
+    public function searchLexicon(): array
+    {
+        $productStmt = $this->pdo->query('SELECT name FROM products WHERE is_active = 1 AND is_search_hidden = 0 ORDER BY updated_at DESC LIMIT 500');
+        $brandStmt = $this->pdo->query('SELECT name FROM brands ORDER BY name ASC');
+        $categoryStmt = $this->pdo->query('SELECT name FROM categories ORDER BY name ASC');
+
+        return [
+            'products' => $productStmt->fetchAll(PDO::FETCH_COLUMN) ?: [],
+            'brands' => $brandStmt->fetchAll(PDO::FETCH_COLUMN) ?: [],
+            'categories' => $categoryStmt->fetchAll(PDO::FETCH_COLUMN) ?: [],
+        ];
+    }
+
     private function publicVisibilityWhereSql(string $tableAlias = 'p'): string
     {
         return $tableAlias . '.is_active = 1 AND ' . $tableAlias . '.is_search_hidden = 0';

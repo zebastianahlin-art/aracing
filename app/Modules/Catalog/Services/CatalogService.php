@@ -9,6 +9,7 @@ use App\Modules\Catalog\Repositories\CatalogRepository;
 use App\Modules\Fitment\Services\FitmentStorefrontService;
 use App\Modules\Fitment\Services\FitmentService;
 use App\Modules\Fitment\Services\FitmentCoverageService;
+use App\Modules\Catalog\Repositories\SearchQueryAliasRepository;
 
 final class CatalogService
 {
@@ -21,7 +22,8 @@ final class CatalogService
         private readonly ProductRecommendationService $recommendations,
         private readonly FitmentService $fitment,
         private readonly FitmentStorefrontService $fitmentStorefront,
-        private readonly FitmentCoverageService $fitmentCoverage
+        private readonly FitmentCoverageService $fitmentCoverage,
+        private readonly SearchQueryAliasRepository $queryAliases
     ) {
     }
 
@@ -140,6 +142,15 @@ final class CatalogService
     private function normalizeFilters(array $query, ?int $forcedCategoryId): array
     {
         $queryText = trim((string) ($query['q'] ?? ''));
+        $queryText = mb_substr($queryText, 0, 120);
+        if ($queryText !== '') {
+            $normalizedQuery = mb_strtolower(preg_replace('/\s+/', ' ', $queryText) ?? $queryText);
+            $alias = $this->queryAliases->resolveActiveTarget($normalizedQuery);
+            if (is_string($alias) && trim($alias) !== '') {
+                $queryText = mb_substr(trim($alias), 0, 120);
+            }
+        }
+
         $sortInput = trim((string) ($query['sort'] ?? ''));
         $sort = $sortInput !== '' ? $sortInput : ($queryText !== '' ? 'relevance' : 'curated');
 
@@ -154,7 +165,7 @@ final class CatalogService
         }
 
         return [
-            'q' => mb_substr($queryText, 0, 120),
+            'q' => $queryText,
             'category_id' => $categoryId,
             'brand_id' => $brandId,
             'min_price' => $minPrice,

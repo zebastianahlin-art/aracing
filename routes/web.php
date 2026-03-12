@@ -7,6 +7,7 @@ use App\Modules\Admin\Controllers\AdminController;
 use App\Modules\Admin\Controllers\AiOperationalAlertController;
 use App\Modules\Admin\Controllers\AiMerchandisingSuggestionAdminController;
 use App\Modules\Admin\Controllers\AiInventoryInsightAdminController;
+use App\Modules\Admin\Controllers\AiSearchInsightAdminController;
 use App\Modules\Admin\Controllers\AiOperationalReportController;
 use App\Modules\Admin\Repositories\AiInventoryInsightRepository;
 use App\Modules\Admin\Repositories\AiMerchandisingSuggestionRepository;
@@ -14,6 +15,7 @@ use App\Modules\Admin\Services\AiOperationalAlertService;
 use App\Modules\Admin\Services\AiInventoryInsightService;
 use App\Modules\Admin\Services\AiMerchandisingSuggestionService;
 use App\Modules\Admin\Services\AiOperationalInsightsService;
+use App\Modules\Admin\Services\AiSearchInsightService;
 use App\Modules\Brand\Controllers\BrandAdminController;
 use App\Modules\Brand\Repositories\BrandRepository;
 use App\Modules\Brand\Services\BrandService;
@@ -22,6 +24,9 @@ use App\Modules\Cart\Repositories\CartProductRepository;
 use App\Modules\Cart\Repositories\CartRepository;
 use App\Modules\Cart\Services\CartService;
 use App\Modules\Catalog\Repositories\CatalogRepository;
+use App\Modules\Catalog\Repositories\SearchQueryAliasRepository;
+use App\Modules\Catalog\Repositories\SearchQueryLogRepository;
+use App\Modules\Catalog\Repositories\SearchQuerySuggestionRepository;
 use App\Modules\Catalog\Services\CatalogService;
 use App\Modules\Catalog\Services\ProductRecommendationService;
 use App\Modules\Category\Controllers\CategoryAdminController;
@@ -149,6 +154,7 @@ use App\Modules\Storefront\Services\HomepageService;
 use App\Modules\Storefront\Services\RobotsService;
 use App\Modules\Storefront\Services\SitemapService;
 use App\Modules\Storefront\Services\SeoService;
+use App\Modules\Storefront\Services\SearchQueryLoggingService;
 use App\Modules\Storefront\Services\RecentViewedService;
 use App\Modules\Supplier\Controllers\SupplierAdminController;
 use App\Modules\Supplier\Controllers\SupplierMonitoringAdminController;
@@ -247,6 +253,10 @@ $aiFitmentSuggestionService = new AiFitmentSuggestionService(
     new AiProductImportDraftRepository($app['pdo'])
 );
 $catalogRepository = new CatalogRepository($app['pdo']);
+$searchQueryLogRepository = new SearchQueryLogRepository($app['pdo']);
+$searchQuerySuggestionRepository = new SearchQuerySuggestionRepository($app['pdo']);
+$searchQueryAliasRepository = new SearchQueryAliasRepository($app['pdo']);
+$searchQueryLoggingService = new SearchQueryLoggingService($searchQueryLogRepository);
 $fitmentCoverageService = new FitmentCoverageService($catalogRepository);
 $fitmentGapService = new FitmentGapService(new ProductRepository($app['pdo']), new FitmentFlagRepository($app['pdo']), $supplierFitmentCandidateRepository, $catalogRepository);
 $productRecommendationService = new ProductRecommendationService(
@@ -256,7 +266,7 @@ $productRecommendationService = new ProductRecommendationService(
 );
 $fitmentStorefrontService = new FitmentStorefrontService($fitmentService, $savedVehicleService, new ProductFitmentRepository($app['pdo']));
 $vehicleNavigationService = new VehicleNavigationService($fitmentService, $fitmentStorefrontService, $catalogRepository, $fitmentCoverageService);
-$catalogService = new CatalogService($catalogRepository, $inventoryService, $productRecommendationService, $fitmentService, $fitmentStorefrontService, $fitmentCoverageService);
+$catalogService = new CatalogService($catalogRepository, $inventoryService, $productRecommendationService, $fitmentService, $fitmentStorefrontService, $fitmentCoverageService, $searchQueryAliasRepository);
 $shippingService = new ShippingService(new ShippingMethodRepository($app['pdo']));
 $checkoutTotalsService = new CheckoutTotalsService();
 $discountService = new DiscountService(new DiscountCodeRepository($app['pdo']));
@@ -386,7 +396,7 @@ $robotsService = new RobotsService();
 $sitemapController = new SitemapController($sitemapService, $robotsService);
 $recentViewedService = new RecentViewedService($catalogRepository, $inventoryService);
 $compareService = new CompareService($catalogRepository, $inventoryService);
-$storefront = new StorefrontController($app['view'], $catalogService, $cmsPageService, $authService, $productReviewService, $seoService, $wishlistService, $stockAlertService, $recentViewedService, $compareService, $fitmentService, $savedVehicleService, $fitmentStorefrontService, $vehicleNavigationService);
+$storefront = new StorefrontController($app['view'], $catalogService, $cmsPageService, $authService, $productReviewService, $seoService, $wishlistService, $stockAlertService, $recentViewedService, $compareService, $fitmentService, $savedVehicleService, $fitmentStorefrontService, $vehicleNavigationService, $searchQueryLoggingService);
 $cmsStorefront = new CmsStorefrontController($app['view'], $homepageService, $cmsPageService, $seoService, $authService, $fitmentService, $savedVehicleService, $fitmentStorefrontService, $vehicleNavigationService);
 $cartController = new CartController($app['view'], $cartService, $cmsPageService);
 $checkoutController = new CheckoutController($app['view'], $cartService, new CheckoutService(), $orderService, $shippingService, $checkoutTotalsService, $cmsPageService, $paymentService, $authService);
@@ -439,6 +449,7 @@ $aiInventoryInsightAdmin = new AiInventoryInsightAdminController(
     $brandService,
     $categoryService
 );
+$aiSearchInsightAdmin = new AiSearchInsightAdminController($app['view'], new AiSearchInsightService($searchQueryLogRepository, $searchQuerySuggestionRepository, $searchQueryAliasRepository, $catalogRepository));
 $aiMerchandisingSuggestionAdmin = new AiMerchandisingSuggestionAdminController(
     $app['view'],
     new AiMerchandisingSuggestionService(
@@ -547,6 +558,10 @@ $app['router']->get('/admin', [$admin, 'dashboard']);
 $app['router']->get('/admin/ai-alerts', [$aiOperationalAlertAdmin, 'index']);
 $app['router']->get('/admin/ai-ops-report', [$aiOperationalReportAdmin, 'index']);
 $app['router']->get('/admin/ai-inventory-insights', [$aiInventoryInsightAdmin, 'index']);
+$app['router']->get('/admin/ai-search-insights', [$aiSearchInsightAdmin, 'index']);
+$app['router']->post('/admin/ai-search-insights/generate', [$aiSearchInsightAdmin, 'generate']);
+$app['router']->post('/admin/ai-search-insights/suggestions/{id}/approve', [$aiSearchInsightAdmin, 'approve']);
+$app['router']->post('/admin/ai-search-insights/suggestions/{id}/reject', [$aiSearchInsightAdmin, 'reject']);
 $app['router']->get('/admin/ai-merch-suggestions', [$aiMerchandisingSuggestionAdmin, 'index']);
 $app['router']->post('/admin/ai-merch-suggestions/generate', [$aiMerchandisingSuggestionAdmin, 'generate']);
 $app['router']->get('/admin/ai-merch-suggestions/{id}', [$aiMerchandisingSuggestionAdmin, 'show']);

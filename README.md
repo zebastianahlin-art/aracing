@@ -1683,3 +1683,31 @@ Lokal testning:
 3. Testa filter för insight-typ, leverantör, brand och kategori.
 4. Verifiera att varje rad visar tydliga nyckeltal och fungerande action links.
 5. Verifiera dashboard-kortet för "AI Inventory Insights (v1)" i `/admin`.
+
+## AI Search Insights / zero-result queries v1
+
+Databas:
+- kör även `database/migrations/050_ai_search_insights_v1.sql`
+
+Admin:
+- `/admin/ai-search-insights`
+
+Vad som ingår i v1:
+- storefront-sökningar loggas lättviktigt i `search_query_logs` (`query_text`, `normalized_query`, `result_count`, tid, session)
+- operativ adminvy för problematiska queries (zero-result och låg-resultat)
+- review-first förslag i `search_query_suggestions` (typer: `synonym`, `redirect_query`, `query_alias`)
+- approve/reject i admin (inget går live automatiskt)
+- godkända förslag sparas som aktiva alias i `search_query_aliases` och används sedan av befintligt sökflöde
+
+Regler i v1:
+- ingen ny sökmotor
+- ingen automatisk synonympublicering
+- ingen black-box ranking
+- förslag bygger på enkel och förklarbar regelbas (singular/plural, svensk/engelsk ordlista, nära katalogmatchning)
+
+Lokal testning:
+1. Kör migration `050_ai_search_insights_v1.sql` i MariaDB.
+2. Gör några storefront-sökningar på `/search` (inklusive sökningar med 0 träffar).
+3. Öppna `/admin/ai-search-insights` och verifiera att problematiska queries visas.
+4. Klicka `Generera förslag` och verifiera pending-förslag.
+5. Godkänn ett förslag och verifiera att alias används i kommande sökningar.

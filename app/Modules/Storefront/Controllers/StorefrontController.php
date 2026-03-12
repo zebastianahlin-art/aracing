@@ -19,6 +19,7 @@ use App\Modules\Fitment\Services\FitmentService;
 use App\Modules\Fitment\Services\SavedVehicleService;
 use App\Modules\Fitment\Services\FitmentStorefrontService;
 use App\Modules\Fitment\Services\VehicleNavigationService;
+use App\Modules\Storefront\Services\SearchQueryLoggingService;
 
 final class StorefrontController
 {
@@ -36,7 +37,8 @@ final class StorefrontController
         private readonly FitmentService $fitment,
         private readonly SavedVehicleService $savedVehicles,
         private readonly FitmentStorefrontService $fitmentStorefront,
-        private readonly VehicleNavigationService $vehicleNavigation
+        private readonly VehicleNavigationService $vehicleNavigation,
+        private readonly SearchQueryLoggingService $searchQueryLogging
     ) {
     }
 
@@ -84,6 +86,7 @@ final class StorefrontController
         $payload['fitmentNotice'] = trim((string) ($_GET['fitment_notice'] ?? ''));
         $payload['fitmentStorefront'] = $this->fitmentStorefront->activeVehiclePayload($this->customerId());
         $payload['vehicleNavigation'] = $this->vehicleNavigation->storefrontPayload($this->customerId());
+        $this->searchQueryLogging->logStorefrontSearch((string) ($payload['filters']['q'] ?? ''), (int) ($payload['total'] ?? 0));
 
         return new Response($this->views->render('storefront.search', $payload));
     }

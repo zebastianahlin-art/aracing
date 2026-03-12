@@ -69,7 +69,7 @@ ALTER TABLE supplier_items
 CREATE TABLE IF NOT EXISTS import_rows (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     import_run_id BIGINT UNSIGNED NOT NULL,
-    row_number INT UNSIGNED NOT NULL,
+    source_row_number INT UNSIGNED NOT NULL,
     status VARCHAR(40) NOT NULL,
     raw_row_json JSON NOT NULL,
     mapped_row_json JSON NULL,

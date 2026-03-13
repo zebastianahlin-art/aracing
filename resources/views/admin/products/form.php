@@ -14,6 +14,31 @@ $stockOptions = ['in_stock', 'out_of_stock', 'backorder'];
 $filterAction = $isEdit ? '/admin/products/' . (int) $product['id'] . '/edit' : '/admin/products/create';
 $mediaError = (string) ($_GET['media_error'] ?? '');
 $notice = (string) ($_GET['notice'] ?? '');
+$canLikelyBeVisible = (int) ($product['is_active'] ?? 1) === 1
+    && (int) ($product['is_search_hidden'] ?? 0) === 0
+    && (int) ($product['is_indexable'] ?? 1) === 1;
+$visibilityReasons = [];
+if ((int) ($product['is_active'] ?? 1) !== 1) {
+    $visibilityReasons[] = 'Produkten är inaktiv.';
+}
+if ((int) ($product['is_search_hidden'] ?? 0) === 1) {
+    $visibilityReasons[] = 'Produkten är dold i publik sök/listning.';
+}
+if ((int) ($product['is_indexable'] ?? 1) !== 1) {
+    $visibilityReasons[] = 'Indexerbar sida är avstängd.';
+}
+if (trim((string) ($product['name'] ?? '')) === '') {
+    $visibilityReasons[] = 'Namn saknas.';
+}
+if ((float) ($product['sale_price'] ?? 0) <= 0) {
+    $visibilityReasons[] = 'Pris saknas eller är 0.';
+}
+if ((string) ($product['stock_status'] ?? 'out_of_stock') === 'out_of_stock' && (int) ($product['backorder_allowed'] ?? 0) !== 1) {
+    $visibilityReasons[] = 'Lagerstatus är slut och backorder är avstängt.';
+}
+if ($visibilityReasons === []) {
+    $visibilityReasons[] = 'Status ser bra ut för publik synlighet.';
+}
 
 $categoryNameMap = [];
 foreach (($categories ?? []) as $categoryOption) {
@@ -23,7 +48,7 @@ ob_start();
 ?>
 <section class="card" style="margin-bottom:.8rem;">
   <h4>Filtrera leverantörsartiklar</h4>
-  <form method="get" action="<?= $filterAction ?>" style="display:grid; gap:.5rem; grid-template-columns:1fr 1fr auto; align-items:end;">
+  <form method="get" action="<?= $filterAction ?>" style="display:grid; gap:.5rem; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); align-items:end;">
     <div>
       <label>Filter leverantör</label>
       <select name="supplier_id">
@@ -41,8 +66,21 @@ ob_start();
   </form>
 </section>
 
+<section class="card" style="margin-bottom:.8rem; background:#0f172a; color:#fff;">
+  <form method="post" action="<?= $isEdit ? '/admin/products/' . (int) $product['id'] : '/admin/products' ?>" style="display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; justify-content:space-between;">
+    <?php if ((string) ($_GET['return_to_review'] ?? '') === '1'): ?>
+      <input type="hidden" name="return_to_review" value="1">
+    <?php endif; ?>
+    <div style="font-weight:700;"><?= $isEdit ? 'Redigera produkt' : 'Skapa produkt' ?></div>
+    <div style="display:flex; flex-wrap:wrap; gap:.5rem;">
+      <button class="btn" type="submit" name="save_action" value="save">Spara produkt</button>
+      <button class="btn" type="submit" name="save_action" value="save_continue">Spara och fortsätt redigera</button>
+      <a class="btn" href="/admin/products">Tillbaka till produkter</a>
+    </div>
+  </form>
+</section>
+
 <section class="card">
-  <h3><?= $isEdit ? 'Redigera produkt' : 'Skapa produkt' ?></h3>
   <?php if ($notice !== ''): ?>
     <p class="pill ok"><?= htmlspecialchars($notice, ENT_QUOTES, 'UTF-8') ?></p>
   <?php endif; ?>
@@ -80,89 +118,122 @@ ob_start();
       </div>
     </div>
   <?php endif; ?>
+
+  <section class="card" style="margin-bottom:.8rem; border:1px solid #e5e7eb;">
+    <h4>Storefront synlighet</h4>
+    <p>
+      <span class="pill <?= $canLikelyBeVisible ? 'ok' : 'warn' ?>"><?= $canLikelyBeVisible ? 'Troligen synlig publikt' : 'Risk att inte visas publikt' ?></span>
+    </p>
+    <?php foreach ($visibilityReasons as $reason): ?>
+      <p class="muted" style="margin:.2rem 0;">• <?= htmlspecialchars($reason, ENT_QUOTES, 'UTF-8') ?></p>
+    <?php endforeach; ?>
+  </section>
+
   <form method="post" action="<?= $isEdit ? '/admin/products/' . (int) $product['id'] : '/admin/products' ?>">
     <?php if ((string) ($_GET['return_to_review'] ?? '') === '1'): ?>
       <input type="hidden" name="return_to_review" value="1">
     <?php endif; ?>
-    <div class="grid">
-      <div><label>Namn</label><input required name="name" value="<?= htmlspecialchars((string) ($product['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></div>
-      <div><label>Slug</label><input name="slug" value="<?= htmlspecialchars((string) ($product['slug'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></div>
-      <div><label>SKU</label><input name="sku" value="<?= htmlspecialchars((string) ($product['sku'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></div>
-      <div><label>Brand</label><select name="brand_id"><option value="">Ingen</option><?php foreach ($brands as $brand): ?><option value="<?= (int) $brand['id'] ?>" <?= (string) ($product['brand_id'] ?? '') === (string) $brand['id'] ? 'selected' : '' ?>><?= htmlspecialchars((string) $brand['name'], ENT_QUOTES, 'UTF-8') ?></option><?php endforeach; ?></select></div>
-      <div><label>Category</label><select name="category_id"><option value="">Ingen</option><?php foreach ($categories as $categoryOption): ?><option value="<?= (int) $categoryOption['id'] ?>" <?= (string) ($product['category_id'] ?? '') === (string) $categoryOption['id'] ? 'selected' : '' ?>><?= htmlspecialchars((string) $categoryOption['name'], ENT_QUOTES, 'UTF-8') ?></option><?php endforeach; ?></select></div>
-      <div><label><input type="checkbox" name="is_active" value="1" <?= (int) ($product['is_active'] ?? 1) === 1 ? 'checked' : '' ?>> Aktiv</label></div>
-    </div>
 
-    <h4>Publicerad pris/lager</h4>
-    <div class="grid">
-      <div><label>Sale price</label><input name="sale_price" value="<?= htmlspecialchars((string) ($product['sale_price'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="0.00"></div>
-      <div><label>Valuta</label><input name="currency_code" value="<?= htmlspecialchars((string) ($product['currency_code'] ?? 'SEK'), ENT_QUOTES, 'UTF-8') ?>"></div>
-      <div><label>Lagerstatus</label><select name="stock_status"><?php foreach ($stockOptions as $option): ?><option value="<?= htmlspecialchars($option, ENT_QUOTES, 'UTF-8') ?>" <?= (string) ($product['stock_status'] ?? 'out_of_stock') === $option ? 'selected' : '' ?>><?= htmlspecialchars($option, ENT_QUOTES, 'UTF-8') ?></option><?php endforeach; ?></select></div>
-      <div><label>Lagervärde (qty)</label><input name="stock_quantity" value="<?= htmlspecialchars((string) ($product['stock_quantity'] ?? 0), ENT_QUOTES, 'UTF-8') ?>"></div>
-      <div><label><input type="checkbox" name="backorder_allowed" value="1" <?= (int) ($product['backorder_allowed'] ?? 0) === 1 ? 'checked' : '' ?>> Tillåt backorder</label></div>
-    </div>
-
-
-
-    <h4>Synlighet & merchandising</h4>
-    <div class="grid">
-      <div><label><input type="checkbox" name="is_search_hidden" value="1" <?= (int) ($product['is_search_hidden'] ?? 0) === 1 ? 'checked' : '' ?>> Dölj i publik sök och listning</label></div>
-      <div><label><input type="checkbox" name="is_featured" value="1" <?= (int) ($product['is_featured'] ?? 0) === 1 ? 'checked' : '' ?>> Prioritera som featured</label></div>
-      <div><label>Manuell sökboost</label><input type="number" name="search_boost" min="-1000" max="1000" value="<?= (int) ($product['search_boost'] ?? 0) ?>"></div>
-      <div><label>Manuell sorteringsprioritet</label><input type="number" name="sort_priority" min="-1000" max="1000" value="<?= (int) ($product['sort_priority'] ?? 0) ?>"></div>
-    </div>
-
-    <h4>Leverantörskoppling (v1)</h4>
-    <div class="grid">
-      <div>
-        <label>Välj supplier_item</label>
-        <select name="supplier_item_id">
-          <option value="">Ingen koppling</option>
-          <?php foreach ($supplier_items as $item): ?>
-            <option value="<?= (int) $item['id'] ?>" <?= $selectedSupplierItemId === (string) $item['id'] ? 'selected' : '' ?>>
-              <?= htmlspecialchars((string) ($item['supplier_name'] ?? '-') . ' | ' . ($item['supplier_sku'] ?? '-') . ' | ' . ($item['supplier_title'] ?? '-'), ENT_QUOTES, 'UTF-8') ?>
-            </option>
-          <?php endforeach; ?>
-        </select>
+    <section class="card" style="margin-bottom:.8rem;">
+      <h4>Basic info</h4>
+      <div class="grid">
+        <div><label>Namn</label><input required name="name" value="<?= htmlspecialchars((string) ($product['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></div>
+        <div><label>Slug</label><input name="slug" value="<?= htmlspecialchars((string) ($product['slug'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></div>
+        <div><label>SKU</label><input name="sku" value="<?= htmlspecialchars((string) ($product['sku'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></div>
+        <div><label>Brand</label><select name="brand_id"><option value="">Ingen</option><?php foreach ($brands as $brand): ?><option value="<?= (int) $brand['id'] ?>" <?= (string) ($product['brand_id'] ?? '') === (string) $brand['id'] ? 'selected' : '' ?>><?= htmlspecialchars((string) $brand['name'], ENT_QUOTES, 'UTF-8') ?></option><?php endforeach; ?></select></div>
+        <div><label>Category</label><select name="category_id"><option value="">Ingen</option><?php foreach ($categories as $categoryOption): ?><option value="<?= (int) $categoryOption['id'] ?>" <?= (string) ($product['category_id'] ?? '') === (string) $categoryOption['id'] ? 'selected' : '' ?>><?= htmlspecialchars((string) $categoryOption['name'], ENT_QUOTES, 'UTF-8') ?></option><?php endforeach; ?></select></div>
       </div>
-      <div>
-        <label><input type="checkbox" name="link_is_primary" value="1" <?= (isset($product['link_is_primary']) && (int) $product['link_is_primary'] === 1) || $primaryLink !== null ? 'checked' : '' ?>> Primär koppling</label>
+    </section>
+
+    <section class="card" style="margin-bottom:.8rem;">
+      <h4>Publishing & visibility</h4>
+      <div class="grid">
+        <div><label><input type="checkbox" name="is_active" value="1" <?= (int) ($product['is_active'] ?? 1) === 1 ? 'checked' : '' ?>> Aktiv</label></div>
+        <div><label><input type="checkbox" name="is_search_hidden" value="1" <?= (int) ($product['is_search_hidden'] ?? 0) === 1 ? 'checked' : '' ?>> Dölj i publik sök och listning</label></div>
+        <div><label><input type="checkbox" name="is_featured" value="1" <?= (int) ($product['is_featured'] ?? 0) === 1 ? 'checked' : '' ?>> Prioritera som featured</label></div>
+        <div><label>Manuell sökboost</label><input type="number" name="search_boost" min="-1000" max="1000" value="<?= (int) ($product['search_boost'] ?? 0) ?>"></div>
+        <div><label>Manuell sorteringsprioritet</label><input type="number" name="sort_priority" min="-1000" max="1000" value="<?= (int) ($product['sort_priority'] ?? 0) ?>"></div>
       </div>
+    </section>
+
+    <section class="card" style="margin-bottom:.8rem;">
+      <h4>Pricing & stock</h4>
+      <div class="grid">
+        <div><label>Sale price</label><input name="sale_price" value="<?= htmlspecialchars((string) ($product['sale_price'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="0.00"></div>
+        <div><label>Valuta</label><input name="currency_code" value="<?= htmlspecialchars((string) ($product['currency_code'] ?? 'SEK'), ENT_QUOTES, 'UTF-8') ?>"></div>
+        <div><label>Lagerstatus</label><select name="stock_status"><?php foreach ($stockOptions as $option): ?><option value="<?= htmlspecialchars($option, ENT_QUOTES, 'UTF-8') ?>" <?= (string) ($product['stock_status'] ?? 'out_of_stock') === $option ? 'selected' : '' ?>><?= htmlspecialchars($option, ENT_QUOTES, 'UTF-8') ?></option><?php endforeach; ?></select></div>
+        <div><label>Lagervärde (qty)</label><input name="stock_quantity" value="<?= htmlspecialchars((string) ($product['stock_quantity'] ?? 0), ENT_QUOTES, 'UTF-8') ?>"></div>
+        <div><label><input type="checkbox" name="backorder_allowed" value="1" <?= (int) ($product['backorder_allowed'] ?? 0) === 1 ? 'checked' : '' ?>> Tillåt backorder</label></div>
+      </div>
+    </section>
+
+    <section class="card" style="margin-bottom:.8rem;">
+      <h4>Supplier link</h4>
+      <div class="grid">
+        <div>
+          <label>Välj supplier_item</label>
+          <select name="supplier_item_id">
+            <option value="">Ingen koppling</option>
+            <?php foreach ($supplier_items as $item): ?>
+              <option value="<?= (int) $item['id'] ?>" <?= $selectedSupplierItemId === (string) $item['id'] ? 'selected' : '' ?>>
+                <?= htmlspecialchars((string) ($item['supplier_name'] ?? '-') . ' | ' . ($item['supplier_sku'] ?? '-') . ' | ' . ($item['supplier_title'] ?? '-'), ENT_QUOTES, 'UTF-8') ?>
+              </option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <div>
+          <label><input type="checkbox" name="link_is_primary" value="1" <?= (isset($product['link_is_primary']) && (int) $product['link_is_primary'] === 1) || $primaryLink !== null ? 'checked' : '' ?>> Primär koppling</label>
+        </div>
+      </div>
+
+      <?php if ($primaryLink !== null): ?>
+        <div class="card" style="margin-top:.7rem;">
+          <strong>Snapshot (primär koppling)</strong>
+          <p class="muted" style="margin:.4rem 0 0;">Leverantör: <?= htmlspecialchars((string) ($primaryLink['supplier_name'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
+          <p class="muted" style="margin:.2rem 0;">SKU: <?= htmlspecialchars((string) ($primaryLink['supplier_sku_snapshot'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
+          <p class="muted" style="margin:.2rem 0;">Titel: <?= htmlspecialchars((string) ($primaryLink['supplier_title_snapshot'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
+          <p class="muted" style="margin:.2rem 0;">Pris: <?= htmlspecialchars((string) ($primaryLink['supplier_price_snapshot'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
+          <p class="muted" style="margin:.2rem 0;">Lager: <?= htmlspecialchars((string) ($primaryLink['supplier_stock_snapshot'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
+        </div>
+      <?php endif; ?>
+    </section>
+
+    <section class="card" style="margin-bottom:.8rem;">
+      <h4>Description</h4>
+      <label>Beskrivning</label>
+      <textarea name="description"><?= htmlspecialchars((string) ($product['description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
+    </section>
+
+    <section class="card" style="margin-bottom:.8rem;">
+      <h4>SEO</h4>
+      <div class="grid">
+        <div><label>SEO-titel</label><input name="seo_title" maxlength="255" value="<?= htmlspecialchars((string) ($product['seo_title'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></div>
+        <div><label>Canonical URL (valfri override)</label><input name="canonical_url" maxlength="255" placeholder="/product/exempel eller https://..." value="<?= htmlspecialchars((string) ($product['canonical_url'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></div>
+        <div>
+          <label>Meta robots override</label>
+          <?php $metaRobots = (string) ($product['meta_robots'] ?? ''); ?>
+          <select name="meta_robots">
+            <option value="">Automatisk</option>
+            <option value="index,follow" <?= $metaRobots === 'index,follow' ? 'selected' : '' ?>>index,follow</option>
+            <option value="noindex,follow" <?= $metaRobots === 'noindex,follow' ? 'selected' : '' ?>>noindex,follow</option>
+          </select>
+        </div>
+        <div><label><input type="checkbox" name="is_indexable" value="1" <?= (int) ($product['is_indexable'] ?? 1) === 1 ? 'checked' : '' ?>> Indexerbar sida</label></div>
+      </div>
+      <label>SEO-beskrivning</label><textarea name="seo_description" maxlength="1000"><?= htmlspecialchars((string) ($product['seo_description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
+    </section>
+
+    <section class="card" style="margin-bottom:.8rem;">
+      <h4>Attributes</h4>
+      <label>Attribut (en rad per attribut: key|value)</label>
+      <textarea name="attributes"><?= htmlspecialchars($attributesText, ENT_QUOTES, 'UTF-8') ?></textarea>
+    </section>
+
+    <div style="display:flex; flex-wrap:wrap; gap:.5rem;">
+      <button class="btn" type="submit" name="save_action" value="save">Spara produkt</button>
+      <button class="btn" type="submit" name="save_action" value="save_continue">Spara och fortsätt redigera</button>
+      <a class="btn" href="/admin/products">Tillbaka till produkter</a>
     </div>
-
-    <?php if ($primaryLink !== null): ?>
-      <div class="card" style="margin-top:.7rem;">
-        <strong>Snapshot (primär koppling)</strong>
-        <p class="muted" style="margin:.4rem 0 0;">Leverantör: <?= htmlspecialchars((string) ($primaryLink['supplier_name'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
-        <p class="muted" style="margin:.2rem 0;">SKU: <?= htmlspecialchars((string) ($primaryLink['supplier_sku_snapshot'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
-        <p class="muted" style="margin:.2rem 0;">Titel: <?= htmlspecialchars((string) ($primaryLink['supplier_title_snapshot'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
-        <p class="muted" style="margin:.2rem 0;">Pris: <?= htmlspecialchars((string) ($primaryLink['supplier_price_snapshot'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
-        <p class="muted" style="margin:.2rem 0;">Lager: <?= htmlspecialchars((string) ($primaryLink['supplier_stock_snapshot'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></p>
-      </div>
-    <?php endif; ?>
-
-    <label>Beskrivning</label><textarea name="description"><?= htmlspecialchars((string) ($product['description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
-
-
-    <h4>SEO (v1)</h4>
-    <div class="grid">
-      <div><label>SEO-titel</label><input name="seo_title" maxlength="255" value="<?= htmlspecialchars((string) ($product['seo_title'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></div>
-      <div><label>Canonical URL (valfri override)</label><input name="canonical_url" maxlength="255" placeholder="/product/exempel eller https://..." value="<?= htmlspecialchars((string) ($product['canonical_url'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></div>
-      <div>
-        <label>Meta robots override</label>
-        <?php $metaRobots = (string) ($product['meta_robots'] ?? ''); ?>
-        <select name="meta_robots">
-          <option value="">Automatisk</option>
-          <option value="index,follow" <?= $metaRobots === 'index,follow' ? 'selected' : '' ?>>index,follow</option>
-          <option value="noindex,follow" <?= $metaRobots === 'noindex,follow' ? 'selected' : '' ?>>noindex,follow</option>
-        </select>
-      </div>
-      <div><label><input type="checkbox" name="is_indexable" value="1" <?= (int) ($product['is_indexable'] ?? 1) === 1 ? 'checked' : '' ?>> Indexerbar sida</label></div>
-    </div>
-    <label>SEO-beskrivning</label><textarea name="seo_description" maxlength="1000"><?= htmlspecialchars((string) ($product['seo_description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
-
-    <label>Attribut (en rad per attribut: key|value)</label><textarea name="attributes"><?= htmlspecialchars($attributesText, ENT_QUOTES, 'UTF-8') ?></textarea>
-    <br><button class="btn" type="submit">Spara</button>
   </form>
 </section>
 

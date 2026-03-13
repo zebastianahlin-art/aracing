@@ -91,10 +91,11 @@ $filters = $filters ?? ['name' => '', 'sku' => '', 'active' => '', 'has_link' =>
       <button class="btn" type="submit">Kör bulkåtgärd</button>
     </div>
 
+    <div style="overflow-x:auto;">
     <table class="table compact">
       <thead>
       <tr>
-        <th></th><th>ID</th><th>Produkt</th><th>Publicerad data</th><th>Leverantörssnapshot</th><th>Avvikelser</th><th>Snabbåtgärder</th>
+        <th></th><th>ID</th><th>Produkt</th><th>Publicerad data</th><th>Leverantörssnapshot</th><th>Avvikelser</th><th>Åtgärder</th>
       </tr>
       </thead>
       <tbody>
@@ -107,7 +108,8 @@ $filters = $filters ?? ['name' => '', 'sku' => '', 'active' => '', 'has_link' =>
             <span class="muted">SKU: <?= htmlspecialchars((string) ($product['sku'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></span><br>
             <span class="muted">Brand: <?= htmlspecialchars((string) ($product['brand_name'] ?? '-'), ENT_QUOTES, 'UTF-8') ?> · Kategori: <?= htmlspecialchars((string) ($product['category_name'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></span><br>
             <span class="pill <?= (int) $product['is_active'] === 1 ? 'ok' : 'bad' ?>"><?= (int) $product['is_active'] === 1 ? 'Aktiv' : 'Inaktiv' ?></span>
-            <span class="pill <?= (int) ($product['is_search_hidden'] ?? 0) === 1 ? 'warn' : 'ok' ?>"><?= (int) ($product['is_search_hidden'] ?? 0) === 1 ? 'Dold publikt' : 'Synlig publikt' ?></span>
+            <span class="pill <?= (int) ($product['is_search_hidden'] ?? 0) === 1 ? 'warn' : 'ok' ?>"><?= (int) ($product['is_search_hidden'] ?? 0) === 1 ? 'Dold i listning' : 'Visas i listning' ?></span>
+            <span class="pill <?= (int) ($product['is_indexable'] ?? 1) === 1 ? 'ok' : 'warn' ?>"><?= (int) ($product['is_indexable'] ?? 1) === 1 ? 'Indexerbar sida' : 'Ej indexerbar sida' ?></span>
             <?php if ((int) ($product['is_featured'] ?? 0) === 1): ?><span class="pill ok">Featured</span><?php endif; ?>
           </td>
           <td>
@@ -135,12 +137,14 @@ $filters = $filters ?? ['name' => '', 'sku' => '', 'active' => '', 'has_link' =>
             <?php endif; ?>
           </td>
           <td>
-            <div class="actions-inline" style="margin:0;">
+            <div style="display:grid; gap:.35rem; margin:0;">
               <a class="btn" href="/admin/products/<?= (int) $product['id'] ?>/edit">Redigera</a>
-              <button class="btn" type="submit" name="action" value="sync_snapshot" formaction="/admin/products/<?= (int) $product['id'] ?>/operations">Synka snapshot</button>
-              <button class="btn" type="submit" name="action" value="copy_price" formaction="/admin/products/<?= (int) $product['id'] ?>/operations">Kopiera pris</button>
-              <button class="btn" type="submit" name="action" value="copy_stock" formaction="/admin/products/<?= (int) $product['id'] ?>/operations">Kopiera lager</button>
-              <button class="btn" type="submit" name="action" value="refresh_stock_status" formaction="/admin/products/<?= (int) $product['id'] ?>/operations">Sätt lagerstatus</button>
+              <div class="actions-inline" style="margin:0; gap:.35rem; flex-wrap:wrap;">
+                <button class="btn" type="submit" name="action" value="sync_snapshot" formaction="/admin/products/<?= (int) $product['id'] ?>/operations">Synka</button>
+                <button class="btn" type="submit" name="action" value="copy_price" formaction="/admin/products/<?= (int) $product['id'] ?>/operations">Kopiera pris</button>
+                <button class="btn" type="submit" name="action" value="copy_stock" formaction="/admin/products/<?= (int) $product['id'] ?>/operations">Kopiera lager</button>
+                <button class="btn" type="submit" name="action" value="refresh_stock_status" formaction="/admin/products/<?= (int) $product['id'] ?>/operations">Lagerstatus</button>
+              </div>
               <button class="btn" type="submit" name="action" value="<?= (int) $product['is_active'] === 1 ? 'set_inactive' : 'set_active' ?>" formaction="/admin/products/<?= (int) $product['id'] ?>/operations"><?= (int) $product['is_active'] === 1 ? 'Sätt inaktiv' : 'Sätt aktiv' ?></button>
             </div>
           </td>
@@ -148,6 +152,7 @@ $filters = $filters ?? ['name' => '', 'sku' => '', 'active' => '', 'has_link' =>
       <?php endforeach; ?>
       </tbody>
     </table>
+    </div>
   </form>
 </section>
 <?php $content = (string) ob_get_clean(); $title = 'Products | Admin'; require __DIR__ . '/../../layouts/admin.php'; ?>

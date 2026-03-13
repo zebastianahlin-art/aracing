@@ -160,7 +160,12 @@ final class ProductAdminController
             return $this->redirect('/admin/supplier-item-review?notice=' . urlencode('Produkt skapad och kopplad (#' . $productId . ')'));
         }
 
-        return $this->redirect('/admin/products');
+        $saveAction = (string) ($_POST['save_action'] ?? 'save');
+        if ($saveAction === 'save_continue') {
+            return $this->redirect('/admin/products/' . $productId . '/edit?notice=' . urlencode('Produkten sparades.'));
+        }
+
+        return $this->redirect('/admin/products?notice=' . urlencode('Produkten sparades.'));
     }
 
     public function articleCareQueue(): Response
@@ -211,9 +216,15 @@ final class ProductAdminController
 
     public function update(string $id): Response
     {
-        $this->products->update((int) $id, $_POST);
+        $productId = (int) $id;
+        $this->products->update($productId, $_POST);
 
-        return $this->redirect('/admin/products');
+        $saveAction = (string) ($_POST['save_action'] ?? 'save');
+        if ($saveAction === 'save_continue') {
+            return $this->redirect('/admin/products/' . $productId . '/edit?notice=' . urlencode('Produkten uppdaterades.'));
+        }
+
+        return $this->redirect('/admin/products?notice=' . urlencode('Produkten uppdaterades.'));
     }
 
     public function createEnrichmentSuggestion(string $id): Response

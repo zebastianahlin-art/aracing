@@ -30,8 +30,31 @@ $paths = [
     'storage/sessions',
     'public/uploads/product-images',
 ];
+
+$rootCandidates = [dirname(__DIR__)];
+if (PHP_SAPI === 'cli' && isset($_SERVER['argv'][0]) && trim((string) $_SERVER['argv'][0]) !== '') {
+    $scriptPath = (string) $_SERVER['argv'][0];
+    if ($scriptPath[0] !== '/') {
+        $scriptPath = getcwd() . '/' . $scriptPath;
+    }
+    $rootCandidates[] = dirname(dirname($scriptPath));
+}
+$rootCandidates = array_values(array_unique($rootCandidates));
+
 foreach ($paths as $relative) {
-    $full = dirname(__DIR__) . '/' . $relative;
+    $full = null;
+    foreach ($rootCandidates as $root) {
+        $candidate = rtrim($root, '/') . '/' . $relative;
+        if (is_dir($candidate)) {
+            $full = $candidate;
+            break;
+        }
+    }
+
+    if ($full === null) {
+        $full = rtrim($rootCandidates[0], '/') . '/' . $relative;
+    }
+
     $exists = is_dir($full) || mkdir($full, 0775, true) || is_dir($full);
 
     $writable = false;

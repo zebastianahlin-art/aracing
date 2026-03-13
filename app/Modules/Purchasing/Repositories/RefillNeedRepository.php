@@ -35,7 +35,7 @@ final class RefillNeedRepository
                            SELECT COUNT(*)
                            FROM stock_alert_subscriptions sas
                            WHERE sas.product_id = p.id
-                             AND sas.status = \"active\"
+                             AND sas.status = \'active\'
                        ) AS active_stock_alerts
                 FROM products p
                 LEFT JOIN product_supplier_links psl ON psl.product_id = p.id AND psl.is_primary = 1

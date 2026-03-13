@@ -491,6 +491,32 @@ final class ProductService
         return in_array($normalized, $allowed, true) ? $normalized : 'out_of_stock';
     }
 
+    private function nullableString(?string $value, ?int $maxLength = null): ?string
+    {
+        $normalized = trim((string) $value);
+        if ($normalized === '') {
+            return null;
+        }
+
+        if ($maxLength !== null) {
+            $normalized = mb_substr($normalized, 0, $maxLength);
+        }
+
+        return $normalized;
+    }
+
+    private function normalizeCanonicalUrl(?string $value): ?string
+    {
+        return $this->nullableString($value, 2048);
+    }
+
+    private function normalizeMetaRobots(?string $value): string
+    {
+        $normalized = mb_strtolower(trim((string) $value));
+
+        return in_array($normalized, self::ALLOWED_META_ROBOTS, true) ? $normalized : 'index,follow';
+    }
+
     /** @return array<int, array{attribute_key:string, attribute_value:string}> */
     private function parseAttributes(string $raw): array
     {

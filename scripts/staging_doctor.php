@@ -32,14 +32,22 @@ $paths = [
 ];
 foreach ($paths as $relative) {
     $full = dirname(__DIR__) . '/' . $relative;
-    if (!is_dir($full)) {
-        @mkdir($full, 0775, true);
+    $exists = is_dir($full) || mkdir($full, 0775, true) || is_dir($full);
+
+    $writable = false;
+    if ($exists) {
+        $probe = $full . '/.staging-doctor-write-test';
+        $written = @file_put_contents($probe, 'ok');
+        if ($written !== false) {
+            $writable = true;
+            @unlink($probe);
+        }
     }
 
     $checks[] = [
         'label' => 'Writable: ' . $relative,
-        'ok' => is_dir($full) && is_writable($full),
-        'details' => is_dir($full) ? (is_writable($full) ? 'OK' : 'Not writable') : 'Could not create directory',
+        'ok' => $exists && $writable,
+        'details' => !$exists ? 'Could not create directory' : ($writable ? 'OK' : 'Not writable'),
     ];
 }
 
